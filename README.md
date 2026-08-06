@@ -45,7 +45,4 @@ through OCI metadata. The GDB recipe prefers the published builder and falls
 back to pinned Alpine for first-time bootstrapping. Start an interactive builder
 with `./aarch64_alpine_build_scripts/run-builder.sh`.
 
-GHCR creates new packages as private; after their first publication, make them
-public in the package settings to allow anonymous pulls.
-
 Build conventions and artifact requirements are documented in `AGENTS.md`.
