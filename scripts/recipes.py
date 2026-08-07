@@ -198,6 +198,55 @@ def _validate_recipe(root: Path, row: dict[str, str], line_number: int) -> Recip
     if not source_values["SOURCE_MIRROR_URL"].endswith(mirror_suffix):
         raise _error(line_number, "SOURCE_MIRROR_URL does not match the release tag and archive")
 
+    if name == "tcpdump":
+        required_libpcap_fields = {
+            "LIBPCAP_VERSION",
+            "LIBPCAP_ARCHIVE",
+            "LIBPCAP_SHA256",
+            "LIBPCAP_UPSTREAM_URL",
+            "LIBPCAP_MIRROR_URL",
+            "LIBPCAP_LICENSE",
+        }
+        expected_fields = required_source_fields | required_libpcap_fields
+        missing_libpcap_fields = sorted(required_libpcap_fields - source_values.keys())
+        if missing_libpcap_fields:
+            raise _error(
+                line_number,
+                f"tcpdump source.lock is missing: {', '.join(missing_libpcap_fields)}",
+            )
+        unexpected_fields = sorted(source_values.keys() - expected_fields)
+        if unexpected_fields:
+            raise _error(
+                line_number,
+                f"tcpdump source.lock has unexpected fields: {', '.join(unexpected_fields)}",
+            )
+
+        libpcap_version = source_values["LIBPCAP_VERSION"]
+        if VERSION_RE.fullmatch(libpcap_version) is None:
+            raise _error(line_number, f"invalid LIBPCAP_VERSION: {libpcap_version}")
+        if SHA256_RE.fullmatch(source_values["LIBPCAP_SHA256"]) is None:
+            raise _error(
+                line_number,
+                "LIBPCAP_SHA256 must be 64 lowercase hexadecimal characters",
+            )
+        libpcap_archive = source_values["LIBPCAP_ARCHIVE"]
+        if (
+            PurePosixPath(libpcap_archive).name != libpcap_archive
+            or libpcap_archive in {".", ".."}
+        ):
+            raise _error(line_number, "LIBPCAP_ARCHIVE must be a safe filename")
+        if libpcap_archive == source_archive:
+            raise _error(line_number, "tcpdump source archives must be distinct")
+        for url_field in ("LIBPCAP_UPSTREAM_URL", "LIBPCAP_MIRROR_URL"):
+            if not source_values[url_field].startswith("https://"):
+                raise _error(line_number, f"{url_field} must use HTTPS")
+        libpcap_mirror_suffix = f"/{release_tag}/{libpcap_archive}"
+        if not source_values["LIBPCAP_MIRROR_URL"].endswith(libpcap_mirror_suffix):
+            raise _error(
+                line_number,
+                "LIBPCAP_MIRROR_URL does not match the release tag and archive",
+            )
+
     environment_values = _read_lock(root / environment_lock, line_number)
     if DIGEST_IMAGE_RE.fullmatch(environment_values.get("BUILDER_IMAGE", "")) is None:
         raise _error(line_number, "environment lock must pin BUILDER_IMAGE by SHA-256 digest")

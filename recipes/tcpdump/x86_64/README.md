@@ -1,0 +1,38 @@
+# x86-64 tcpdump recipe
+
+This recipe builds tcpdump 4.99.4 with libpcap 1.10.4 as a stripped static
+x86-64 executable. From the repository root, use the stable dispatcher or the
+direct recipe command:
+
+```sh
+./build.sh tcpdump
+./recipes/tcpdump/x86_64/build.sh
+```
+
+Both commands require Bash, Docker, and access to the public images and source
+URLs named by the committed locks. The build consumes the exact builder digest
+in `builders/x86_64/environment.lock`, validates a temporary candidate, and
+writes `artifacts/x86_64/tcpdump` only after every check passes. On non-x86-64
+Linux hosts it may register the pinned QEMU `binfmt_misc` helper with
+`--privileged` when amd64 container support is absent. Set `BUILD_JOBS` to tune
+compilation parallelism:
+
+```sh
+BUILD_JOBS=4 ./build.sh tcpdump
+```
+
+`source.lock` owns both source versions, archive names, checksums, the shared
+immutable repository release, official fallback URLs, and license identifiers.
+Each URL is accepted only after its corresponding locked checksum passes.
+Reviewed license material and the exact linked-archive provenance inventory are
+under `licenses/` and are copied into the artifact image.
+
+The build rejects an ELF interpreter, dynamic dependencies, a wrong machine,
+retained debug or full symbol-table sections, and an incomplete linked-archive
+inventory. Its smoke test checks the reported tcpdump/libpcap versions, compiles
+a BPF filter, and decodes a deterministic packet capture without network access.
+
+To keep the executable self-contained, tcpdump omits OpenSSL or LibreSSL,
+libcap-ng, libsmi, and Capsicum integration. libpcap omits remote capture, USB,
+netmap, Bluetooth, D-Bus, RDMA, libnl, DAG, Septel, SNF, TurboCap, and DPDK
+backends.

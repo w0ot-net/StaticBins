@@ -54,7 +54,7 @@ class CatalogFixture:
             encoding="utf-8",
         )
         (recipe_dir / "Dockerfile").write_text("FROM scratch\n", encoding="utf-8")
-        (recipe_dir / "source.lock").write_text(
+        source_lock = (
             f"SOURCE_VERSION={version}\n"
             f"SOURCE_ARCHIVE={name}-{version}.tar.xz\n"
             f"SOURCE_SHA256={'2' * 64}\n"
@@ -62,9 +62,19 @@ class CatalogFixture:
             f"SOURCE_RELEASE_TAG={name}-{version}-source\n"
             f"SOURCE_MIRROR_URL=https://mirror.invalid/releases/download/"
             f"{name}-{version}-source/{name}-{version}.tar.xz\n"
-            "SOURCE_LICENSE=GPL-3.0-or-later\n",
-            encoding="utf-8",
+            "SOURCE_LICENSE=GPL-3.0-or-later\n"
         )
+        if name == "tcpdump":
+            source_lock += (
+                "LIBPCAP_VERSION=1.10.4\n"
+                "LIBPCAP_ARCHIVE=libpcap-1.10.4.tar.gz\n"
+                f"LIBPCAP_SHA256={'3' * 64}\n"
+                "LIBPCAP_UPSTREAM_URL=https://upstream.invalid/libpcap.tar.gz\n"
+                "LIBPCAP_MIRROR_URL=https://mirror.invalid/releases/download/"
+                f"{name}-{version}-source/libpcap-1.10.4.tar.gz\n"
+                "LIBPCAP_LICENSE=BSD-3-Clause\n"
+            )
+        (recipe_dir / "source.lock").write_text(source_lock, encoding="utf-8")
         (recipe_dir / "build.sh").write_text(script_body, encoding="utf-8")
         (license_dir / "NOTICE.md").write_text("notice\n", encoding="utf-8")
         (license_dir / "archive-inventory.tsv").write_text(
@@ -159,6 +169,63 @@ class RecipeCatalogTests(unittest.TestCase):
         self.assertEqual(
             ("7.4-aarch64", "aarch64-latest"), loaded[0].tag_suffixes
         )
+
+    def test_tcpdump_two_source_lock_is_bounded_and_validated(self) -> None:
+        temporary_directory, fixture = self.make_fixture()
+        self.addCleanup(temporary_directory.cleanup)
+        fixture.add_recipe("tcpdump", architecture="x86_64", version="4.99.4")
+        catalog = fixture.write_catalog()
+        fixture.track()
+        loaded = recipes.load_catalog(fixture.root, catalog)
+        self.assertEqual("tcpdump", loaded[0].name)
+
+        mutations = (
+            (
+                "missing dependency field",
+                "LIBPCAP_LICENSE=BSD-3-Clause\n",
+                "",
+                "tcpdump source.lock is missing: LIBPCAP_LICENSE",
+            ),
+            (
+                "malformed dependency checksum",
+                f"LIBPCAP_SHA256={'3' * 64}",
+                "LIBPCAP_SHA256=not-a-checksum",
+                "LIBPCAP_SHA256 must be",
+            ),
+            (
+                "unsafe dependency archive",
+                "LIBPCAP_ARCHIVE=libpcap-1.10.4.tar.gz",
+                "LIBPCAP_ARCHIVE=../libpcap.tar.gz",
+                "LIBPCAP_ARCHIVE must be a safe filename",
+            ),
+            (
+                "duplicate source archive",
+                "LIBPCAP_ARCHIVE=libpcap-1.10.4.tar.gz",
+                "LIBPCAP_ARCHIVE=tcpdump-4.99.4.tar.xz",
+                "source archives must be distinct",
+            ),
+            (
+                "wrong dependency mirror release",
+                "tcpdump-4.99.4-source/libpcap-1.10.4.tar.gz",
+                "other-release/libpcap-1.10.4.tar.gz",
+                "LIBPCAP_MIRROR_URL does not match",
+            ),
+            (
+                "unexpected third source field",
+                "LIBPCAP_LICENSE=BSD-3-Clause\n",
+                "LIBPCAP_LICENSE=BSD-3-Clause\nTHIRD_SOURCE_VERSION=1.0\n",
+                "unexpected fields: THIRD_SOURCE_VERSION",
+            ),
+        )
+        original_lock = (
+            fixture.root / "recipes/tcpdump/x86_64/source.lock"
+        ).read_text(encoding="utf-8")
+        for label, old, new, expected_message in mutations:
+            with self.subTest(label=label):
+                lock_path = fixture.root / "recipes/tcpdump/x86_64/source.lock"
+                lock_path.write_text(original_lock.replace(old, new), encoding="utf-8")
+                with self.assertRaisesRegex(recipes.CatalogError, expected_message):
+                    recipes.load_catalog(fixture.root, catalog)
 
     def test_unknown_header_is_rejected(self) -> None:
         temporary_directory, fixture = self.make_fixture()

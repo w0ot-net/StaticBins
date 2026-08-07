@@ -6,7 +6,7 @@ recipes.
 | Architecture | Committed artifacts | Rebuild support |
 | --- | --- | --- |
 | AArch64 | GDB 17.2 | Complete recipe |
-| x86-64 | `gdbserver`, `lsof`, `socat`, `strace`, `tcpdump` | Legacy artifacts |
+| x86-64 | tcpdump 4.99.4; `gdbserver`, `lsof`, `socat`, `strace` | tcpdump recipe; four legacy artifacts |
 
 ## Build
 
@@ -15,6 +15,7 @@ List the enabled recipes, then build one with Bash and Docker:
 ```sh
 ./build.sh list
 ./build.sh gdb
+./build.sh tcpdump
 ```
 
 The root command reads the minimal allowlist in `recipes/catalog.tsv` and
@@ -23,8 +24,10 @@ delegates to the matching recipe. Committed executables live in
 `recipes/<tool>/<architecture>/`, and locked reusable environments in
 `builders/<architecture>/`.
 
-See [`recipes/gdb/aarch64/README.md`](recipes/gdb/aarch64/README.md) for GDB's
-prerequisites, source and feature policy, direct command, and output details.
+See the recipe README for
+[GDB](recipes/gdb/aarch64/README.md) or
+[tcpdump](recipes/tcpdump/x86_64/README.md) for prerequisites, source and
+feature policy, direct commands, and output details.
 
 ## Containers
 
@@ -32,6 +35,8 @@ Published images include:
 
 - `ghcr.io/w0ot-net/static_bins-gdb:17.2-aarch64`
 - `ghcr.io/w0ot-net/static_bins-gdb:aarch64-latest`
+- `ghcr.io/w0ot-net/static_bins-tcpdump:4.99.4-x86_64`
+- `ghcr.io/w0ot-net/static_bins-tcpdump:x86_64-latest`
 - `ghcr.io/w0ot-net/static_bins-builder:aarch64-alpine-3.24.1-r1`
 - `ghcr.io/w0ot-net/static_bins-builder:x64-alpine-3.24.1-r1`
 

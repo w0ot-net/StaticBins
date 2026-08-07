@@ -34,6 +34,12 @@ the committed artifact, and enforce the target architecture and static-ELF
 contract. `source.lock` owns the source version, archive, checksum, official
 URL, immutable mirror release and URL, and license identifier.
 
+If a tool requires another source archive, keep that dependency in the same
+tool-owned lock and immutable source release. Extend catalog and mirror
+validation only for that bounded lock shape, verify every archive independently,
+and keep dependency-specific fetching and configuration inside the recipe; the
+catalog is not a general dependency resolver.
+
 ## Catalog row
 
 Add one tab-delimited row to `recipes/catalog.tsv`:
