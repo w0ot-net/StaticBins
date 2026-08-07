@@ -56,8 +56,9 @@ Out of scope:
   SLSA certification, or a second artifact hosting service.
 - Making arbitrary future projects reproducible, adding a general build graph,
   or automatically treating every catalog row as attested.
-- Chasing nondeterminism beyond one bounded confirmation build or redesigning a
-  toolchain solely to earn a stronger label.
+- A second confirmation build, nondeterminism investigation, artifact-byte
+  replacement, or toolchain redesign after an initial mismatch. Those require a
+  later, separately authorized artifact-update decision.
 - Vulnerability scanning, malware scanning, source review claims, SBOM
   replacement, or assertions that an attested binary is inherently safe.
 - Removing legacy artifacts; their required outcome here is an unambiguous
@@ -86,15 +87,10 @@ index, not a signature or trust root.
 
 Establish initial exact-build status conservatively. Run one clean native
 Buildx rebuild of each current supported artifact and compare it with the
-committed file. If it matches, no second build is needed. If it differs, run
-exactly one additional clean build:
-
-- If the two new candidates match each other, fully validate that canonical
-  output and replace the stale committed artifact in a separate explicit commit,
-  then require the assurance workflow to reproduce it.
-- If the two candidates differ, retain the original artifact, label it `Not
-  verified`, omit it from attestation, and record the hashes and bounded result.
-  Deterministic-build remediation requires a later, separately scoped decision.
+committed file. A match qualifies that artifact for the permanent exact-rebuild
+job. A mismatch immediately leaves the committed artifact unchanged, labels it
+`Not verified`, omits it from attestation, and records the two hashes. Do not run
+a second build or turn this assurance plan into artifact remediation.
 
 Add `.github/workflows/verify-artifacts.yml` after utility-image publication has
 been retired. On every pull request it has a lightweight change-detection job
@@ -107,37 +103,44 @@ that hash, and therefore reuses all recipe-owned validation. The gate fails when
 a required build fails and passes without compilation when no trust-critical
 path changed.
 
-On a push to `main`, repeat the same exact comparison and use GitHub's native
-artifact-attestation action, pinned by full commit SHA, to attest each verified
-raw artifact. Grant only `contents: read`, `id-token: write`, and
-`attestations: write`; do not request package write access. Pull-request jobs
-never publish attestations. Do not attest a merely pre-existing file without a
-successful same-job rebuild comparison.
+On a push to `main`, use the same trust-critical path selection. For each
+selected verified artifact, repeat the exact comparison and use GitHub's native
+artifact-attestation action, pinned by full commit SHA, to attest the rebuilt raw
+file. Grant only `contents: read`, `id-token: write`, and `attestations: write`;
+do not request package write access. Pull-request jobs never publish
+attestations, and documentation-only main pushes neither rebuild nor re-attest
+unchanged files. Do not attest a merely pre-existing file without a successful
+same-job rebuild comparison.
 
 Keep the verified tool list explicit in the workflow. Adding a future artifact
 does not automatically receive provenance: its contributor either demonstrates
 an exact rebuild and adds a bounded job or records `Not verified` in `TRUST.md`.
 This small explicit list is preferable to a new assurance manifest or generic
-build orchestration layer for two real consumers.
+build orchestration layer for two real consumers. If neither current tool
+qualifies, the workflow still reports its stable manifest/status gate but has no
+attestation job; the plan must not publish an empty provenance claim or block
+honest `Not verified` completion.
 
 Document the normal user path:
 
 ```sh
 sha256sum -c artifacts/SHA256SUMS
-gh attestation verify artifacts/aarch64/gdb --repo w0ot-net/static_bins
+gh attestation verify artifacts/aarch64/gdb \
+  --repo w0ot-net/static_bins \
+  --signer-workflow w0ot-net/static_bins/.github/workflows/verify-artifacts.yml \
+  --source-ref refs/heads/main
 ```
 
 The trust document explains that the first command checks repository/download
-integrity, while the second binds exact bytes to the named GitHub repository,
-commit, and workflow. It also states that provenance is not a malware or
-vulnerability guarantee.
+integrity, while the second requires exact bytes, the named GitHub repository,
+the intended signer workflow, and a `main`-push source ref; its successful output
+identifies the attested commit. It also states that provenance is not a malware
+or vulnerability guarantee.
 
 ## Affected Components
 
 - `artifacts/SHA256SUMS`: add the deterministic integrity manifest for every
   distributed file.
-- `artifacts/{aarch64/gdb,x86_64/tcpdump}`: update only if two fresh candidates
-  agree and prove that the existing committed artifact is stale.
 - `.github/workflows/verify-artifacts.yml`: add path-aware exact rebuild checks,
   a stable assurance gate, and push-only raw artifact attestations.
 - `scripts/recipes.py`: validate complete and exact artifact-manifest coverage.
@@ -162,7 +165,7 @@ vulnerability guarantee.
    implying provenance.
 4. Add the exact-rebuild workflow for only the tools that qualified, using
    stable check names and push-only attestations. If neither tool qualifies,
-   stop and revise the assurance goal rather than publishing empty provenance.
+   retain the stable non-attesting manifest/status gate and the honest result.
 5. Extend `TRUST.md` and the nearest repository/contributor contracts with the
    verified and unverified results and user commands.
 6. Push the bounded changes, require the assurance gate to pass, verify each
@@ -179,14 +182,16 @@ vulnerability guarantee.
   extra row, and one-byte artifact or manifest corruption.
 - For each proposed verified tool, run its root build on the native target
   runner, require all recipe checks, and compare the final SHA-256 with the
-  committed file. Exercise the one-extra-build limit only after a mismatch.
+  committed file. After a mismatch, require no second build or artifact-byte
+  change in this plan.
 - Exercise the workflow on a documentation-only pull request and require the
   stable gate to pass without Docker or compilation. Exercise each trust-critical
   path class and require the appropriate exact-build job plus gate.
 - Confirm pull-request jobs cannot write attestations or packages. On `main`,
   inspect the attestation subject digest and workflow/commit identity, then run
-  `gh attestation verify` against independently downloaded GDB and tcpdump files
-  only when their status is verified.
+  the documented `gh attestation verify` command against independently downloaded
+  GDB and tcpdump files only when their status is verified; require the exact
+  signer workflow and `refs/heads/main` policy flags to succeed.
 - Confirm every unverified legacy artifact is present in the checksum manifest
   and plainly marked `Not verified`, with no attestation or reproducibility
   claim.
