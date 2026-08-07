@@ -1,5 +1,7 @@
 # Plan: Simplify Repository Layout and Naming
 
+*Distilled: 2026-08-06*
+
 ## Summary
 
 Reorganize the repository around three obvious owners: `artifacts/` for
