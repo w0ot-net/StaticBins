@@ -150,3 +150,51 @@ its current behavior and references.
   incorrect architecture, package inventory, OCI label, or existing versioned
   tag.
 - The existing AArch64 builder publication behavior remains intact.
+
+## Execution Notes
+
+Implemented the x86-64 builder lifecycle in commits `404509e` and `ab1f011`.
+The architecture owns its Alpine and package locks, Dockerfile, and local
+candidate command under `x64_alpine_build_scripts/`. The existing builder
+workflow now accepts only the fixed `aarch64` and `x64` choices and maps them to
+their repository directories, native runners, container platforms, cache
+scopes, and floating tags. The README documents both candidate commands and the
+publish-then-lock lifecycle. No artifact or legacy x86-64 recipe changed.
+
+The minimal direct package investigation made one bounded correction to the
+provisional five-package set: a scratch build proved that the libpcap 1.10.4
+release still requires Flex and Bison. The final lock therefore contains seven
+direct packages. The same scratch build also showed that libpcap rejects the
+legacy `--enable-static` option; removing that unsupported option belongs to
+the tcpdump recipe plan and did not change this builder outcome. Local Docker
+did not provide Buildx, so candidate validation exercised the native
+`docker build` fallback.
+
+Builder workflow run `31141833649` published
+`x64-alpine-3.24.1-r1` and `x64-latest` with digest
+`sha256:ed0de561168a27489545d883e790707ae9a34c9412ce6e944c973bc3d848b030`.
+The digest is committed in the x64 environment lock. Anonymous pulls confirmed
+that the digest and both tags resolve to the same amd64 image. Inspection
+confirmed the repository OCI source label, all seven exact direct package
+versions, required commands, static musl archive, an SPDX SBOM attestation, and
+SLSA provenance.
+
+Validation completed successfully:
+
+- Shell syntax, workflow YAML parsing, immutable-reference checks, and
+  `git diff --check`.
+- `./x64_alpine_build_scripts/build-builder.sh`, including native amd64 image,
+  package, command, label, and static ELF probe checks.
+- A scratch tcpdump 4.99.4/libpcap 1.10.4 build in the exact locked base,
+  producing a stripped x86-64 `ET_EXEC` with no interpreter or `DT_NEEDED`
+  entries and the expected version output.
+- Successful native x86-64 publication run `31141833649`, versioned-tag
+  non-replacement preflight, anonymous digest/tag pulls, package inspection,
+  and SBOM/provenance manifest inspection.
+- Mechanical verification that the shared workflow retains the original
+  AArch64 directory, runner, platform, cache scope, and tags.
+
+Deliberately excluded work remains unchanged: the tcpdump artifact migration,
+the other four x86-64 binaries, an interactive x86-64 builder wrapper, shared
+cross-architecture script abstractions, Alpine mirroring, and byte-for-byte
+reproducibility.
