@@ -90,9 +90,11 @@ index, not a signature or trust root.
 Establish initial exact-build status conservatively. Run one clean native
 Buildx rebuild of each current supported artifact and compare it with the
 committed file. A match qualifies that artifact for the permanent exact-rebuild
-job. A mismatch immediately leaves the committed artifact unchanged, labels it
-`Not verified`, omits it from attestation, and records the two hashes. Do not run
-a second build or turn this assurance plan into artifact remediation.
+job. Because the supported command replaces the artifact path, first preserve
+its bytes and mode in a narrowly scoped temporary location. On a mismatch,
+restore and re-verify the original exactly, label it `Not verified`, omit it from
+attestation, and record the two hashes. Do not run a second build or turn this
+assurance plan into artifact remediation.
 
 Add `.github/workflows/verify-artifacts.yml` after utility-image publication has
 been retired. On every pull request it has a lightweight change-detection job
@@ -167,8 +169,9 @@ or vulnerability guarantee.
 ## Implementation Sequence
 
 1. Confirm source authentication and utility publication cleanup are complete,
-   record all existing artifact hashes/modes, and verify the utility packages
-   remain available until replacement assurance is established.
+   record all existing artifact hashes/modes, keep protected temporary copies of
+   the two build targets, and verify the utility packages remain available until
+   replacement assurance is established.
 2. Run the bounded initial native rebuild comparison for GDB and tcpdump.
    Classify each result using only the two statuses above; announce any build
    expected to exceed ten minutes.
@@ -194,7 +197,8 @@ or vulnerability guarantee.
   extra row, and one-byte artifact or manifest corruption.
 - For each proposed verified tool, run its root build on the native target
   runner, require all recipe checks, and compare the final SHA-256 with the
-  committed file. After a mismatch, require no second build or artifact-byte
+  committed file. After a mismatch, restore the protected original and require
+  its hash and mode to match the baseline; permit no second build or artifact-byte
   change in this plan.
 - Exercise the workflow on a documentation-only pull request and require the
   stable gate to pass without Docker or compilation. Exercise each trust-critical
