@@ -107,3 +107,40 @@ independent rebuild evidence as separate TRUST facts.
 - Its full-system ARMv7 smoke test proves a real inferior attach, stop reply,
   kill exchange, and clean shutdown using only declarative cached VM inputs.
 - Existing GDBserver recipes and artifacts remain byte-for-byte unchanged.
+
+## Execution Notes
+
+Completed on 2026-08-07 in implementation commit
+`4523f7056744b9746eb51eea8e60f32768814fce`.
+
+- Added the complete `recipes/gdbserver/armv7/` owner from the reviewed
+  AArch64 design, retaining GNU GDB 16.3 PGP authentication, the
+  GDBserver-only feature policy, licenses, link inventory, and RSP harness.
+- Selected Alpine 3.22.5 ARMv7 `vmlinuz-lts` at SHA-256
+  `48a91620c1ff0285d3fe545fac6113aada841339bdbf4f316715000b8d0529a6`.
+  Its published config enabled `ARCH_VIRT`, PL011 console, gzip initramfs,
+  devtmpfs, and procfs; an evidence boot reached `/init` on QEMU
+  `virt,highmem=off` with a Cortex-A15 CPU before recipe execution.
+- Translated the builder, platform, output, compiler triplet, and GCC archive
+  paths to `armv7-alpine-linux-musleabihf`; the locked builder confirmed the
+  C++ runtime and both compiler archive owners before compilation.
+- Built and committed `artifacts/armv7/gdbserver` at 723,040 bytes with
+  SHA-256
+  `43c6d205be3f8db1f26cdce28b366675615e75df5dd94ad8d5a826fe5d188748`.
+  GDBserver and both stripped static helpers passed ELF32 little-endian ARM
+  EABI5 hard-float `ET_EXEC`, interpreter, and `DT_NEEDED` checks.
+- The bounded full-system VM ran GDBserver natively, attached to a real ARMv7
+  inferior, returned a valid RSP stop reply, processed the kill packet, and
+  shut down cleanly with `STATIC_BINS_GDBSERVER_SMOKE_OK`.
+- Added catalog, checksum, README, upstream-PGP source, checksum-only VM
+  kernel, recipe-build, and `None` independent-evidence records. Existing
+  AArch64 and x86-64 GDBserver hashes remained unchanged.
+- Bounded corrections: both VM helpers were stripped and subjected to the
+  full ARMv7 ELF contract, and whitespace-only issues inherited by three
+  copied license files were normalized for `git diff --check`. The expensive
+  build ran once through the direct recipe path; root dispatcher checks did
+  not recompile it.
+- Shell syntax, strict C warning checks, published kernel-config inspection,
+  kernel evidence boot, source PGP verification, archive-owner checks, the
+  direct target build, full manifest and dispatcher checks, and
+  `./validate.sh` before and after the push all passed.
