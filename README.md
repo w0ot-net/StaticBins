@@ -28,8 +28,19 @@ records, including the historical tcpdump attestation verification command.
 
 ## Build
 
-List the enabled recipes, then build one with Bash, Docker, and the Docker
-Buildx plugin:
+Start from a fresh checkout:
+
+```sh
+git clone https://github.com/w0ot-net/static_bins.git
+cd static_bins
+```
+
+Ordinary recipes require Bash, a usable Docker daemon with the Buildx plugin,
+and the host commands `file`, `readelf`, and `sha256sum`. A recipe README names
+any additional tools it needs, such as full-system QEMU, initramfs utilities,
+or a kernel downloader.
+
+List the enabled recipes, then build one explicit tool/architecture pair:
 
 ```sh
 ./build.sh list
@@ -54,6 +65,23 @@ Buildx plugin:
 ./build.sh tcpdump x86
 ./build.sh tcpdump x86_64
 ```
+
+Normal builds anonymously pull the public builder digest committed in the
+selected architecture's `environment.lock`; GHCR login and publication
+credentials are only for maintainers publishing a new builder. The tracked
+source bytes and authentication evidence avoid upstream source downloads, but
+a cold build still needs registry access for locked images. GDBserver and
+strace recipes that use full-system validation may also download their
+separately pinned smoke-test kernel on first use.
+
+For a non-native target, a recipe may run the pinned `binfmt_misc` helper with
+`--privileged` when target containers cannot already execute. Docker and
+BuildKit cache image content and build layers, and VM-backed recipes retain
+their verified kernel in an external cache, so later builds can reuse them.
+Compilation under emulation may still take more than ten minutes. See the
+[build pipeline](doc/architecture/build/BUILD_PIPELINE.md) and
+[build environments](doc/architecture/build/BUILD_ENVIRONMENTS.md) for the
+stable execution and builder contracts.
 
 Run the repository's fast offline checks before committing or pushing:
 

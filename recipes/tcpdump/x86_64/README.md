@@ -5,7 +5,7 @@ x86-64 executable. From the repository root, use the stable dispatcher or the
 direct recipe command:
 
 ```sh
-./build.sh tcpdump
+./build.sh tcpdump x86_64
 ./recipes/tcpdump/x86_64/build.sh
 ```
 
@@ -19,7 +19,7 @@ QEMU `binfmt_misc` helper with `--privileged` when amd64 container support is
 absent. Set `BUILD_JOBS` to tune compilation parallelism:
 
 ```sh
-BUILD_JOBS=4 ./build.sh tcpdump
+BUILD_JOBS=4 ./build.sh tcpdump x86_64
 ```
 
 `source.lock` owns both source versions, archive names, checksums, official
