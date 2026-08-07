@@ -167,3 +167,32 @@ workflow only after the local command and docs are in place.
   that depend on them.
 - Existing builder images and environment locks remain unchanged; ARMv7 r2 is
   deliberately deferred to its own executable plan.
+
+## Execution Notes
+
+Completed on 2026-08-07 in implementation commit
+`20db25fc9a711e00aa723245b4df905bae2c5ae6`.
+
+- Added executable `builders/publish.sh` with explicit mappings for `aarch64`,
+  `armv7`, and `x86_64`. It validates pinned lock inputs and local
+  prerequisites, fails closed on uncertain registry state, refuses an existing
+  versioned tag before compilation, invokes the existing candidate validator,
+  and publishes versioned/floating tags with SBOM and maximum provenance.
+- Buildx metadata parsing requires a valid immutable SHA-256 digest. A
+  post-push registry inspection requires that digest and exactly one manifest
+  for the requested OCI platform before the script prints the reviewed
+  `BUILDER_IMAGE` assignment; the script never edits a lock.
+- Deleted the last GitHub Actions workflow and updated the live user,
+  contributor, builder, trust, and automation authorities. All ten existing
+  recipe recovery messages and the AArch64 runner now name the local publisher.
+- Registry credentials remain wholly in Docker's external configuration. The
+  publisher accepts exactly one architecture argument and no token input.
+- There were no material deviations. As required by the plan, no test tag was
+  published; the first real new-tag publication is exercised by the dependent
+  ARMv7 r2 plan.
+- `bash -n` passed for every changed script, `./validate.sh` passed, and
+  invalid-argument tests returned usage errors without touching Docker.
+  Non-mutating checks of all three current public versioned tags refused before
+  candidate validation or registry writes. `git diff --check`, executable-mode
+  inspection, mapping/flag inspection, stale live-reference searches, and the
+  empty tracked workflow-directory check also passed.
