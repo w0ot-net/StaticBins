@@ -1,21 +1,28 @@
 #!/usr/bin/env bash
 
 # Strict shared loader for builders/catalog.tsv. Callers provide the catalog
-# path and repository root, then consume BUILDER_ARCHITECTURES,
-# BUILDER_PLATFORMS, and BUILDER_TAG_PREFIXES.
+# path and repository root, plus an optional selected architecture whose first
+# publication has not produced BUILDER_IMAGE yet. Callers then consume
+# BUILDER_ARCHITECTURES, BUILDER_PLATFORMS, and BUILDER_TAG_PREFIXES.
 load_builder_catalog() {
-    if (( $# != 2 )); then
-        echo "error: load_builder_catalog requires CATALOG and REPOSITORY_ROOT" >&2
+    if (( $# < 2 || $# > 3 )); then
+        echo "error: load_builder_catalog requires CATALOG, REPOSITORY_ROOT, and optional UNPUBLISHED_ARCHITECTURE" >&2
         return 1
     fi
 
     local catalog_path="$1"
     local repository_root="$2"
+    local unpublished_architecture="${3:-}"
     local expected_header=$'architecture\tplatform\ttag_prefix'
     local row_pattern=$'^([^\t]+)\t([^\t]+)\t([^\t]+)$'
     local lock_pattern='^([A-Z][A-Z0-9_]*)=([^[:space:]#]+)$'
     local digest_image_pattern='^[^@[:space:]]+@sha256:[0-9a-f]{64}$'
     local LC_ALL=C
+
+    if [[ -n "${unpublished_architecture}" && ! "${unpublished_architecture}" =~ ^[a-z0-9][a-z0-9_-]*$ ]]; then
+        echo "error: invalid unpublished builder architecture: ${unpublished_architecture}" >&2
+        return 1
+    fi
 
     if [[ ! -f "${catalog_path}" || -L "${catalog_path}" || ! -r "${catalog_path}" ]]; then
         echo "error: missing regular builder catalog: ${catalog_path}" >&2
@@ -113,18 +120,26 @@ load_builder_catalog() {
         done < "${builder_directory}/environment.lock"
 
         local required_key
-        for required_key in ALPINE_IMAGE BINFMT_IMAGE BUILDER_TAG BUILDER_IMAGE; do
+        for required_key in ALPINE_IMAGE BINFMT_IMAGE BUILDER_TAG; do
             if [[ -z "${lock_values[${required_key}]+present}" ]]; then
                 echo "error: builders/${architecture}/environment.lock is missing ${required_key}" >&2
                 return 1
             fi
         done
-        for required_key in ALPINE_IMAGE BINFMT_IMAGE BUILDER_IMAGE; do
+        if [[ -z "${lock_values[BUILDER_IMAGE]+present}" && "${architecture}" != "${unpublished_architecture}" ]]; then
+            echo "error: builders/${architecture}/environment.lock is missing BUILDER_IMAGE" >&2
+            return 1
+        fi
+        for required_key in ALPINE_IMAGE BINFMT_IMAGE; do
             if [[ ! "${lock_values[${required_key}]}" =~ ${digest_image_pattern} ]]; then
                 echo "error: builders/${architecture}/environment.lock must pin ${required_key} by SHA-256 digest" >&2
                 return 1
             fi
         done
+        if [[ -n "${lock_values[BUILDER_IMAGE]+present}" && ! "${lock_values[BUILDER_IMAGE]}" =~ ${digest_image_pattern} ]]; then
+            echo "error: builders/${architecture}/environment.lock must pin BUILDER_IMAGE by SHA-256 digest" >&2
+            return 1
+        fi
         if [[ ! "${lock_values[BUILDER_TAG]}" =~ ^[a-z0-9][a-z0-9._-]*$ || "${lock_values[BUILDER_TAG]}" != "${tag_prefix}"* ]]; then
             echo "error: builders/${architecture}/environment.lock BUILDER_TAG must begin with ${tag_prefix}" >&2
             return 1

@@ -47,6 +47,7 @@ class CatalogFixture:
         defaults = {
             "aarch64": ("linux/arm64", "aarch64-"),
             "armv7": ("linux/arm/v7", "armv7-"),
+            "x86": ("linux/386", "x86-"),
             "x86_64": ("linux/amd64", "x64-"),
         }
         default_platform, default_prefix = defaults.get(
@@ -282,6 +283,7 @@ class RecipeCatalogTests(unittest.TestCase):
             {
                 "aarch64": ("linux/arm64", "aarch64-"),
                 "armv7": ("linux/arm/v7", "armv7-"),
+                "x86": ("linux/386", "x86-"),
                 "x86_64": ("linux/amd64", "x64-"),
             },
             {
@@ -315,6 +317,7 @@ class RecipeCatalogTests(unittest.TestCase):
         self.assertEqual(
             "aarch64\tlinux/arm64\taarch64-\n"
             "armv7\tlinux/arm/v7\tarmv7-\n"
+            "x86\tlinux/386\tx86-\n"
             "x86_64\tlinux/amd64\tx64-\n",
             shell_result.stdout,
         )
@@ -431,6 +434,51 @@ class RecipeCatalogTests(unittest.TestCase):
         )
         self.assertEqual(1, result.returncode)
         self.assertIn("invalid platform", result.stderr)
+
+    def test_only_publisher_loader_allows_selected_unpublished_builder(self) -> None:
+        temporary_directory, fixture = self.make_fixture()
+        self.addCleanup(temporary_directory.cleanup)
+        fixture.add_builder("aarch64")
+        catalog = fixture.write_builder_catalog()
+        helper = fixture.install_builder_helper()
+        lock = fixture.root / "builders/aarch64/environment.lock"
+        lock.write_text(
+            "\n".join(
+                line
+                for line in lock.read_text(encoding="utf-8").splitlines()
+                if not line.startswith("BUILDER_IMAGE=")
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+
+        with self.assertRaisesRegex(recipes.CatalogError, "BUILDER_IMAGE"):
+            recipes.load_builder_catalog(fixture.root, catalog)
+
+        for unpublished_architecture, expected_status in (
+            ("", 1),
+            ("aarch64", 0),
+            ("x86_64", 1),
+        ):
+            with self.subTest(unpublished_architecture=unpublished_architecture):
+                arguments = [
+                    "bash",
+                    "-c",
+                    'source "$1"; load_builder_catalog "$2" "$3" "${4:-}"',
+                    "builder-catalog-test",
+                    str(helper),
+                    str(catalog),
+                    str(fixture.root),
+                ]
+                if unpublished_architecture:
+                    arguments.append(unpublished_architecture)
+                result = subprocess.run(
+                    arguments,
+                    check=False,
+                    capture_output=True,
+                    text=True,
+                )
+                self.assertEqual(expected_status, result.returncode, result.stderr)
 
     def test_publisher_rejects_unknown_architecture_before_docker(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:

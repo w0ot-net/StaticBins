@@ -19,10 +19,15 @@ if (( $# != 1 )); then
 fi
 
 readonly ARCHITECTURE=$1
-load_builder_catalog "${BUILDER_CATALOG}" "${REPO_ROOT}"
+if [[ ! "${ARCHITECTURE}" =~ ^[a-z0-9][a-z0-9_-]*$ ]]; then
+    echo "error: unsupported architecture: ${ARCHITECTURE}" >&2
+    usage
+    exit 2
+fi
 
-if [[ ! "${ARCHITECTURE}" =~ ^[a-z0-9][a-z0-9_-]*$ ]] ||
-    [[ -z "${BUILDER_PLATFORMS[${ARCHITECTURE}]+present}" ]]; then
+load_builder_catalog "${BUILDER_CATALOG}" "${REPO_ROOT}" "${ARCHITECTURE}"
+
+if [[ -z "${BUILDER_PLATFORMS[${ARCHITECTURE}]+present}" ]]; then
     echo "error: unsupported architecture: ${ARCHITECTURE}" >&2
     usage
     exit 2

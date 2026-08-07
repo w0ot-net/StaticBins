@@ -12,6 +12,7 @@ builder or recipe policy.
 | --- | --- | --- | --- |
 | `aarch64` | `linux/arm64` | `aarch64` | `aarch64-*` |
 | `armv7` | `linux/arm/v7` | `armv7l` | `armv7-*` |
+| `x86` | `linux/386` | Alpine `x86`; ELF `Intel 80386` | `x86-*` |
 | `x86_64` | `linux/amd64` | `x86_64` | `x64-*` |
 
 The external `x64-*` spelling is retained for public compatibility; repository
@@ -21,11 +22,19 @@ paths and catalog rows use `x86_64`.
 | --- | --- | --- |
 | `aarch64` | `aarch64-alpine-3.24.1-r2` | GDB, GDBserver, lsof, socat, strace, tcpdump |
 | `armv7` | `armv7-alpine-3.24.1-r2` | GDB, GDBserver, lsof, socat, strace, tcpdump |
+| `x86` | `x86-alpine-3.24.1-r1` | None yet; builder foundation only |
 | `x86_64` | `x64-alpine-3.24.1-r3` | GDB, GDBserver, lsof, socat, strace, tcpdump |
 
 The x86-64 r3 environment adds the established GDB 17.2 static dependency set:
 Expat, GMP, MPFR, ncurses, xz, zlib, and zstd. Its candidate validation links
 and executes one static C++ probe against that complete set before publication.
+
+The 32-bit x86 r1 environment is the reviewed package union for the same six
+utility profiles. It maps repository and Alpine identifier `x86` to OCI
+`linux/386`, and its candidate proves Alpine package identity plus static ELF32
+little-endian `Intel 80386` C and C++ execution under the explicit
+`-march=i686 -msse2 -mfpmath=sse` baseline. Builder availability does not claim
+that an x86 utility artifact exists.
 
 Each `builders/<architecture>/` owns a Dockerfile, exact `packages.lock`, and
 `environment.lock`. The environment lock pins the Alpine base and binfmt helper
@@ -53,6 +62,11 @@ When the workstation is not the target architecture, that validator registers
 only the committed binfmt image and proves target execution. This affects
 builder execution, not the architecture promise: every resulting recipe
 artifact must run on its destination host.
+
+For a selected architecture's first publication only, the publisher accepts
+an otherwise complete environment lock before `BUILDER_IMAGE` exists. Every
+normal dispatcher and repository-validation path remains strict, and the
+reported immutable digest must be adopted before a recipe can be activated.
 
 Registry authentication remains in Docker's external credential configuration.
 The publisher accepts no token argument, never edits `environment.lock`, and

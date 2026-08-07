@@ -33,11 +33,12 @@ build.sh
 
 Pin the Alpine base and binfmt helper by digest, lock exact package versions,
 choose a new non-replaceable `BUILDER_TAG` beginning with the catalog prefix,
-and keep `BUILDER_IMAGE` pinned to an immutable published digest. The executable
-candidate command must use Docker Buildx and fail closed while checking exact
-packages, required commands and static archives, target runtime identity, the
-promised static ELF/ABI, and OCI labels. Add architecture-specific probes; do
-not weaken them into generic lowest-common-denominator checks.
+and leave `BUILDER_IMAGE` absent only until the first publication supplies its
+digest. The executable candidate command must use Docker Buildx and fail closed
+while checking exact packages, required commands and static archives, target
+runtime identity, the promised static ELF/ABI, and OCI labels. Add
+architecture-specific probes; do not weaken them into generic
+lowest-common-denominator checks.
 
 Run the fast contract checks and the real candidate validation:
 
@@ -59,8 +60,11 @@ The publisher refuses an existing versioned tag and pushes the versioned and
 architecture-floating tags with SBOM and provenance. Inspect the reported
 image anonymously: require the intended platform, source label, target runtime,
 attached attestations, and exact digest. Only then commit the reported immutable
-`BUILDER_IMAGE` to `builders/<architecture>/environment.lock`. Builder
-publication and digest adoption are a separate maintainer change from recipes.
+`BUILDER_IMAGE` to `builders/<architecture>/environment.lock`. The publisher is
+the only catalog consumer that accepts this selected prepublication owner
+without `BUILDER_IMAGE`; normal dispatch and repository validation reject it.
+Builder publication and digest adoption are a separate maintainer change from
+recipes.
 
 ## 4. Activate utilities
 
