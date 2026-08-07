@@ -9,9 +9,10 @@ build allowlist, and replace publication CI with fast repository validation.
 Docker remains the recipe execution mechanism, but recipe output is exported as
 a local binary rather than tagged, loaded, or pushed as a utility image.
 
-Execute this plan only after the currently queued source-input and Buildx plans
-are completed or explicitly abandoned; do not race their changes to recipes,
-source locks, the validator, or documentation.
+Execute this plan only after `06-commit-source-inputs.md` and
+`07-require-buildx.md` are completed. Its tracked-source and single-Buildx-path
+design depends on both outcomes; if either plan is abandoned, stop and revise
+this plan rather than executing against different assumptions.
 
 ## Problem
 
@@ -69,7 +70,9 @@ The supported ownership model becomes:
 - `artifacts/<architecture>/<tool>` is the distributed executable.
 - `recipes/<tool>/<architecture>/` owns the reproducible build and validation.
 - `builders/<architecture>/environment.lock` selects an immutable builder from
-  the sole GHCR package, `ghcr.io/w0ot-net/static_bins-builder`.
+  the sole supported GHCR publication target,
+  `ghcr.io/w0ot-net/static_bins-builder`. Retired utility packages remain as
+  external residue until the ordered deletion plan runs.
 - Recipe-local `sources/` directories retain the checksum-locked upstream
   inputs established by the prerequisite source migration; they are not binary
   or container distribution endpoints.
@@ -101,12 +104,24 @@ source material remain tracked beside the recipe; they are not redundantly
 copied into a nonexistent runtime package. The builder stage and guest-side
 build commands must remain unchanged.
 
+The root README's artifact table becomes the concrete download surface: link
+each utility name to its exact relative path under `artifacts/`, and link each
+reproducible entry to its recipe documentation and distribution notice. State
+that cloning the repository or following the file link obtains the standalone
+binary. Do not replace the retired images with an unplanned release service.
+
 Make the repository changes in one implementation commit so the push evaluates
-only the new validation workflow. Record artifact hashes and Git modes first.
-After all Dockerfile cleanup is complete, exercise each affected recipe exactly
-once through the supported Buildx host command, using native/cacheable execution
-where available; do not repeat builds for documentation or late validation.
-Any unexpected binary change is a stop condition for this policy-only cleanup.
+only the new validation workflow. Record artifact hashes and Git modes and keep
+protected temporary copies before building. After all Dockerfile cleanup is
+complete, exercise each affected recipe exactly once through the supported
+Buildx host command, using native/cacheable execution where available; do not
+repeat builds for documentation or late validation. A rebuilt candidate must
+pass the full recipe contract, but its hash need not equal the prior artifact
+because the repository does not claim byte-for-byte reproducibility. If a valid
+build installs different bytes, record the candidate hash, restore the protected
+committed bytes, and require no artifact diff in this policy-only change. Stop
+for architecture, feature, validation, or unexplained build-path drift, not for
+hash inequality alone.
 
 ## Affected Components
 
@@ -122,29 +137,34 @@ Any unexpected binary change is a stop condition for this policy-only cleanup.
   `recipes/tcpdump/x86_64/Dockerfile`: keep builder behavior and binary export,
   but remove runtime-image-only metadata, files, and entrypoints.
 - `README.md`, `AGENTS.md`, and `doc/adding-a-binary.md`: define the binary-only
-  distribution model, builder-only GHCR contract, and validation-only CI.
+  distribution model, add direct artifact/recipe/notice links, and document the
+  builder-only GHCR contract plus validation-only CI.
 - `recipes/{gdb/aarch64,tcpdump/x86_64}/README.md` and
   `recipes/{gdb/aarch64,tcpdump/x86_64}/licenses/NOTICE.md`: remove artifact-image
   wording while preserving source, license, provenance, and build facts.
 
 ## Implementation Sequence
 
-1. Wait for in-flight plan work and workflows to finish. Require a clean,
-   synchronized `main`, then record both reproducible artifact hashes/modes,
-   both builder lock digests, catalog contents, and the live set of references
-   to utility publication.
+1. Require completed records for plans 06 and 07, no in-flight workflow, and a
+   clean, synchronized `main`. Record both artifact hashes/modes, keep protected
+   temporary copies, and record both builder lock digests, catalog contents, and
+   the live set of references to utility publication.
 2. Git-move the publication workflow to the validation workflow and replace its
    jobs, triggers, and permissions with the fast checks above.
 3. Remove matrix-only Python state and tests while preserving every current
    source-lock and recipe-integrity check delivered by preceding plans.
 4. Reduce both Dockerfile final stages to binary export without changing either
    builder stage, guest script, source input, or output filename.
-5. Update the nearest live documentation and notices. Search all live files for
-   utility package names and publication terms; allow builder publication and
-   historical completed records only.
+5. Update the nearest live documentation and notices, including direct artifact,
+   recipe, and notice links in the root table. Search production files and
+   current user/contributor documentation for utility package names and
+   publication terms; allow builder publication, completed history, and the
+   ordered GHCR cleanup plan's exact retirement references only.
 6. Run fast validation, then run each affected recipe once through its supported
-   Buildx command. Compare artifact hashes/modes with the recorded baseline and
-   stop rather than commit an unexplained binary change.
+   Buildx command. Fully validate each result; if valid rebuilt bytes differ,
+   record that candidate hash and restore the protected committed artifact.
+   Require the final tracked hashes/modes to equal the baseline and stop on any
+   behavioral or build-path regression.
 7. Explicitly stage the bounded files, commit and push the cleanup atomically,
    wait for the new validation workflow, and verify the push did not create a
    utility-image workflow run or a new GHCR utility package version.
@@ -162,16 +182,21 @@ Any unexpected binary change is a stop condition for this policy-only cleanup.
 - Run `./build.sh gdb` and `./build.sh tcpdump` once after the final Dockerfile
   edits, reusing native/cacheable execution. Confirm Buildx local output still
   supplies the expected binary and all target/static/version/focused smoke tests
-  pass. Do not dispatch the retired publication workflow as validation.
+  pass. Record candidate hashes without requiring byte-for-byte reproduction,
+  and do not dispatch the retired publication workflow as validation.
 - Compare the before/after SHA-256 and Git index mode of
   `artifacts/aarch64/gdb` and `artifacts/x86_64/tcpdump`; require no artifact
-  change from this distribution-policy cleanup. Confirm all other artifacts are
+  change from this distribution-policy cleanup after restoring a valid but
+  byte-different candidate when necessary. Confirm all other artifacts are
   untouched.
-- Search live code and current documentation (excluding completed plans and
-  third-party license prose) for `static_bins-gdb`, `static_bins-tcpdump`,
-  `publish-containers`, `artifact image`, `image_name`, `tag_suffixes`,
-  `cache_scope`, and the matrix command. Only builder-image and historical
-  references may remain.
+- Verify every artifact-table link, recipe link, and distribution-notice link
+  resolves inside the checkout and names the intended architecture/tool.
+- Search production code/workflows and current user/contributor documentation
+  for `static_bins-gdb`, `static_bins-tcpdump`, `publish-containers`,
+  `artifact image`, `image_name`, `tag_suffixes`, `cache_scope`, and the matrix
+  command.
+  Exclude third-party license prose, completed plans, this distilled plan, and
+  the ordered GHCR cleanup plan; only builder-publication references may remain.
 - After the push, require the validation workflow to succeed and compare GHCR
   utility package version counts with the pre-push snapshot to prove nothing
   was republished.
@@ -183,10 +208,12 @@ Any unexpected binary change is a stop condition for this policy-only cleanup.
 - The catalog and validator own build availability and recipe integrity only,
   with no image/tag/cache/runner/platform matrix state.
 - `./build.sh gdb` and `./build.sh tcpdump` still use their exact locked builder
-  digests and produce the same validated committed executables.
+  digests and produce fully validated candidates; the committed artifact bytes
+  and modes remain unchanged by this policy cleanup.
 - Recipe Dockerfiles serve local Buildx export and caching without defining a
   distributed runtime package contract.
 - Current documentation consistently directs users to committed binaries and
-  recipes while describing GHCR as builder-only.
+  recipes through working repository links while describing GHCR as
+  builder-only.
 - Fast validation runs on relevant changes without compiling or publishing
   every utility.
