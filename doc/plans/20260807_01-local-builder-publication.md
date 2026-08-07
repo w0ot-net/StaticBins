@@ -1,5 +1,7 @@
 # Plan: Replace the Builder Workflow with Local Publication
 
+*Distilled: 2026-08-07*
+
 ## Summary
 
 Add one maintainer command, `./builders/publish.sh <architecture>`, that

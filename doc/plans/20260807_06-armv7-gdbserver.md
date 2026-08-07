@@ -1,5 +1,7 @@
 # Plan: Add the ARMv7 GDBserver Recipe and Binary
 
+*Distilled: 2026-08-07*
+
 ## Summary
 
 Add GNU GDBserver 16.3 as a reproducible static ARMv7 executable. Port the

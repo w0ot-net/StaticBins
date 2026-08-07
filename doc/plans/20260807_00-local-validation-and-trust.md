@@ -1,5 +1,7 @@
 # Plan: Replace CI Validation with a Local Trust Contract
 
+*Distilled: 2026-08-07*
+
 ## Summary
 
 Make one root `./validate.sh` command the repository's fast, offline validation
