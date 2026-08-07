@@ -23,6 +23,7 @@ keyserver, or network lookup.
 | Source | Authentication | Full signer fingerprint | Official evidence |
 | --- | --- | --- | --- |
 | [GDB 17.2](recipes/gdb/aarch64/source.lock) | Upstream PGP | `F40ADB902B24264AA42E50BF92EDB04BFF325CF3` | [signature](https://ftp.gnu.org/gnu/gdb/gdb-17.2.tar.xz.sig); [GNU keyring](https://ftp.gnu.org/gnu/gnu-keyring.gpg) |
+| [GDB 17.2 (ARMv7)](recipes/gdb/armv7/source.lock) | Upstream PGP | `F40ADB902B24264AA42E50BF92EDB04BFF325CF3` | [signature](https://ftp.gnu.org/gnu/gdb/gdb-17.2.tar.xz.sig); [GNU keyring](https://ftp.gnu.org/gnu/gnu-keyring.gpg) |
 | [GDB 16.3 (GDBserver, AArch64)](recipes/gdbserver/aarch64/source.lock) | Upstream PGP | `F40ADB902B24264AA42E50BF92EDB04BFF325CF3` | [signature](https://ftp.gnu.org/gnu/gdb/gdb-16.3.tar.xz.sig); [GNU keyring](https://ftp.gnu.org/gnu/gnu-keyring.gpg) |
 | [GDB 16.3 (GDBserver, ARMv7)](recipes/gdbserver/armv7/source.lock) | Upstream PGP | `F40ADB902B24264AA42E50BF92EDB04BFF325CF3` | [signature](https://ftp.gnu.org/gnu/gdb/gdb-16.3.tar.xz.sig); [GNU keyring](https://ftp.gnu.org/gnu/gnu-keyring.gpg) |
 | [GDB 16.3 (GDBserver, x86-64)](recipes/gdbserver/x86_64/source.lock) | Upstream PGP | `F40ADB902B24264AA42E50BF92EDB04BFF325CF3` | [signature](https://ftp.gnu.org/gnu/gdb/gdb-16.3.tar.xz.sig); [GNU keyring](https://ftp.gnu.org/gnu/gnu-keyring.gpg) |
@@ -96,6 +97,7 @@ does not identify who built a binary or establish its provenance.
 | `artifacts/aarch64/lsof` | Checksum only | Committed recipe and target checks passed | None |
 | `artifacts/aarch64/socat` | Checksum only | Committed recipe and target checks passed | None |
 | `artifacts/aarch64/strace` | Checksum only | Committed recipe and target checks passed | None |
+| `artifacts/armv7/gdb` | Upstream PGP | Committed recipe and target checks passed | None |
 | `artifacts/armv7/gdbserver` | Upstream PGP | Committed recipe and target checks passed | None |
 | `artifacts/armv7/lsof` | Checksum only | Committed recipe and target checks passed | None |
 | `artifacts/armv7/socat` | Checksum only | Committed recipe and target checks passed | None |

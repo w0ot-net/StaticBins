@@ -6,7 +6,7 @@ recipes.
 | Architecture | Ready-to-run binaries | Rebuild support |
 | --- | --- | --- |
 | AArch64 | [GDB 17.2](artifacts/aarch64/gdb); [GDBserver 16.3](artifacts/aarch64/gdbserver); [lsof 4.99.5](artifacts/aarch64/lsof); [socat 1.8.1.3](artifacts/aarch64/socat); [strace 6.16](artifacts/aarch64/strace) | [GDB](recipes/gdb/aarch64/README.md); [GDBserver](recipes/gdbserver/aarch64/README.md); [lsof](recipes/lsof/aarch64/README.md); [socat](recipes/socat/aarch64/README.md); [strace](recipes/strace/aarch64/README.md) |
-| ARMv7 | [GDBserver 16.3](artifacts/armv7/gdbserver); [lsof 4.99.5](artifacts/armv7/lsof); [socat 1.8.1.3](artifacts/armv7/socat); [strace 6.16](artifacts/armv7/strace); [tcpdump 4.99.4](artifacts/armv7/tcpdump) | [GDBserver](recipes/gdbserver/armv7/README.md); [lsof](recipes/lsof/armv7/README.md); [socat](recipes/socat/armv7/README.md); [strace](recipes/strace/armv7/README.md); [tcpdump](recipes/tcpdump/armv7/README.md) |
+| ARMv7 | [GDB 17.2](artifacts/armv7/gdb); [GDBserver 16.3](artifacts/armv7/gdbserver); [lsof 4.99.5](artifacts/armv7/lsof); [socat 1.8.1.3](artifacts/armv7/socat); [strace 6.16](artifacts/armv7/strace); [tcpdump 4.99.4](artifacts/armv7/tcpdump) | [GDB](recipes/gdb/armv7/README.md); [GDBserver](recipes/gdbserver/armv7/README.md); [lsof](recipes/lsof/armv7/README.md); [socat](recipes/socat/armv7/README.md); [strace](recipes/strace/armv7/README.md); [tcpdump](recipes/tcpdump/armv7/README.md) |
 | x86-64 | [tcpdump 4.99.4](artifacts/x86_64/tcpdump); [GDBserver 16.3](artifacts/x86_64/gdbserver); [lsof 4.99.5](artifacts/x86_64/lsof); [socat 1.8.1.3](artifacts/x86_64/socat); [strace 6.16](artifacts/x86_64/strace) | [tcpdump](recipes/tcpdump/x86_64/README.md); [GDBserver](recipes/gdbserver/x86_64/README.md); [lsof](recipes/lsof/x86_64/README.md); [socat](recipes/socat/x86_64/README.md); [strace](recipes/strace/x86_64/README.md) |
 
 Clone the repository or follow an artifact link to obtain the standalone
@@ -33,6 +33,7 @@ Buildx plugin:
 ```sh
 ./build.sh list
 ./build.sh gdb aarch64
+./build.sh gdb armv7
 ./build.sh gdbserver aarch64
 ./build.sh gdbserver armv7
 ./build.sh lsof armv7
@@ -60,8 +61,8 @@ live in `artifacts/<architecture>/`, tool-specific builds in
 checksum-locked upstream archives under `sources/`, so an ordinary build does
 not depend on an upstream source URL.
 
-See the recipe README for [GDB](recipes/gdb/aarch64/README.md), or the
-architecture-specific [tcpdump](recipes/tcpdump/),
+See the architecture-specific [GDB](recipes/gdb/) and
+[tcpdump](recipes/tcpdump/),
 [GDBserver](recipes/gdbserver/), [lsof](recipes/lsof/),
 [socat](recipes/socat/), and [strace](recipes/strace/) recipes for
 prerequisites, source and feature policy, direct commands, and output details.

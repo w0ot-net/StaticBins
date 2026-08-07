@@ -1,5 +1,6 @@
 name	architecture	enabled
 gdb	aarch64	true
+gdb	armv7	true
 gdbserver	aarch64	true
 gdbserver	armv7	true
 gdbserver	x86_64	true
