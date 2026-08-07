@@ -4,7 +4,7 @@ This recipe builds GDB 17.2 as a stripped static AArch64 executable. From the
 repository root, use the stable dispatcher or the direct recipe command:
 
 ```sh
-./build.sh gdb
+./build.sh gdb aarch64
 ./recipes/gdb/aarch64/build.sh
 ```
 
@@ -18,7 +18,7 @@ and may register the pinned `binfmt_misc` helper with `--privileged` when suppor
 is absent. Set `BUILD_JOBS` to tune compilation parallelism:
 
 ```sh
-BUILD_JOBS=4 ./build.sh gdb
+BUILD_JOBS=4 ./build.sh gdb aarch64
 ```
 
 `source.lock` owns the version, archive, checksum, official provenance URL, and
