@@ -30,6 +30,7 @@ keyserver, or network lookup.
 | [GDB 16.3 (GDBserver, x86-64)](recipes/gdbserver/x86_64/source.lock) | Upstream PGP | `F40ADB902B24264AA42E50BF92EDB04BFF325CF3` | [signature](https://ftp.gnu.org/gnu/gdb/gdb-16.3.tar.xz.sig); [GNU keyring](https://ftp.gnu.org/gnu/gnu-keyring.gpg) |
 | [lsof 4.99.5 (AArch64)](recipes/lsof/aarch64/source.lock) | Checksum only | Not available | [GitHub release](https://github.com/lsof-org/lsof/releases/tag/4.99.5) |
 | [lsof 4.99.5 (ARMv7)](recipes/lsof/armv7/source.lock) | Checksum only | Not available | [GitHub release](https://github.com/lsof-org/lsof/releases/tag/4.99.5) |
+| [lsof 4.99.5 (x86)](recipes/lsof/x86/source.lock) | Checksum only | Not available | [GitHub release](https://github.com/lsof-org/lsof/releases/tag/4.99.5) |
 | [lsof 4.99.5 (x86-64)](recipes/lsof/x86_64/source.lock) | Checksum only | Not available | [GitHub release](https://github.com/lsof-org/lsof/releases/tag/4.99.5) |
 | [socat 1.8.1.3 (AArch64)](recipes/socat/aarch64/source.lock) | Checksum only | Not available | [official Git repository](https://repo.or.cz/socat.git) |
 | [socat 1.8.1.3 (ARMv7)](recipes/socat/armv7/source.lock) | Checksum only | Not available | [official Git repository](https://repo.or.cz/socat.git) |
@@ -109,6 +110,7 @@ does not identify who built a binary or establish its provenance.
 | `artifacts/armv7/socat` | Checksum only | Committed recipe and target checks passed | None |
 | `artifacts/armv7/strace` | Checksum only | Committed recipe and target checks passed | None |
 | `artifacts/armv7/tcpdump` | Upstream PGP for tcpdump and libpcap | Committed recipe and target checks passed | None |
+| `artifacts/x86/lsof` | Checksum only | Committed recipe and target checks passed | None |
 | `artifacts/x86/tcpdump` | Upstream PGP for tcpdump and libpcap | Committed recipe and target checks passed | None |
 | `artifacts/x86_64/gdb` | Upstream PGP | Committed recipe and target checks passed | None |
 | `artifacts/x86_64/tcpdump` | Upstream PGP for tcpdump and libpcap | Committed recipe and target checks passed | Exact native rebuild and historical GitHub attestation |
