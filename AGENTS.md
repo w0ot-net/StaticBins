@@ -40,6 +40,13 @@ Reproducible build guidance:
 - Treat builder publication as a separate maintainer operation: validate and
   publish a new versioned builder first, then commit its immutable digest before
   recipes may consume it.
+- Give each published recipe one committed source lock. Mirror every required
+  source archive to a non-replaceable repository release asset, retain the
+  official upstream as a checksum-equivalent fallback, and accept bytes only
+  after verifying the locked checksum.
+- Keep reviewed license text and a factual linked-input provenance inventory
+  with each recipe. Publication must fail when the final link contains an
+  archive that is missing package, version, license, or source evidence.
 - Keep downloaded source, package caches, object files, container layers, and VM
   scratch state outside the tracked tree. Use a narrowly scoped temporary or
   cache directory and clean it safely.
@@ -83,6 +90,12 @@ Validation efficiency:
 
 - Start with syntax checks and `git diff --check`, then run the narrowest real
   build and target-architecture smoke test that prove the change.
+- Do not repeat a known-good expensive compilation merely to re-run a late
+  validation step. Preserve the build tree and diagnostic artifacts needed to
+  retry that step, or move the retry to a native/cacheable builder.
+- Design late-stage validation to report all discovered mismatches in one pass.
+  When a failure still requires a rebuild, reuse a valid cache and avoid slow
+  emulation unless the emulated path itself is what must be tested.
 - Compilation under emulation can be slow. Before a validation expected to take
   more than 10 minutes, tell the user what will run and give a rough estimate.
 - Avoid rebuilding unrelated binaries or running broad validation when only one

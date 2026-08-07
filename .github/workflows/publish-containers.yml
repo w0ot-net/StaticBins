@@ -29,11 +29,13 @@ jobs:
         run: |
           set -euo pipefail
           source aarch64_alpine_build_scripts/environment.lock
+          source aarch64_alpine_build_scripts/gdb/source.lock
           case "${BUILDER_IMAGE}" in
             *@sha256:*) ;;
             *) echo "error: BUILDER_IMAGE must be pinned by digest" >&2; exit 1 ;;
           esac
           echo "builder_image=${BUILDER_IMAGE}" >> "${GITHUB_OUTPUT}"
+          echo "source_version=${SOURCE_VERSION}" >> "${GITHUB_OUTPUT}"
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@bb05f3f5519dd87d3ba754cc423b652a5edd6d2c # v4.2.0
@@ -56,7 +58,7 @@ jobs:
             BUILD_JOBS=4
           push: true
           tags: |
-            ${{ env.GDB_IMAGE }}:17.2-aarch64
+            ${{ env.GDB_IMAGE }}:${{ steps.environment.outputs.source_version }}-aarch64
             ${{ env.GDB_IMAGE }}:aarch64-latest
           cache-from: type=gha,scope=aarch64-gdb
           cache-to: type=gha,mode=max,scope=aarch64-gdb

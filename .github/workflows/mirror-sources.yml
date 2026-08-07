@@ -1,0 +1,84 @@
+name: Mirror source archives
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  publish-gdb-source:
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Load and validate source lock
+        id: source
+        shell: bash
+        run: |
+          set -euo pipefail
+          source aarch64_alpine_build_scripts/gdb/source.lock
+          expected_mirror="https://github.com/${GITHUB_REPOSITORY}/releases/download/${SOURCE_RELEASE_TAG}/${SOURCE_ARCHIVE}"
+          test "${SOURCE_MIRROR_URL}" = "${expected_mirror}"
+          test "${SOURCE_UPSTREAM_URL}" != "${SOURCE_MIRROR_URL}"
+          test "${SOURCE_ARCHIVE}" = "gdb-${SOURCE_VERSION}.tar.xz"
+          echo "version=${SOURCE_VERSION}" >> "${GITHUB_OUTPUT}"
+          echo "archive=${SOURCE_ARCHIVE}" >> "${GITHUB_OUTPUT}"
+          echo "sha256=${SOURCE_SHA256}" >> "${GITHUB_OUTPUT}"
+          echo "upstream_url=${SOURCE_UPSTREAM_URL}" >> "${GITHUB_OUTPUT}"
+          echo "release_tag=${SOURCE_RELEASE_TAG}" >> "${GITHUB_OUTPUT}"
+
+      - name: Refuse replacement and require immutable releases
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ steps.source.outputs.release_tag }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(gh api "repos/${GITHUB_REPOSITORY}/immutable-releases" --jq .enabled)" = true
+          if gh release view "${RELEASE_TAG}" --repo "${GITHUB_REPOSITORY}" >/dev/null 2>&1; then
+            echo "error: release already exists: ${RELEASE_TAG}" >&2
+            exit 1
+          fi
+          if git ls-remote --exit-code --tags origin "refs/tags/${RELEASE_TAG}" >/dev/null 2>&1; then
+            echo "error: tag already exists: ${RELEASE_TAG}" >&2
+            exit 1
+          fi
+
+      - name: Download and verify official source
+        env:
+          SOURCE_ARCHIVE: ${{ steps.source.outputs.archive }}
+          SOURCE_SHA256: ${{ steps.source.outputs.sha256 }}
+          SOURCE_UPSTREAM_URL: ${{ steps.source.outputs.upstream_url }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p mirror-assets
+          curl --fail --location --retry 5 --retry-all-errors \
+            --output "mirror-assets/${SOURCE_ARCHIVE}" "${SOURCE_UPSTREAM_URL}"
+          echo "${SOURCE_SHA256}  mirror-assets/${SOURCE_ARCHIVE}" | sha256sum -c -
+          cp aarch64_alpine_build_scripts/gdb/source.lock mirror-assets/source.lock
+          tar -czf mirror-assets/gdb-distribution-materials.tar.gz \
+            -C aarch64_alpine_build_scripts/gdb source.lock licenses
+
+      - name: Publish immutable source release once
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ steps.source.outputs.release_tag }}
+          SOURCE_ARCHIVE: ${{ steps.source.outputs.archive }}
+          SOURCE_VERSION: ${{ steps.source.outputs.version }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh release create "${RELEASE_TAG}" \
+            --repo "${GITHUB_REPOSITORY}" \
+            --target "${GITHUB_SHA}" \
+            --draft \
+            --title "GDB ${SOURCE_VERSION} verified source" \
+            --notes "Verified upstream source and distribution materials for the static AArch64 GDB recipe."
+          gh release upload "${RELEASE_TAG}" mirror-assets/* \
+            --repo "${GITHUB_REPOSITORY}"
+          gh release edit "${RELEASE_TAG}" --repo "${GITHUB_REPOSITORY}" --draft=false
+          test "$(gh api "repos/${GITHUB_REPOSITORY}/releases/tags/${RELEASE_TAG}" --jq .immutable)" = true

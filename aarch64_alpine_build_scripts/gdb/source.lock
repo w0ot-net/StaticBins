@@ -1,0 +1,8 @@
+# Immutable GDB source and distribution metadata.
+SOURCE_VERSION=17.2
+SOURCE_ARCHIVE=gdb-17.2.tar.xz
+SOURCE_SHA256=1c036c0d72e4b3d1fb5c94c88632add6f9d76f4d7c4d2ea793c12a9f19a3228c
+SOURCE_UPSTREAM_URL=https://ftp.gnu.org/gnu/gdb/gdb-17.2.tar.xz
+SOURCE_RELEASE_TAG=gdb-17.2-source
+SOURCE_MIRROR_URL=https://github.com/w0ot-net/static_bins/releases/download/gdb-17.2-source/gdb-17.2.tar.xz
+SOURCE_LICENSE=GPL-3.0-or-later

@@ -23,10 +23,14 @@ emulation; if ARM64 `binfmt_misc` support is absent, it registers the pinned
 helper container automatically with `--privileged`. Docker Desktop normally
 provides this support already.
 
-The recipe verifies the GDB 17.2 source checksum and rejects output containing
-an ELF interpreter or dynamic-library dependencies. Python, Guile, debuginfod,
+The recipe takes all GDB source metadata from its committed `source.lock`, tries
+the repository's immutable source release before the official GNU endpoint,
+and accepts only the locked checksum. It rejects output containing an ELF
+interpreter or dynamic-library dependencies. Python, Guile, debuginfod,
 Babeltrace, libipt, and source-highlight are disabled to keep the result
-self-contained. Set `BUILD_JOBS` to adjust compilation parallelism:
+self-contained. License and linked-archive provenance are recorded in the
+recipe's `licenses/NOTICE.md`. Set `BUILD_JOBS` to adjust compilation
+parallelism:
 
 ```sh
 BUILD_JOBS=4 ./aarch64_alpine_build_scripts/gdb/build.sh
