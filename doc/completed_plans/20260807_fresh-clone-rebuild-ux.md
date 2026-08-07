@@ -177,3 +177,22 @@ source, feature, validation, and trust text unchanged.
   enabled catalog row, including both x86-64 tcpdump examples.
 - Build behavior, builders, recipes, catalogs, trust records, checksums, and
   artifact bytes remain unchanged.
+
+## Execution Notes
+
+Completed on 2026-08-07 in implementation commit
+`ba08cc54f05395bf1a6802ff8438dca246d8c2ea`.
+
+- Added a copy-paste fresh-clone entry point and documented the common Bash,
+  Docker/Buildx, `file`, `readelf`, and `sha256sum` host boundary while keeping
+  recipe READMEs authoritative for extra VM and kernel utilities.
+- Clarified anonymous immutable-builder consumption versus authenticated
+  maintainer publication, and distinguished tracked source inputs from the
+  registry and pinned-kernel network access a cold build can still require.
+- Documented conditional privileged binfmt registration, reusable Docker,
+  BuildKit, and kernel caches, and the potentially long emulated-compilation
+  path without promising a fixed duration.
+- Corrected both x86-64 tcpdump dispatcher examples. Every documented build
+  command now selects exactly one of the 24 enabled catalog rows; all new links,
+  `git diff --check`, repository validation, 25 focused tests, and the explicit
+  two-file documentation scope passed.
