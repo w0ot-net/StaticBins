@@ -36,6 +36,8 @@ keyserver, or network lookup.
 | [strace 6.16 (AArch64)](recipes/strace/aarch64/source.lock) | Checksum only | Not adopted | [official release](https://strace.io/files/6.16/) |
 | [strace 6.16 (ARMv7)](recipes/strace/armv7/source.lock) | Checksum only | Not adopted | [official release](https://strace.io/files/6.16/) |
 | [strace 6.16 (x86-64)](recipes/strace/x86_64/source.lock) | Checksum only | Not adopted | [official release](https://strace.io/files/6.16/) |
+| [tcpdump 4.99.4 (AArch64)](recipes/tcpdump/aarch64/source.lock) | Upstream PGP | `1F166A5742ABB9E0249A8D30E089DEF1D9C15D0D` | [signature](https://www.tcpdump.org/release/tcpdump-4.99.4.tar.gz.sig); [Tcpdump Group key](https://www.tcpdump.org/release/signing-key-RSA-E089DEF1D9C15D0D.asc) |
+| [libpcap 1.10.4 (AArch64)](recipes/tcpdump/aarch64/source.lock) | Upstream PGP | `1F166A5742ABB9E0249A8D30E089DEF1D9C15D0D` | [signature](https://www.tcpdump.org/release/libpcap-1.10.4.tar.gz.sig); [Tcpdump Group key](https://www.tcpdump.org/release/signing-key-RSA-E089DEF1D9C15D0D.asc) |
 | [tcpdump 4.99.4 (ARMv7)](recipes/tcpdump/armv7/source.lock) | Upstream PGP | `1F166A5742ABB9E0249A8D30E089DEF1D9C15D0D` | [signature](https://www.tcpdump.org/release/tcpdump-4.99.4.tar.gz.sig); [Tcpdump Group key](https://www.tcpdump.org/release/signing-key-RSA-E089DEF1D9C15D0D.asc) |
 | [libpcap 1.10.4 (ARMv7)](recipes/tcpdump/armv7/source.lock) | Upstream PGP | `1F166A5742ABB9E0249A8D30E089DEF1D9C15D0D` | [signature](https://www.tcpdump.org/release/libpcap-1.10.4.tar.gz.sig); [Tcpdump Group key](https://www.tcpdump.org/release/signing-key-RSA-E089DEF1D9C15D0D.asc) |
 | [tcpdump 4.99.4 (x86-64)](recipes/tcpdump/x86_64/source.lock) | Upstream PGP | `1F166A5742ABB9E0249A8D30E089DEF1D9C15D0D` | [signature](https://www.tcpdump.org/release/tcpdump-4.99.4.tar.gz.sig); [Tcpdump Group key](https://www.tcpdump.org/release/signing-key-RSA-E089DEF1D9C15D0D.asc) |
@@ -97,6 +99,7 @@ does not identify who built a binary or establish its provenance.
 | `artifacts/aarch64/lsof` | Checksum only | Committed recipe and target checks passed | None |
 | `artifacts/aarch64/socat` | Checksum only | Committed recipe and target checks passed | None |
 | `artifacts/aarch64/strace` | Checksum only | Committed recipe and target checks passed | None |
+| `artifacts/aarch64/tcpdump` | Upstream PGP for tcpdump and libpcap | Committed recipe and target checks passed | None |
 | `artifacts/armv7/gdb` | Upstream PGP | Committed recipe and target checks passed | None |
 | `artifacts/armv7/gdbserver` | Upstream PGP | Committed recipe and target checks passed | None |
 | `artifacts/armv7/lsof` | Checksum only | Committed recipe and target checks passed | None |
