@@ -127,3 +127,23 @@ generic dispatch or validation to infer rollout status from partial state.
   architecture coverage.
 - No builder, recipe, artifact, checksum, trust fact, version, or feature policy
   changes in this documentation-only finalization.
+
+## Execution Notes
+
+Completed on 2026-08-07 in implementation commit
+`bb79780cbacd3e9009ccf245e99aca8ed7213501`.
+
+- Replaced the crowded architecture rows with a six-tool by four-architecture
+  download matrix and reduced the build block to the catalog listing, generic
+  command form, and one copy-paste example.
+- Recorded the builder-only onboarding exception and complete ready-
+  architecture coverage contract in `AGENTS.md`, both contributor procedures,
+  and the repository model.
+- The required final catalog audit exposed stale live text claiming the x86
+  builder had no recipe consumers, so the build-environment authority was also
+  corrected to list the completed six-tool x86 suite; no builder state changed.
+- Confirmed the enabled catalog is exactly the 24-pair Cartesian product, all
+  24 artifact and recipe README paths exist, and every tool version is uniform
+  across architectures (including libpcap 1.10.4). All matrix links,
+  dispatcher and recipe validation, the artifact checksum manifest, 25 focused
+  tests, `git diff --check`, and the documentation-only scope passed.
