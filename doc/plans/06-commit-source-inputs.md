@@ -13,12 +13,11 @@ this plan does not introduce binary GitHub Releases or change GHCR publication.
 ## Problem
 
 The source-retention implementation currently exposes upstream inputs as
-releases of `static_bins`. `recipes/gdb/aarch64/source.lock` and the in-progress
-tcpdump recipe name release tags and `github.com/w0ot-net/static_bins/releases`
-URLs, normal builds prefer those URLs, the catalog validator requires their URL
-shape, and `.github/workflows/mirror-sources.yml` publishes tool-specific source
-releases. The repository currently has two immutable releases with that
-identity:
+releases of `static_bins`. The GDB and tcpdump source locks name release tags
+and `github.com/w0ot-net/static_bins/releases` URLs, normal builds prefer those
+URLs, the catalog validator requires their URL shape, and
+`.github/workflows/mirror-sources.yml` publishes tool-specific source releases.
+The repository currently has two immutable releases with that identity:
 
 - `gdb-17.2-source`
 - `tcpdump-4.99.4-libpcap-1.10.4-source`
@@ -31,11 +30,14 @@ GDB is 24,658,624 bytes, tcpdump is 1,903,612 bytes, and libpcap is 952,153
 bytes. A fresh checkout can own and verify these exact 27,514,389 bytes without
 another service or release namespace.
 
-This plan must be executed only after `05-rebuild-x86-64-tcpdump.md` is either
-completed or explicitly abandoned. That work currently overlaps the tcpdump
-lock, scripts, artifact, catalog, tests, documentation, workflow, and published
-source release; attempting both migrations concurrently would make ownership
-and validation ambiguous.
+The former `05-rebuild-x86-64-tcpdump.md` prerequisite is satisfied by completed
+record `doc/completed_plans/20260807_05-rebuild-x86-64-tcpdump.md` and
+implementation commit `ddab286`; treat that committed tcpdump recipe and its
+documented release inventory as this migration's baseline. Plan
+`07-require-buildx.md` is explicitly ordered after this plan because it overlaps
+both recipe host scripts and will remove their direct-container branches. Do
+not execute plans 06 and 07 concurrently or fold the later backend-policy work
+into this source migration.
 
 ## Scope
 
@@ -188,9 +190,10 @@ remote state drifted or any unexpected release exists.
 
 ## Implementation Sequence
 
-1. Finish or abandon `05-rebuild-x86-64-tcpdump.md`, require a clean ownership
-   boundary for its overlapping files, and inventory the two public immutable
-   releases and all of their assets before changing active source references.
+1. Confirm the completed tcpdump plan and commit `ddab286` are present, require
+   a clean ownership boundary from plan 07 and unrelated work, and inventory the
+   two public immutable releases and all of their assets before changing active
+   source references.
 2. Download the three official archives to a narrowly scoped temporary
    directory, compare them with the existing release assets, verify the locked
    SHA-256 values, inspect their sizes, and add them under the consuming
@@ -257,9 +260,10 @@ remote state drifted or any unexpected release exists.
   installed artifact, repeat the `file`, `readelf`, stripping, architecture,
   version, linked-archive inventory, and focused functional smoke checks defined
   by its recipe. Specifically assert GDB remains an AArch64 `ET_DYN` static-PIE
-  executable and tcpdump remains an x86-64 `ET_EXEC` executable; force a
-  pre-install GDB validation failure and prove the committed output hash does not
-  change.
+  executable and tcpdump remains an x86-64 `ET_EXEC` executable. Inspect the GDB
+  command order to confirm every candidate check precedes installation, then run
+  a controlled bad-source-checksum failure and prove the committed output hash
+  does not change.
 - Before deleting external state, download every asset from both immutable
   releases and reconcile it with the three committed archives, current notices,
   locks, or repository history. After pushing, download each raw archive from
