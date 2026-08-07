@@ -1,5 +1,7 @@
 # Plan: Establish the System Architecture Documentation Tree
 
+*Distilled: 2026-08-07*
+
 ## Summary
 
 Create a canonical documentation router and a structured architecture tree that
