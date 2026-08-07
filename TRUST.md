@@ -31,8 +31,10 @@ keyserver, or network lookup.
 | [socat 1.8.1.3 (x86-64)](recipes/socat/x86_64/source.lock) | Checksum only | Not available | [official Git repository](https://repo.or.cz/socat.git) |
 | [strace 6.16 (AArch64)](recipes/strace/aarch64/source.lock) | Checksum only | Not adopted | [official release](https://strace.io/files/6.16/) |
 | [strace 6.16 (x86-64)](recipes/strace/x86_64/source.lock) | Checksum only | Not adopted | [official release](https://strace.io/files/6.16/) |
-| [tcpdump 4.99.4](recipes/tcpdump/x86_64/source.lock) | Upstream PGP | `1F166A5742ABB9E0249A8D30E089DEF1D9C15D0D` | [signature](https://www.tcpdump.org/release/tcpdump-4.99.4.tar.gz.sig); [Tcpdump Group key](https://www.tcpdump.org/release/signing-key-RSA-E089DEF1D9C15D0D.asc) |
-| [libpcap 1.10.4](recipes/tcpdump/x86_64/source.lock) | Upstream PGP | `1F166A5742ABB9E0249A8D30E089DEF1D9C15D0D` | [signature](https://www.tcpdump.org/release/libpcap-1.10.4.tar.gz.sig); [Tcpdump Group key](https://www.tcpdump.org/release/signing-key-RSA-E089DEF1D9C15D0D.asc) |
+| [tcpdump 4.99.4 (ARMv7)](recipes/tcpdump/armv7/source.lock) | Upstream PGP | `1F166A5742ABB9E0249A8D30E089DEF1D9C15D0D` | [signature](https://www.tcpdump.org/release/tcpdump-4.99.4.tar.gz.sig); [Tcpdump Group key](https://www.tcpdump.org/release/signing-key-RSA-E089DEF1D9C15D0D.asc) |
+| [libpcap 1.10.4 (ARMv7)](recipes/tcpdump/armv7/source.lock) | Upstream PGP | `1F166A5742ABB9E0249A8D30E089DEF1D9C15D0D` | [signature](https://www.tcpdump.org/release/libpcap-1.10.4.tar.gz.sig); [Tcpdump Group key](https://www.tcpdump.org/release/signing-key-RSA-E089DEF1D9C15D0D.asc) |
+| [tcpdump 4.99.4 (x86-64)](recipes/tcpdump/x86_64/source.lock) | Upstream PGP | `1F166A5742ABB9E0249A8D30E089DEF1D9C15D0D` | [signature](https://www.tcpdump.org/release/tcpdump-4.99.4.tar.gz.sig); [Tcpdump Group key](https://www.tcpdump.org/release/signing-key-RSA-E089DEF1D9C15D0D.asc) |
+| [libpcap 1.10.4 (x86-64)](recipes/tcpdump/x86_64/source.lock) | Upstream PGP | `1F166A5742ABB9E0249A8D30E089DEF1D9C15D0D` | [signature](https://www.tcpdump.org/release/libpcap-1.10.4.tar.gz.sig); [Tcpdump Group key](https://www.tcpdump.org/release/signing-key-RSA-E089DEF1D9C15D0D.asc) |
 
 The GDB signature is valid upstream origin evidence but uses legacy DSA with
 SHA-1. The tcpdump and libpcap signatures use RSA with SHA-512. These records
@@ -83,6 +85,7 @@ does not identify who built a binary or establish its provenance.
 | `artifacts/aarch64/lsof` | Checksum only | Committed recipe and target checks passed | None |
 | `artifacts/aarch64/socat` | Checksum only | Committed recipe and target checks passed | None |
 | `artifacts/aarch64/strace` | Checksum only | Committed recipe and target checks passed | None |
+| `artifacts/armv7/tcpdump` | Upstream PGP for tcpdump and libpcap | Committed recipe and target checks passed | None |
 | `artifacts/x86_64/tcpdump` | Upstream PGP for tcpdump and libpcap | Committed recipe and target checks passed | Exact native rebuild and historical GitHub attestation |
 | `artifacts/x86_64/gdbserver` | Upstream PGP | Committed recipe and target checks passed | None |
 | `artifacts/x86_64/lsof` | Checksum only | Committed recipe and target checks passed | None |
