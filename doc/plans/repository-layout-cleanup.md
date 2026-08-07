@@ -138,8 +138,10 @@ Treat the path, catalog, caller, test, workflow, and documentation migration as
 one atomic implementation commit. Run local validation before pushing and do
 not publish an intermediate commit containing only moves or only updated
 callers. If the triggered CI run fails, stop before new recipe or tcpdump work
-and fix or revert that migration commit. Existing GHCR tags continue to point
-at their last successful publication until a replacement publish completes.
+and fix or revert that migration commit. Record both public GDB tag digests
+before publication because a failed multi-tag push can update only one alias;
+after any failure, inspect both tags and restore any changed alias to its saved
+digest before proceeding.
 
 Move GDB-specific usage and feature detail out of the landing page into
 `recipes/gdb/aarch64/README.md`. Keep the root README limited to what the
@@ -178,7 +180,8 @@ repository provides, the artifact table, `./build.sh list`,
 
 1. Treat this layout migration as the prerequisite for new recipe work and the
    active tcpdump plan. Record SHA-256 values and Git modes for every committed
-   binary and the locked builder/source inputs before moving anything.
+   binary, the locked builder/source inputs, and both current public GDB tag
+   digests before moving anything.
 2. Use Git-aware moves to create `artifacts/`, `builders/`, and `recipes/`,
    rename builder entry points/locks, and relocate the legacy tcpdump script.
    Do not add old-path wrappers or duplicate files.
@@ -197,7 +200,8 @@ repository provides, the artifact table, `./build.sh list`,
    Then run one native catalog-driven GDB publication and inspect the resulting
    public image. Reuse existing validated bytes/cache and do not repeat a local
    QEMU compilation solely to prove path changes. If CI fails, fix or revert the
-   migration before proceeding to any new recipe or tcpdump work.
+   migration, inspect both public GDB tags, and restore either alias that changed
+   during a partial push before proceeding to new recipe or tcpdump work.
 
 ## Validation
 
@@ -230,7 +234,9 @@ repository provides, the artifact table, `./build.sh list`,
   committed artifact. Expect the republished GDB manifest/index digest to change
   when revision/provenance metadata changes; require its public repository/tag
   names and payload bytes to remain stable. Reuse the prior focused
-  remote-debugging result when the payload hash is identical.
+  remote-debugging result when the payload hash is identical. If publication
+  fails, compare both tag targets with the recorded pre-run digests and restore
+  any partially updated alias before resuming work.
 - Read the updated active tcpdump plan end to end and verify its paths,
   architecture terminology, catalog assumptions, and success criteria match
   the new repository contract before later execution.
