@@ -108,11 +108,12 @@ path changed.
 On a push to `main`, use the same trust-critical path selection. For each
 selected verified artifact, repeat the exact comparison and use GitHub's native
 artifact-attestation action, pinned by full commit SHA, to attest the rebuilt raw
-file. Grant only `contents: read`, `id-token: write`, and `attestations: write`;
-do not request package write access. Pull-request jobs never publish
-attestations, and documentation-only main pushes neither rebuild nor re-attest
-unchanged files. Do not attest a merely pre-existing file without a successful
-same-job rebuild comparison.
+file. Set the workflow default to `contents: read`; grant `id-token: write` and
+`attestations: write` only on the main-push/manual job that both rebuilds and
+attests. Pull-request, change-detection, and gate jobs receive no write scope, and
+no job requests package write access. Documentation-only main pushes neither
+rebuild nor re-attest unchanged files. Do not attest a merely pre-existing file
+without a successful same-job rebuild comparison.
 
 Also expose `workflow_dispatch` for a bounded maintainer refresh. A dispatch must
 run at `refs/heads/main` or fail without attesting; at `main`, it ignores change
