@@ -12,7 +12,7 @@ architecture. Keep target ABI, ELF, and functional checks explicit in the
 architecture and tool owners rather than generalizing policy that genuinely
 differs by target.
 
-Execute this plan after the open ARMv7 artifact plans and the ordered AArch64
+Execute this plan after the ARMv7 artifact plans and the ordered AArch64
 tcpdump and x86-64 GDB plans, and before the 32-bit x86 builder and recipe
 plans.
 
