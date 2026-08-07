@@ -5,6 +5,11 @@ in `recipes/catalog.tsv`. Tool-specific source, configuration, build, license,
 and smoke-test logic stays inside the recipe; the root dispatcher and local
 repository validation remain generic.
 
+A newly distributed utility must have a complete recipe and artifact for every
+ready architecture. If that rollout is still incomplete, keep it out of the
+enabled catalog and public artifact index until the remaining architecture
+owners are ready; do not redefine ready architectures as partial coverage.
+
 This procedure implements the repository's stable
 [repository model](architecture/repository/REPOSITORY_MODEL.md),
 [build pipeline](architecture/build/BUILD_PIPELINE.md),

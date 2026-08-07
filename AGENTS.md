@@ -34,6 +34,11 @@ Repository contract:
   `builders/catalog.tsv` row and a complete conventional builder owner. Follow
   `doc/adding-an-architecture.md`; publish and lock its immutable builder before
   activating recipes for it.
+- A published builder may exist as an onboarding foundation before recipes,
+  but present an architecture as ready for utility users only when every
+  currently distributed tool has an enabled recipe and artifact for it. Adopt
+  a new distributed tool for every ready architecture as one coordinated
+  rollout; keep incomplete coverage out of the public artifact index.
 - Keep `artifacts/SHA256SUMS` complete and exact for every distributed file,
   excluding the manifest itself. Record every artifact's source
   authentication, recipe build validation, and any independent evidence in

@@ -22,7 +22,7 @@ paths and catalog rows use `x86_64`.
 | --- | --- | --- |
 | `aarch64` | `aarch64-alpine-3.24.1-r2` | GDB, GDBserver, lsof, socat, strace, tcpdump |
 | `armv7` | `armv7-alpine-3.24.1-r2` | GDB, GDBserver, lsof, socat, strace, tcpdump |
-| `x86` | `x86-alpine-3.24.1-r1` | None yet; builder foundation only |
+| `x86` | `x86-alpine-3.24.1-r1` | GDB, GDBserver, lsof, socat, strace, tcpdump |
 | `x86_64` | `x64-alpine-3.24.1-r3` | GDB, GDBserver, lsof, socat, strace, tcpdump |
 
 The x86-64 r3 environment adds the established GDB 17.2 static dependency set:
@@ -33,8 +33,8 @@ The 32-bit x86 r1 environment is the reviewed package union for the same six
 utility profiles. It maps repository and Alpine identifier `x86` to OCI
 `linux/386`, and its candidate proves Alpine package identity plus static ELF32
 little-endian `Intel 80386` C and C++ execution under the explicit
-`-march=i686 -msse2 -mfpmath=sse` baseline. Builder availability does not claim
-that an x86 utility artifact exists.
+`-march=i686 -msse2 -mfpmath=sse` baseline. Builder availability remained a
+separate foundation until the architecture's utility recipes were activated.
 
 Each `builders/<architecture>/` owns a Dockerfile, exact `packages.lock`, and
 `environment.lock`. The environment lock pins the Alpine base and binfmt helper

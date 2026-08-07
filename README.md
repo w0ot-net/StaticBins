@@ -3,12 +3,18 @@
 Ready-to-run static Linux utilities with small, documented, repeatable build
 recipes.
 
-| Architecture | Ready-to-run binaries | Rebuild support |
-| --- | --- | --- |
-| AArch64 | [GDB 17.2](artifacts/aarch64/gdb); [GDBserver 16.3](artifacts/aarch64/gdbserver); [lsof 4.99.5](artifacts/aarch64/lsof); [socat 1.8.1.3](artifacts/aarch64/socat); [strace 6.16](artifacts/aarch64/strace); [tcpdump 4.99.4](artifacts/aarch64/tcpdump) | [GDB](recipes/gdb/aarch64/README.md); [GDBserver](recipes/gdbserver/aarch64/README.md); [lsof](recipes/lsof/aarch64/README.md); [socat](recipes/socat/aarch64/README.md); [strace](recipes/strace/aarch64/README.md); [tcpdump](recipes/tcpdump/aarch64/README.md) |
-| ARMv7 | [GDB 17.2](artifacts/armv7/gdb); [GDBserver 16.3](artifacts/armv7/gdbserver); [lsof 4.99.5](artifacts/armv7/lsof); [socat 1.8.1.3](artifacts/armv7/socat); [strace 6.16](artifacts/armv7/strace); [tcpdump 4.99.4](artifacts/armv7/tcpdump) | [GDB](recipes/gdb/armv7/README.md); [GDBserver](recipes/gdbserver/armv7/README.md); [lsof](recipes/lsof/armv7/README.md); [socat](recipes/socat/armv7/README.md); [strace](recipes/strace/armv7/README.md); [tcpdump](recipes/tcpdump/armv7/README.md) |
-| x86 | [GDB 17.2](artifacts/x86/gdb); [GDBserver 16.3](artifacts/x86/gdbserver); [lsof 4.99.5](artifacts/x86/lsof); [socat 1.8.1.3](artifacts/x86/socat); [strace 6.16](artifacts/x86/strace); [tcpdump 4.99.4](artifacts/x86/tcpdump) | [GDB](recipes/gdb/x86/README.md); [GDBserver](recipes/gdbserver/x86/README.md); [lsof](recipes/lsof/x86/README.md); [socat](recipes/socat/x86/README.md); [strace](recipes/strace/x86/README.md); [tcpdump](recipes/tcpdump/x86/README.md) |
-| x86-64 | [GDB 17.2](artifacts/x86_64/gdb); [GDBserver 16.3](artifacts/x86_64/gdbserver); [lsof 4.99.5](artifacts/x86_64/lsof); [socat 1.8.1.3](artifacts/x86_64/socat); [strace 6.16](artifacts/x86_64/strace); [tcpdump 4.99.4](artifacts/x86_64/tcpdump) | [GDB](recipes/gdb/x86_64/README.md); [GDBserver](recipes/gdbserver/x86_64/README.md); [lsof](recipes/lsof/x86_64/README.md); [socat](recipes/socat/x86_64/README.md); [strace](recipes/strace/x86_64/README.md); [tcpdump](recipes/tcpdump/x86_64/README.md) |
+| Utility | Version | AArch64 | ARMv7 | x86-64 | x86 |
+| --- | --- | --- | --- | --- | --- |
+| GDB | 17.2 | [Download](artifacts/aarch64/gdb) | [Download](artifacts/armv7/gdb) | [Download](artifacts/x86_64/gdb) | [Download](artifacts/x86/gdb) |
+| GDBserver | 16.3 | [Download](artifacts/aarch64/gdbserver) | [Download](artifacts/armv7/gdbserver) | [Download](artifacts/x86_64/gdbserver) | [Download](artifacts/x86/gdbserver) |
+| lsof | 4.99.5 | [Download](artifacts/aarch64/lsof) | [Download](artifacts/armv7/lsof) | [Download](artifacts/x86_64/lsof) | [Download](artifacts/x86/lsof) |
+| socat | 1.8.1.3 | [Download](artifacts/aarch64/socat) | [Download](artifacts/armv7/socat) | [Download](artifacts/x86_64/socat) | [Download](artifacts/x86/socat) |
+| strace | 6.16 | [Download](artifacts/aarch64/strace) | [Download](artifacts/armv7/strace) | [Download](artifacts/x86_64/strace) | [Download](artifacts/x86/strace) |
+| tcpdump | 4.99.4 | [Download](artifacts/aarch64/tcpdump) | [Download](artifacts/armv7/tcpdump) | [Download](artifacts/x86_64/tcpdump) | [Download](artifacts/x86/tcpdump) |
+
+Every displayed combination has a committed recipe at
+`recipes/<tool>/<architecture>/` and rebuilds with
+`./build.sh <tool> <architecture>`; for example, `./build.sh lsof x86_64`.
 
 Clone the repository or follow an artifact link to obtain the standalone
 executable. GHCR is not used to distribute utility binaries.
@@ -44,26 +50,8 @@ List the enabled recipes, then build one explicit tool/architecture pair:
 
 ```sh
 ./build.sh list
-./build.sh gdb aarch64
-./build.sh gdb armv7
-./build.sh gdb x86
-./build.sh gdb x86_64
-./build.sh gdbserver aarch64
-./build.sh gdbserver armv7
-./build.sh lsof armv7
+./build.sh <tool> <architecture>
 ./build.sh lsof x86_64
-./build.sh socat aarch64
-./build.sh socat armv7
-./build.sh strace armv7
-./build.sh strace x86_64
-./build.sh tcpdump aarch64
-./build.sh tcpdump armv7
-./build.sh gdbserver x86
-./build.sh lsof x86
-./build.sh socat x86
-./build.sh strace x86
-./build.sh tcpdump x86
-./build.sh tcpdump x86_64
 ```
 
 Normal builds anonymously pull the public builder digest committed in the

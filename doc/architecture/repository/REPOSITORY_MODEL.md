@@ -29,6 +29,14 @@ endianness, ABI, and smoke-test requirements remain explicit in their
 architecture and recipe owners, as documented in
 [Build environments](../build/BUILD_ENVIRONMENTS.md).
 
+Builder support and public utility readiness are separate states. A cataloged,
+published builder may exist alone while an architecture is being onboarded;
+until every currently distributed tool has an enabled recipe and committed
+artifact for it, that architecture is a builder-only foundation rather than a
+ready download target. Conversely, adopting a new distributed tool requires
+coverage across every ready architecture. This rollout state is a documentation
+contract, not another catalog field or a generic dispatcher inference.
+
 ## Dispatch and validation
 
 `./build.sh list` emits enabled `(name, architecture)` pairs. A tool name may be
