@@ -158,3 +158,54 @@ source host.
   as blockers.
 - The existing one-command build and published GDB image retain all static and
   functional validation guarantees.
+
+## Execution Notes
+
+Implemented the source lock, mirror workflow, distribution materials, and
+linked-archive validation in commits `23c7342`, `46f8e77`, and `4b899ec`.
+`source.lock` is now the only consumed owner of GDB 17.2 source metadata. The
+guest build tries the repository release first, verifies every candidate against
+the locked SHA-256, and falls back to GNU only after a failed fetch or checksum.
+The final link emits a map and reconciles every external archive against 15
+exact package/version/license/source rows from the locked ARM64 builder.
+
+GitHub Actions' repository token cannot read repository administration settings,
+so the planned in-workflow preflight for release immutability returned HTTP 403.
+The maintainer-side execution enabled and verified the setting through the
+repository administration API. The manual workflow now requires an explicit
+immutability confirmation, verifies the authoritative release `immutable` field
+after publication, and removes its own mutable release/tag before failing if the
+postcondition is ever false. This avoids requiring a separate administrator PAT
+secret while preserving the publication invariant.
+
+Validation completed successfully:
+
+- Shell syntax, workflow YAML, lock/URL/tag consistency, duplicate-metadata
+  searches, exact imported-license checks, and `git diff --check` passed.
+- All 15 external archive rows matched the exact installed owner, version, and
+  Alpine-declared license in the locked public ARM64 builder.
+- Local fault injection made the real guest fetch loop reject corrupt bytes from
+  both approved endpoints. Native artifact workflow run `31142027617` exercised
+  the official fallback before the mirror existed; a bounded direct-container
+  check later accepted the mirror checksum without contacting the fallback.
+- Source workflow run `31142113893` published `gdb-17.2-source`; the release is
+  non-draft and immutable. Its anonymous archive download and a fresh GNU
+  download were byte-identical at SHA-256
+  `1c036c0d72e4b3d1fb5c94c88632add6f9d76f4d7c4d2ea793c12a9f19a3228c`.
+  Expected-failure run `31142147097` proved a second dispatch refuses the
+  existing release before downloading or publishing.
+- Native ARM artifact workflow run `31142027617` completed the full build and
+  linked-input reconciliation, then published both GDB tags at image digest
+  `sha256:78037a4150350e592a40449cdde795178bc1fc1136aaa69dc2f9c0c73c471d07`.
+  Anonymous extraction confirmed that the image carries the exact committed
+  source lock and distribution directory.
+- The public and committed GDB payload is a stripped static PIE for AArch64 with
+  no interpreter or `DT_NEEDED` entries, reports GDB 17.2, and has SHA-256
+  `8e729a88937e2187a9288ae9914748ae3946285227a76ce37232802df8319f4a`.
+  A focused QEMU remote-debugging test connected, broke at `main`, stepped,
+  printed `marker = 42`, and observed normal inferior exit.
+
+No second full local QEMU compilation was completed merely to repeat late
+inventory validation. The final build ran once on native ARM with BuildKit
+caching, and already validated output was reused for the repository artifact.
+This efficiency rule is now explicit in `AGENTS.md`.
