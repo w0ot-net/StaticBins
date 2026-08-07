@@ -1,5 +1,7 @@
 # Plan: Narrow tcpdump Assurance Selection
 
+*Distilled: 2026-08-07*
+
 ## Summary
 
 Keep tcpdump's exact-rebuild gate sensitive to its own trust boundary while

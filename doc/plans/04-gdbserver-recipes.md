@@ -1,5 +1,7 @@
 # Plan: Add GDBserver Recipes for Both Architectures
 
+*Distilled: 2026-08-07*
+
 ## Summary
 
 Replace the legacy x86-64 gdbserver and add an AArch64 counterpart using two

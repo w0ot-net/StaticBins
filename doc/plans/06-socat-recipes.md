@@ -1,5 +1,7 @@
 # Plan: Add socat Recipes for Both Architectures
 
+*Distilled: 2026-08-07*
+
 ## Summary
 
 Replace the legacy x86-64 socat and add AArch64 socat with version 1.8.1.3

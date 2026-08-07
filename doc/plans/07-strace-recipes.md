@@ -1,5 +1,7 @@
 # Plan: Add strace Recipes for Both Architectures
 
+*Distilled: 2026-08-07*
+
 ## Summary
 
 Replace the legacy x86-64 strace and add AArch64 strace with version 6.16

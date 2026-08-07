@@ -1,5 +1,7 @@
 # Plan: Add lsof Recipes for Both Architectures
 
+*Distilled: 2026-08-07*
+
 ## Summary
 
 Replace the legacy x86-64 lsof and add AArch64 lsof with conventional recipes

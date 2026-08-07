@@ -1,5 +1,7 @@
 # Plan: Select Recipes by Tool and Architecture
 
+*Distilled: 2026-08-07*
+
 ## Summary
 
 Make `(name, architecture)` the recipe identity so one tool can have both
