@@ -34,7 +34,7 @@ both commands ambiguous; the root dispatcher correctly rejects them.
 In scope:
 
 - Add a concise fresh-clone quickstart to `README.md`: clone, enter the
-  checkout, check the common host boundary, list recipes, and run one explicit
+  checkout, state the common host boundary, list recipes, and run one explicit
   `(tool, architecture)` build command.
 - Name the common host commands enforced by ordinary recipes and route users
   to the recipe README for tool-specific additions such as full-system AArch64
@@ -50,9 +50,6 @@ In scope:
   build boundary.
 - Correct both ambiguous x86-64 tcpdump dispatcher examples to include
   `x86_64`.
-- Update the build-pipeline authority with the same precise cold/warm and
-  network boundary so the user README does not become the only statement of
-  stable behavior.
 
 Out of scope:
 
@@ -64,6 +61,9 @@ Out of scope:
   rebuild any selected artifact.
 - Refactoring duplicated recipe host scripts or changing their prerequisite,
   image-pull, emulation, build, smoke-test, or installation behavior.
+- Changing architecture documentation. The existing build-pipeline authority
+  already owns image pulls, conditional emulation, external cache retention,
+  full-system validation, and fail-closed builder availability.
 - Making builds registry-independent, adding mutable or locally rebuilt
   builder fallbacks, or changing GHCR's builder-only distribution role.
 - Reducing repository size through LFS, shallow-clone guidance, shared source
@@ -78,11 +78,10 @@ fresh-clone sequence using the public repository URL, `cd static_bins`,
 `./build.sh list`, and one real explicit command such as
 `./build.sh lsof x86_64`. Follow it with a compact prerequisite boundary:
 Bash; a usable Docker daemon; Docker Buildx; and the host `file`, `readelf`, and
-`sha256sum` commands. Show `docker buildx version` and `docker info` as direct
-checks rather than introducing a wrapper or a second requirements registry.
-State that recipe READMEs remain authoritative for additional tools and feature
-tradeoffs, and that the invoked recipe reports a missing command before image
-pulls or compilation.
+`sha256sum` commands. Do not add separate manual preflight commands: the
+selected recipe remains the executable authority that checks Buildx, Docker,
+and its exact host commands before image pulls or compilation. State that
+recipe READMEs remain authoritative for additional tools and feature tradeoffs.
 
 Describe GHCR as both a speed and repeatability mechanism. An ordinary build
 anonymously pulls the exact builder digest from the selected architecture's
@@ -100,14 +99,9 @@ target may cause the recipe to run the pinned binfmt helper with `--privileged`
 when target containers cannot already execute. Do not add a generic install
 command for Docker, QEMU, or distro packages; those package names and setup
 steps vary by host, and the actual recipe checks command availability directly.
-Do not publish measured repository or image sizes as stable guarantees.
-
-In `doc/architecture/build/BUILD_PIPELINE.md`, add a bounded cold/warm-build
-paragraph near the existing sequence and cache language. It should own the
-distinction between local tracked sources, required locked image pulls,
-conditional binfmt registration, optional pinned VM input, and reusable
-external caches. Preserve Buildx as the only backend and the rule that an
-unavailable committed builder digest is fatal.
+Do not publish measured repository or image sizes as stable guarantees. Link
+to the existing build-pipeline and build-environment authorities for stable
+detail rather than restating or changing their contracts.
 
 In `recipes/tcpdump/x86_64/README.md`, change only the two dispatcher examples
 to `./build.sh tcpdump x86_64` and
@@ -118,8 +112,6 @@ source, feature, validation, and trust text unchanged.
 
 - `README.md`: add the fresh-clone quickstart, complete common prerequisite
   boundary, GHCR consumer/publisher distinction, and cold/warm expectations.
-- `doc/architecture/build/BUILD_PIPELINE.md`: own the stable network,
-  first-use, emulation, and cache behavior of an ordinary build.
 - `recipes/tcpdump/x86_64/README.md`: make both user-facing dispatcher commands
   unambiguous after tcpdump became multi-architecture.
 
@@ -133,27 +125,26 @@ source, feature, validation, and trust text unchanged.
 3. Add the concise fresh-clone, prerequisite, GHCR, cold/warm, and foreign-
    architecture guidance to the root build section without mixing in the
    maintainer publication procedure.
-4. Add the matching stable behavior clarification to the build-pipeline
-   authority, then inspect the three documents together for contradictory
-   offline, authentication, fallback, or cache claims.
-5. Run documentation-focused and repository validation, then commit and push
-   only these documentation paths.
+4. Inspect both changed documents against the existing source-input,
+   build-pipeline, and build-environment authorities for contradictory offline,
+   authentication, fallback, or cache claims. Run validation, then commit and
+   push only the two documentation paths.
 
 ## Validation
 
 - Run `git diff --check` and inspect the rendered Markdown structure and all
-  relative links in the three changed documents.
+  relative links in the two changed documents.
 - Compare every `./build.sh` command in `README.md` and the current
   `recipes/*/*/README.md` files with `./build.sh list`; require an architecture
   wherever a tool has multiple catalog rows.
 - Require `git grep` over the authoritative user documents to find no bare
   `./build.sh tcpdump` or abbreviated x86-64 tcpdump `BUILD_JOBS` example.
-- Run `bash -n build.sh`, `python3 -m unittest tests.test_recipes`, and
-  `./validate.sh` to confirm documentation changes did not coincide with a
-  dispatcher, catalog, source, manifest, or shell regression.
-- Run `sha256sum -c artifacts/SHA256SUMS` and confirm no recipe script, source
-  lock, builder lock, catalog row, or artifact changed. No artifact rebuild is
-  required because this plan changes documentation only.
+- Run `./validate.sh`, which already composes catalog and source validation,
+  unit tests, dispatcher listing, tracked shell syntax, and artifact-manifest
+  checksum validation.
+- Confirm the diff contains only `README.md` and
+  `recipes/tcpdump/x86_64/README.md`; no artifact rebuild is required because
+  this plan changes documentation only.
 
 ## Success Criteria
 
