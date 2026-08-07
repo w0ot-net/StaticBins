@@ -184,3 +184,33 @@ honest state and do not dispatch an empty attestation run.
   explicit.
 - The project gains no fake reviewer ceremony, signed-history migration, custom
   security service, or organization-scale policy.
+
+## Execution Notes
+
+Completed on 2026-08-07.
+
+- Before the change, `main` was at
+  `61fec232b625fa14728a736975565f0141dbac1b`, the repository had no rulesets or
+  classic branch protection, and Actions policy reported `enabled=true`,
+  `allowed_actions=all`, and `sha_pinning_required=false`.
+- All 11 existing workflow `uses:` entries were confirmed to contain full
+  40-character commit SHAs before the external settings changed.
+- Active repository ruleset `artifact-trust-main` has ID `20544422`, targets
+  exactly `refs/heads/main`, has no bypass actors, blocks deletion and
+  non-fast-forward updates, requires pull requests with zero mandatory
+  approvals, and strictly requires `recipe-validation` and
+  `artifact-assurance` against current `main`.
+- Actions remain enabled with `allowed_actions=all`; full-SHA enforcement is now
+  active with `sha_pinning_required=true`.
+- Documentation implementation commit
+  `eb20e58d0f7305c1440ba72a9f12491dc5b424df` passed both required checks in
+  pull request 4 without an artifact build. It was squash-merged through the
+  protected path as `7f707f68d5269398222abc721a7006e0eae8bcd7`.
+- The one post-protection manual refresh, workflow run `31159885587`, rebuilt
+  tcpdump exactly and passed `artifact-assurance`. Its attestation names
+  `.github/workflows/verify-artifacts.yml`, `refs/heads/main`, protected source
+  commit `7f707f68d5269398222abc721a7006e0eae8bcd7`, and subject SHA-256
+  `cdd8f895dceb63d428f137ed910cc083dde2bc76d1006e3468b6f8d654c053b1`.
+- A freshly downloaded raw tcpdump file matched that digest and passed GitHub
+  CLI verification with the exact repository, signer workflow, and source-ref
+  constraints. The protected source commit is reachable from current `main`.
