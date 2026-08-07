@@ -2,6 +2,11 @@ name: Mirror source archives
 
 on:
   workflow_dispatch:
+    inputs:
+      immutable_releases_enabled:
+        description: Confirm repository release immutability is enabled
+        required: true
+        type: boolean
 
 permissions:
   contents: write
@@ -30,14 +35,14 @@ jobs:
           echo "upstream_url=${SOURCE_UPSTREAM_URL}" >> "${GITHUB_OUTPUT}"
           echo "release_tag=${SOURCE_RELEASE_TAG}" >> "${GITHUB_OUTPUT}"
 
-      - name: Refuse replacement and require immutable releases
+      - name: Refuse replacement
         env:
           GH_TOKEN: ${{ github.token }}
           RELEASE_TAG: ${{ steps.source.outputs.release_tag }}
         shell: bash
         run: |
           set -euo pipefail
-          test "$(gh api "repos/${GITHUB_REPOSITORY}/immutable-releases" --jq .enabled)" = true
+          test "${{ inputs.immutable_releases_enabled }}" = true
           if gh release view "${RELEASE_TAG}" --repo "${GITHUB_REPOSITORY}" >/dev/null 2>&1; then
             echo "error: release already exists: ${RELEASE_TAG}" >&2
             exit 1
@@ -81,4 +86,13 @@ jobs:
           gh release upload "${RELEASE_TAG}" mirror-assets/* \
             --repo "${GITHUB_REPOSITORY}"
           gh release edit "${RELEASE_TAG}" --repo "${GITHUB_REPOSITORY}" --draft=false
-          test "$(gh api "repos/${GITHUB_REPOSITORY}/releases/tags/${RELEASE_TAG}" --jq .immutable)" = true
+          release_immutable="$(
+            gh api "repos/${GITHUB_REPOSITORY}/releases/tags/${RELEASE_TAG}" \
+              --jq .immutable || printf false
+          )"
+          if [ "${release_immutable}" != true ]; then
+            gh release delete "${RELEASE_TAG}" --repo "${GITHUB_REPOSITORY}" \
+              --cleanup-tag --yes
+            echo "error: published release was not immutable; removed release and tag" >&2
+            exit 1
+          fi
