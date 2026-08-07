@@ -223,3 +223,31 @@ architecture.
   trust boundary.
 - Architecture-specific ELF, ABI, package, and smoke logic remains explicit;
   no broad rebuild or validation-framework abstraction is introduced.
+
+## Execution Notes
+
+Completed on 2026-08-07 in implementation commit
+`9a632f28b1cab60b122395805ed111cdd45b36b2`.
+
+- Added the exact three-row `builders/catalog.tsv` and a strict shared Bash
+  loader that validates ASCII-safe schema and values, ordering, uniqueness,
+  conventional builder owners, immutable lock fields, and tag-prefix parity.
+- Migrated the root dispatcher and builder publisher from literal architecture
+  cases to catalog membership. Existing public commands, builder directories,
+  platforms, floating tags, versioned prefixes, Buildx checks, and publication
+  safety behavior are preserved.
+- Added the equivalent strict Python loader, conventional builder-owner
+  validation even for builder-only architectures, and catalog-driven recipe
+  architecture acceptance. Focused coverage grew from 20 to 24 tests and
+  includes malformed, blank, non-ASCII, duplicate, unsorted, unsafe, missing,
+  lock-mismatched, unknown-recipe, and pre-Docker publisher rejection cases.
+- Added the builder-first architecture-onboarding procedure and updated the
+  repository, build-environment, contributor, user, and agent authorities to
+  point at the catalog while retaining explicit target ABI policy.
+- Bounded correction: the build-environment page still described x86-64 as
+  merely GDB-ready after the preceding plan; its current-consumer row now
+  factually includes GDB.
+- Bash and Python syntax checks, 24 focused tests, exact real mapping checks,
+  unknown publisher rejection, `git diff --check`, and `./validate.sh` passed.
+  Snapshot comparison proved the dispatcher list, recipe catalog, builder
+  locks and owner files, artifact manifest, and every artifact byte unchanged.
