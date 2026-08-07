@@ -90,3 +90,23 @@ request and skips its build jobs only when detection safely returns false.
   direct trust-boundary path still selects the exact rebuild.
 - Required `recipe-validation` and `artifact-assurance` checks retain their
   names and report on every pull request; no trust claim or artifact changes.
+
+## Execution Notes
+
+- Kept tcpdump's direct trust-boundary triggers unchanged and replaced only the
+  broad shared-file cases with exact base/head catalog-row and checksum-record
+  comparisons. Missing, duplicate, changed, or unreadable records select the
+  build fail-safe.
+- Changed only `.github/workflows/verify-artifacts.yml`; no recipe, artifact,
+  trust status, runner, matrix, or attestation behavior changed.
+- No material deviations from the accepted plan were required.
+- YAML parsing and embedded Bash syntax passed. Synthetic Git histories proved
+  documentation-only and unrelated well-formed additions remain unselected;
+  target changes/removals/duplication, comparison failure, and every existing
+  direct path select tcpdump.
+- Pull request #11 passed `recipe-validation`, reproduced tcpdump exactly, and
+  passed the stable `artifact-assurance` aggregate check.
+- Implementation commit: `26efa00` (`Narrow tcpdump assurance selection`),
+  merged to `main` as `926b7ec`.
+- Deliberately excluded follow-up: no generic selector or assurance expansion
+  was introduced.
