@@ -142,3 +142,49 @@ workflow stops building the builder inline and reads only the committed digest.
   recipe inputs before the reviewed digest is committed.
 - The rebuilt committed binary and public GDB image pass architecture,
   static-link, version, and focused debugging checks.
+
+## Execution Notes
+
+Implemented the immutable builder lifecycle in commits `5251c9d` and
+`37e76fb`. Normal GDB builds and interactive sessions now source
+`environment.lock`, pull one exact public builder digest, and stop on failure.
+The GDB guest script no longer installs packages; builder creation owns exact
+direct APK versions through `builder-packages.lock`. Builder publication is a
+separate manual native-ARM workflow, and artifact publication consumes only the
+committed digest.
+
+Changed ownership is limited to the AArch64 environment/package locks, builder
+and GDB Dockerfiles and wrappers, the two publication workflows, and the
+bounded README/AGENTS contracts listed above. The rebuilt
+`aarch64_bins/gdb` was byte-identical to the previously committed artifact, so
+the binary path required no content commit.
+
+One bounded implementation correction records Alpine's actual `samurai`
+package rather than the virtual `ninja` capability; validation still requires
+the `ninja` command. The local x86-64 host lacked Docker Buildx, so candidate
+image construction and validation ran through the new native-ARM publication
+workflow. The public artifact workflow's first source fetch returned transient
+`wget` network-failure code 4; an unchanged retry succeeded. Removing that
+external source dependency remains Plan 2's explicit scope.
+
+Validation completed successfully:
+
+- Host/guest shell syntax, workflow YAML parsing, digest-shape checks,
+  no-fallback/no-`apk` searches, ShellCheck when available, and
+  `git diff --check`.
+- Exact APK lock resolution against the pinned Alpine ARM64 base.
+- Anonymous digest pull plus architecture, installed-package, command, static
+  archive, and OCI-source checks for the public builder.
+- Manual builder workflow run `31136687335` and artifact workflow run
+  `31137059942` (successful unchanged retry).
+- `BUILD_JOBS=16 ./aarch64_alpine_build_scripts/gdb/build.sh`, producing GDB
+  17.2 with SHA-256
+  `5e96e51367020e6be6e2cb0a7f0014573da838a8f7d1d099fd2e5a4a55c820ab`.
+- Independent `file`/`readelf` architecture, interpreter, and `DT_NEEDED`
+  checks on both the local artifact and the anonymously pulled public image.
+- Focused QEMU remote-debugging tests with both payloads: connect, break at
+  `main`, step, read `marker = 42`, and observe normal inferior exit.
+
+Deliberately excluded follow-ups remain unchanged: source mirroring and notices
+(Plan 2), the generic recipe catalog and CI matrix (Plan 3), offline Alpine
+mirroring, byte-for-byte reproducibility, and additional architectures.
