@@ -33,7 +33,10 @@ The exact recipe-local archives were manually verified against those signatures
 during planning, but that evidence is not committed, continuously checked, or
 easy for a user to reproduce. At the same time, making signatures mandatory for
 every future utility would reject legitimate upstreams that publish only a
-release archive and checksum.
+release archive and checksum. The valid GDB signature also uses the upstream's
+legacy DSA key with SHA-1; it is useful origin evidence for these exact bytes but
+must not be presented as cryptographically equivalent to the Tcpdump Group's
+RSA/SHA-512 signatures.
 
 ## Scope
 
@@ -60,6 +63,8 @@ Out of scope:
   a custom PKI, or network access during normal validation and builds.
 - Claiming that an authentic upstream release is free from vulnerabilities or
   malicious upstream code.
+- Adding a signature-algorithm policy engine or rejecting the current GDB source
+  solely because its authentic upstream signature uses legacy DSA/SHA-1.
 - Changing source versions, source archive bytes, build flags, builders, or
   artifact bytes.
 
@@ -105,8 +110,9 @@ Create `TRUST.md` as the single plain-language assurance document. Its source
 table identifies every supported source record as `Upstream PGP` or
 `Checksum-only`, includes the full fingerprint for signed records, links the
 official upstream key/signature location, and explains that authentication
-establishes origin rather than safety. The root README links this document but
-does not duplicate its table.
+establishes origin rather than safety. Mark GDB's row or adjacent note as legacy
+DSA/SHA-1 evidence without weakening or bypassing the exact signature check. The
+root README links this document but does not duplicate its table.
 
 ## Affected Components
 
@@ -160,6 +166,9 @@ does not duplicate its table.
   all three signatures to verify only through their committed keyrings.
 - Inspect machine-readable `gpgv` status and require the GDB and Tcpdump Group
   fingerprints above exactly; short key IDs or key names are insufficient.
+- Confirm the trust table acknowledges GDB's DSA/SHA-1 signature while the
+  Tcpdump Group signatures use RSA/SHA-512; do not turn that disclosure into a
+  fallback after verification failure.
 - In isolated fixtures, prove a corrupt archive, corrupt signature, substituted
   key, wrong fingerprint, missing evidence file, symlink, untracked file, and
   non-`100644` mode each fail.
@@ -179,5 +188,8 @@ does not duplicate its table.
 - Source authentication uses committed evidence and direct actual-state checks,
   with no keyserver, custom trust service, network build dependency, or new
   signature abstraction.
+- GDB's accepted but legacy upstream signature is visible rather than silently
+  receiving the same cryptographic-strength implication as the Tcpdump Group
+  signatures.
 - Current source archives, builders, build behavior, and artifacts are
   unchanged.
