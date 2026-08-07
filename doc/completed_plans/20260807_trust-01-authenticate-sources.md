@@ -213,3 +213,45 @@ the job remains Docker-free and inexpensive.
   by the later protected-main ruleset.
 - Current source archives, builders, build behavior, and artifacts are
   unchanged.
+
+## Execution Notes
+
+Completed on 2026-08-07.
+
+- Implementation commit `fc7fd119b4f0423a5473a9d912267c0a6864f5e3`
+  added the three official detached signatures, two minimal signer keyrings,
+  explicit lock modes/fingerprints, offline validator logic, focused tests,
+  `TRUST.md`, documentation, and the stable pull-request check.
+- Evidence was downloaded from the official URLs into temporary storage before
+  repository installation. The detached-signature SHA-256 values are GDB
+  `88ce7d488cdbd9893920f1d72bd6570a2868a52fc2de6c93522177e4c9ee6b32`,
+  tcpdump
+  `b3efd6af511e07163cab94a3144a0a9064bbf8f040ea5a69861cccca441c7bda`,
+  and libpcap
+  `d3f19087169bc823fad9a8a184372f8977d81b23edcdc6bc9dc9d874c99cab01`.
+  The exported keyrings contain one primary key each and retain mode `100644`.
+- Direct `gpgv --status-fd` checks reported exact `VALIDSIG` fingerprints
+  `F40ADB902B24264AA42E50BF92EDB04BFF325CF3` for GDB and
+  `1F166A5742ABB9E0249A8D30E089DEF1D9C15D0D` for both Tcpdump Group
+  signatures. Packet inspection confirmed GDB's upstream DSA/SHA-1 signature
+  and the tcpdump/libpcap RSA/SHA-512 signatures documented in `TRUST.md`.
+- The existing validator now accepts only explicit `pgp` or `checksum-only`
+  modes. PGP verification uses a new temporary GnuPG home, the committed
+  keyring, machine-readable status, and the locked full fingerprint; it never
+  consults a user keyring or network service. Checksum-only records remain
+  valid but print the documented limitation and cannot retain PGP fields.
+- Validation passed inside a network-disabled namespace with an unrelated user
+  GnuPG home. All 16 unit tests passed, including corrupt archive/signature,
+  substituted key, wrong fingerprint, missing/unsafe/symlinked/untracked/wrong-
+  mode evidence, missing `gpgv`, and explicit checksum-only cases. Python
+  compilation, workflow YAML parsing, dispatcher listing, local-link checks,
+  ASCII checks, and `git diff --check` also passed.
+- Exact-commit main Actions run `31158573518` completed the
+  `recipe-validation` job in eight seconds. Disposable documentation-only probe
+  commit `91111bf31b2c778d0be3079e49fe96121acd506f` opened pull request #1;
+  pull-request run `31158622188` reported and passed the same stable check in
+  nine seconds. The probe PR was closed without merge and its temporary local
+  and remote branch was deleted.
+- All three source archive hashes and both enabled artifact hashes remained
+  identical to their preflight baselines. Builder locks, guest build scripts,
+  Dockerfiles, build flags, and artifact modes were unchanged.
