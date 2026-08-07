@@ -1,0 +1,7 @@
+# lsof source acceptance and provenance metadata.
+SOURCE_VERSION=4.99.5
+SOURCE_ARCHIVE=lsof-4.99.5.tar.gz
+SOURCE_SHA256=4682c2491ec8b3d62f84e135afc1d9ead1bad5f034b50716f0c3826a4ee7d229
+SOURCE_UPSTREAM_URL=https://github.com/lsof-org/lsof/releases/download/4.99.5/lsof-4.99.5.tar.gz
+SOURCE_LICENSE=lsof-license
+SOURCE_AUTHENTICATION=checksum-only
