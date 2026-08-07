@@ -41,7 +41,9 @@ In scope:
   `artifacts/`, including explicitly unverified legacy files.
 - Add one workflow that rebuilds only artifacts approved for exact verification,
   compares their bytes with the committed files, and attests the exact files on
-  protected `main` pushes.
+  selected `main` pushes.
+- Give that workflow one manual protected-`main` rebuild-and-attest entry point
+  for the later protection plan's bounded attestation refresh.
 - Give the workflow one stable, always-reported assurance gate suitable for the
   later branch ruleset without compiling on documentation-only changes.
 - Extend `TRUST.md` with artifact-level status and two short user verification
@@ -112,6 +114,13 @@ attestations, and documentation-only main pushes neither rebuild nor re-attest
 unchanged files. Do not attest a merely pre-existing file without a successful
 same-job rebuild comparison.
 
+Also expose `workflow_dispatch` for a bounded maintainer refresh. A dispatch must
+run at `refs/heads/main` or fail without attesting; at `main`, it ignores change
+detection, rebuilds every currently verified artifact, requires exact equality,
+and only then attests. This is not a scheduled or alternate build path: the later
+protection plan invokes it once after the ruleset exists so at least one
+attestation names a protected-main commit.
+
 Keep the verified tool list explicit in the workflow. Adding a future artifact
 does not automatically receive provenance: its contributor either demonstrates
 an exact rebuild and adds a bounded job or records `Not verified` in `TRUST.md`.
@@ -142,7 +151,8 @@ or vulnerability guarantee.
 - `artifacts/SHA256SUMS`: add the deterministic integrity manifest for every
   distributed file.
 - `.github/workflows/verify-artifacts.yml`: add path-aware exact rebuild checks,
-  a stable assurance gate, and push-only raw artifact attestations.
+  a stable assurance gate, push-triggered attestations, and the bounded manual
+  protected-main refresh.
 - `scripts/recipes.py`: validate complete and exact artifact-manifest coverage.
 - `tests/test_recipes.py`: materially cover manifest completeness, safe paths,
   duplicates, extra entries, and stale hashes.
@@ -164,8 +174,9 @@ or vulnerability guarantee.
 3. Add and validate `artifacts/SHA256SUMS`, including every legacy file without
    implying provenance.
 4. Add the exact-rebuild workflow for only the tools that qualified, using
-   stable check names and push-only attestations. If neither tool qualifies,
-   retain the stable non-attesting manifest/status gate and the honest result.
+   stable check names, push-triggered attestations, and the protected-main manual
+   refresh. If neither tool qualifies, retain the stable non-attesting
+   manifest/status gate and the honest result.
 5. Extend `TRUST.md` and the nearest repository/contributor contracts with the
    verified and unverified results and user commands.
 6. Push the bounded changes, require the assurance gate to pass, verify each
@@ -192,6 +203,9 @@ or vulnerability guarantee.
   the documented `gh attestation verify` command against independently downloaded
   GDB and tcpdump files only when their status is verified; require the exact
   signer workflow and `refs/heads/main` policy flags to succeed.
+- Inspect the manual-event guards and require a non-main ref to fail before any
+  attestation step while a main dispatch selects every verified artifact; leave
+  the one post-protection execution to `trust-03-protect-main.md`.
 - Confirm every unverified legacy artifact is present in the checksum manifest
   and plainly marked `Not verified`, with no attestation or reproducibility
   claim.
@@ -209,3 +223,6 @@ or vulnerability guarantee.
   or project-specific verification service.
 - The workflow exposes one stable required check and avoids expensive builds for
   changes outside the trust boundary.
+- The later protection plan can create a fresh attestation for every verified
+  artifact from protected `main` without changing artifact bytes or adding a
+  second build implementation.
