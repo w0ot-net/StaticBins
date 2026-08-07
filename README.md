@@ -34,22 +34,33 @@ BUILD_JOBS=4 ./aarch64_alpine_build_scripts/gdb/build.sh
 
 ## Containers
 
-The repository publishes two ARM64 images:
+The repository publishes reusable architecture-specific builders and artifact
+images:
 
 - `ghcr.io/w0ot-net/static_bins-builder:aarch64-alpine-3.24.1-r1` is a reusable
   static-build toolchain for GDB and other binaries.
+- `ghcr.io/w0ot-net/static_bins-builder:x64-alpine-3.24.1-r1` is the locked
+  x86-64 toolchain for forthcoming migrated recipes.
 - `ghcr.io/w0ot-net/static_bins-gdb:17.2-aarch64` contains the ready-to-run GDB
   artifact.
 
-Both also receive an `aarch64-latest` tag and are linked to this repository via
-OCI metadata. Pushes to `main` publish the GDB artifact. Normal builds and
-interactive sessions use the locked builder digest and never resolve packages
-or fall back to another image. Start an interactive builder with
+The builders receive architecture-specific `aarch64-latest` or `x64-latest`
+tags, and the GDB artifact receives `aarch64-latest`. All are linked to this
+repository via OCI metadata. Pushes to `main` publish the GDB artifact. Normal
+AArch64 builds and interactive sessions use the locked builder digest and never
+resolve packages or fall back to another image. Start an interactive builder with
 `./aarch64_alpine_build_scripts/run-builder.sh`.
 
-Maintainers can validate a candidate builder with
-`./aarch64_alpine_build_scripts/build-builder.sh`. Builder publication is a
-separate manual workflow; recipes use a new builder only after its reported
-digest is committed to `environment.lock`.
+Maintainers can validate candidate builders with the matching architecture
+command:
+
+```sh
+./aarch64_alpine_build_scripts/build-builder.sh
+./x64_alpine_build_scripts/build-builder.sh
+```
+
+Builder publication is a separate manual workflow with an explicit
+architecture choice; recipes use a new builder only after its reported digest
+is committed to that architecture's `environment.lock`.
 
 Build conventions and artifact requirements are documented in `AGENTS.md`.

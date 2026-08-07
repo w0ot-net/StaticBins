@@ -2,6 +2,15 @@ name: Publish builder
 
 on:
   workflow_dispatch:
+    inputs:
+      architecture:
+        description: Builder architecture to publish
+        required: true
+        type: choice
+        default: aarch64
+        options:
+          - aarch64
+          - x64
 
 permissions:
   contents: read
@@ -12,18 +21,60 @@ env:
 
 jobs:
   publish:
-    runs-on: ubuntu-24.04-arm
+    runs-on: ${{ inputs.architecture == 'x64' && 'ubuntu-24.04' || 'ubuntu-24.04-arm' }}
 
     steps:
       - name: Check out repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - name: Load locked environment
-        id: environment
+      - name: Select and load locked environment
+        id: architecture
         shell: bash
+        env:
+          ARCHITECTURE: ${{ inputs.architecture }}
         run: |
           set -euo pipefail
-          source aarch64_alpine_build_scripts/environment.lock
+
+          case "${ARCHITECTURE}" in
+            aarch64)
+              directory=aarch64_alpine_build_scripts
+              expected_machine=aarch64
+              platform=linux/arm64
+              floating_tag=aarch64-latest
+              cache_scope=aarch64-builder
+              ;;
+            x64)
+              directory=x64_alpine_build_scripts
+              expected_machine=x86_64
+              platform=linux/amd64
+              floating_tag=x64-latest
+              cache_scope=x64-builder
+              ;;
+            *)
+              echo "error: unsupported architecture ${ARCHITECTURE}" >&2
+              exit 1
+              ;;
+          esac
+
+          if [[ "$(uname -m)" != "${expected_machine}" ]]; then
+            echo "error: ${ARCHITECTURE} builder must run on ${expected_machine}, found $(uname -m)" >&2
+            exit 1
+          fi
+
+          source "${directory}/environment.lock"
+          case "${ALPINE_IMAGE}" in
+            *@sha256:*) ;;
+            *) echo "error: ALPINE_IMAGE must be pinned by digest" >&2; exit 1 ;;
+          esac
+          case "${BUILDER_TAG}" in
+            "${ARCHITECTURE}"-*) ;;
+            *) echo "error: BUILDER_TAG does not match ${ARCHITECTURE}" >&2; exit 1 ;;
+          esac
+
+          echo "directory=${directory}" >> "${GITHUB_OUTPUT}"
+          echo "platform=${platform}" >> "${GITHUB_OUTPUT}"
+          echo "floating_tag=${floating_tag}" >> "${GITHUB_OUTPUT}"
+          echo "cache_scope=${cache_scope}" >> "${GITHUB_OUTPUT}"
           echo "alpine_image=${ALPINE_IMAGE}" >> "${GITHUB_OUTPUT}"
           echo "builder_tag=${BUILDER_TAG}" >> "${GITHUB_OUTPUT}"
 
@@ -40,7 +91,7 @@ jobs:
       - name: Refuse to replace a versioned builder
         shell: bash
         env:
-          VERSIONED_IMAGE: ${{ env.BUILDER_REPOSITORY }}:${{ steps.environment.outputs.builder_tag }}
+          VERSIONED_IMAGE: ${{ env.BUILDER_REPOSITORY }}:${{ steps.architecture.outputs.builder_tag }}
         run: |
           if docker manifest inspect "${VERSIONED_IMAGE}" >/dev/null 2>&1; then
             echo "error: ${VERSIONED_IMAGE} already exists" >&2
@@ -51,17 +102,17 @@ jobs:
         id: builder
         uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7.3.0
         with:
-          context: ./aarch64_alpine_build_scripts
-          file: ./aarch64_alpine_build_scripts/Dockerfile
-          platforms: linux/arm64
+          context: ./${{ steps.architecture.outputs.directory }}
+          file: ./${{ steps.architecture.outputs.directory }}/Dockerfile
+          platforms: ${{ steps.architecture.outputs.platform }}
           build-args: |
-            ALPINE_IMAGE=${{ steps.environment.outputs.alpine_image }}
+            ALPINE_IMAGE=${{ steps.architecture.outputs.alpine_image }}
           push: true
           tags: |
-            ${{ env.BUILDER_REPOSITORY }}:${{ steps.environment.outputs.builder_tag }}
-            ${{ env.BUILDER_REPOSITORY }}:aarch64-latest
-          cache-from: type=gha,scope=aarch64-builder
-          cache-to: type=gha,mode=max,scope=aarch64-builder
+            ${{ env.BUILDER_REPOSITORY }}:${{ steps.architecture.outputs.builder_tag }}
+            ${{ env.BUILDER_REPOSITORY }}:${{ steps.architecture.outputs.floating_tag }}
+          cache-from: type=gha,scope=${{ steps.architecture.outputs.cache_scope }}
+          cache-to: type=gha,mode=max,scope=${{ steps.architecture.outputs.cache_scope }}
           provenance: mode=max
           sbom: true
 
@@ -69,8 +120,9 @@ jobs:
         shell: bash
         env:
           BUILDER_DIGEST: ${{ steps.builder.outputs.digest }}
+          ENVIRONMENT_LOCK: ${{ steps.architecture.outputs.directory }}/environment.lock
         run: |
-          echo "Update BUILDER_IMAGE in aarch64_alpine_build_scripts/environment.lock to:" >> "${GITHUB_STEP_SUMMARY}"
+          echo "Update BUILDER_IMAGE in ${ENVIRONMENT_LOCK} to:" >> "${GITHUB_STEP_SUMMARY}"
           echo '```text' >> "${GITHUB_STEP_SUMMARY}"
           echo "${BUILDER_REPOSITORY}@${BUILDER_DIGEST}" >> "${GITHUB_STEP_SUMMARY}"
           echo '```' >> "${GITHUB_STEP_SUMMARY}"
