@@ -41,7 +41,8 @@ In scope:
   succeeded, no utility publisher remains, and no related workflow run is active.
 - Require the active GitHub CLI account to be exactly `w0ot-net` and its classic
   token to have effective `read:packages`, `delete:packages`, and
-  `write:packages` access for preflight, deletion, and rollback.
+  `write:packages` access for preflight, deletion, and rollback, plus `repo`
+  access for exact Actions-cache deletion.
 - Delete the complete `static_bins-gdb` and `static_bins-tcpdump` user-scoped
   container packages through GitHub's supported REST endpoint using credentials
   with the required package scopes.
@@ -67,7 +68,7 @@ Out of scope:
 Use an exact destructive allowlist containing only `static_bins-gdb` and
 `static_bins-tcpdump`. Before mutation, query `/user` and require login
 `w0ot-net`, inspect the token's effective package scopes without printing the
-token, then query each package through
+token, require `repo` access for cache cleanup, then query each package through
 `/user/packages/container/<name>`. Require that it is public, owned by
 `w0ot-net`, and linked to `w0ot-net/static_bins`, and capture its current package
 ID plus every version and tagged digest in a mode-`0600` temporary record.
@@ -92,10 +93,11 @@ do not fall back to a loop that deletes loosely selected version IDs.
 
 The API does not provide an atomic two-package delete. If the first exact delete
 succeeds and the second fails, immediately restore the first through
-`POST /user/packages/container/<exact-package-name>/restore`, require its 204,
-and compare its restored owner/repository/version/tag/digest state with the
-preflight snapshot before stopping. If restoration itself fails, stop and report
-the partial state without touching caches. GitHub documents that a deleted
+the same included-header form with method `POST` and endpoint
+`/user/packages/container/<exact-package-name>/restore`, require its 204, and
+compare its restored owner/repository/version/tag/digest state with the preflight
+snapshot before stopping. If restoration itself fails, stop and report the
+partial state without touching caches. GitHub documents that a deleted
 package may otherwise be restored for 30 days if its namespace has not been
 reused. Record that deadline, and keep both namespaces unused during the
 recovery window. If a later rollback is requested within that window, use the
@@ -106,7 +108,11 @@ Create a separate empty temporary Docker configuration and use
 `DOCKER_CONFIG=<that-directory> docker manifest inspect ...` for all pre/post
 utility-tag and locked-builder checks. Never log in through that configuration;
 this makes "anonymous" a tested property instead of inheriting the executor's
-normal Docker credentials.
+normal Docker credentials. Treat authenticated package GET/list results as the
+authoritative deletion state. After they return 404, retry anonymous manifest
+inspection with bounded backoff for at most five minutes to accommodate registry
+cache propagation; if a retired tag still resolves, stop before cache deletion
+and record the unresolved external state.
 
 Actions cache cleanup happens after package deletion and verification. Resolve
 the utility index keys again, display the complete ID/key list, and delete each
@@ -114,7 +120,9 @@ by exact numeric cache ID with
 `gh cache delete <cache-id> --repo w0ot-net/static_bins`. Do not use a cache key,
 prefix, or `--all` as the deletion argument. Do not delete `buildkit-blob-*`:
 those objects share a BuildKit namespace with builder jobs and will be reclaimed
-by normal cache retention when no surviving index references need them.
+by normal cache retention when no surviving index references need them. Record
+builder index IDs before and after, but prove protection from the exact deletion
+request list rather than assuming GitHub cannot evict a cache independently.
 
 ## Affected Components
 
@@ -131,7 +139,8 @@ by normal cache retention when no surviving index references need them.
 1. Confirm the repository-cleanup plan is completed on `main`, the worktree is
    clean, its validation run passed, utility publication code is absent, and no
    related Actions run is queued or active. Require authenticated GitHub login
-   `w0ot-net` and the read/delete/write package access needed for exact rollback.
+   `w0ot-net`, read/delete/write package access for exact rollback, and `repo`
+   access for cache deletion.
 2. Query all container packages linked to `w0ot-net/static_bins`. Require the
    exact expected set of one protected builder plus the two deletion targets;
    stop for any unknown package rather than expanding scope automatically.
@@ -146,7 +155,8 @@ by normal cache retention when no surviving index references need them.
    first package against the snapshot before stopping; never continue to caches
    from a partial package state.
 5. Verify both package queries now return 404 and anonymous inspection of all
-   four former public tags fails through the isolated Docker configuration.
+   four former public tags fails through the isolated Docker configuration,
+   using bounded retries for no more than five minutes before stopping.
 6. Reconfirm the builder package and both locked digests resolve, then delete
    only the preflighted utility index cache IDs and verify no matching index key
    remains.
@@ -167,14 +177,16 @@ by normal cache retention when no surviving index references need them.
   `static_bins-builder` for this repository. Exercise the specified first-delete
   rollback logic if the second request fails rather than accepting partial state.
 - With an empty isolated `DOCKER_CONFIG`, anonymously inspect the retired tags
-  and require them to be unavailable. Resolve the two exact `BUILDER_IMAGE`
-  digest references from
+  and require them to be unavailable after a bounded retry window. Resolve the
+  two exact `BUILDER_IMAGE` digest references from
   `builders/{aarch64,x86_64}/environment.lock` and require both to remain
   available and unchanged.
 - List Actions caches after cleanup and require no key beginning
-  `index-aarch64-gdb-` or `index-x86_64-tcpdump-`; require all builder index keys
-  to remain, confirm every deletion used a numeric ID, and do not assert deletion
-  of shared blob entries.
+  `index-aarch64-gdb-` or `index-x86_64-tcpdump-`; confirm every deletion used a
+  numeric utility ID and no recorded builder ID. Record any independent builder
+  cache eviction without treating it as evidence that the exact deletion
+  requests targeted the builder, and do not assert deletion of shared blob
+  entries.
 - Verify the tracked source archives and committed GDB/tcpdump artifacts are
   unchanged, the worktree contains no temporary API response, and
   `git diff --check` passes for the finalized plan record.
