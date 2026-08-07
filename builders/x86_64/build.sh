@@ -4,7 +4,7 @@ set -euo pipefail
 
 readonly SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 readonly ENVIRONMENT_LOCK="${SCRIPT_DIR}/environment.lock"
-readonly PACKAGE_LOCK="${SCRIPT_DIR}/builder-packages.lock"
+readonly PACKAGE_LOCK="${SCRIPT_DIR}/packages.lock"
 readonly PLATFORM="linux/amd64"
 
 # shellcheck source=environment.lock
@@ -81,7 +81,7 @@ fi
 
 docker run --rm \
     --platform "${PLATFORM}" \
-    --mount "type=bind,src=${PACKAGE_LOCK},dst=/tmp/builder-packages.lock,readonly" \
+    --mount "type=bind,src=${PACKAGE_LOCK},dst=/tmp/packages.lock,readonly" \
     "${LOCAL_IMAGE}" \
     /bin/sh -eu -c '
         test "$(uname -m)" = x86_64
@@ -95,7 +95,7 @@ docker run --rm \
                 echo "error: ${package_name}: expected ${expected_version}, found ${installed_version}" >&2
                 exit 1
             fi
-        done < /tmp/builder-packages.lock
+        done < /tmp/packages.lock
 
         for command_name in bison cc c++ file flex make readelf sha256sum strip tar wget; do
             if ! command -v "${command_name}" >/dev/null 2>&1; then

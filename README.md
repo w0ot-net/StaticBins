@@ -1,12 +1,12 @@
 # static_bins
 
-Ready-to-run static Linux utilities with scripts that make their builds easy to
-repeat and audit.
+Ready-to-run static Linux utilities with small, documented, repeatable build
+recipes.
 
-| Architecture | Binaries | Rebuild support |
+| Architecture | Committed artifacts | Rebuild support |
 | --- | --- | --- |
-| AArch64 | GDB 17.2 | Complete, one-command recipe |
-| x86-64 | `gdbserver`, `lsof`, `socat`, `strace`, `tcpdump` | Legacy artifacts; `tcpdump` recipe included |
+| AArch64 | GDB 17.2 | Complete recipe |
+| x86-64 | `gdbserver`, `lsof`, `socat`, `strace`, `tcpdump` | Legacy artifacts |
 
 ## Build
 
@@ -17,64 +17,33 @@ List the enabled recipes, then build one with Bash and Docker:
 ./build.sh gdb
 ```
 
-The root command delegates to the recipe's host script without requiring
-Python. The direct GDB entry point remains supported:
+The root command reads the minimal allowlist in `recipes/catalog.tsv` and
+delegates to the matching recipe. Committed executables live in
+`artifacts/<architecture>/`, tool-specific builds in
+`recipes/<tool>/<architecture>/`, and locked reusable environments in
+`builders/<architecture>/`.
 
-```sh
-./aarch64_alpine_build_scripts/gdb/build.sh
-```
-
-The GDB recipe builds with the exact public builder digest recorded in
-`aarch64_alpine_build_scripts/environment.lock` and writes the verified binary
-to `aarch64_bins/gdb`. On non-ARM64 Linux hosts, it uses QEMU user-mode
-emulation; if ARM64 `binfmt_misc` support is absent, it registers the pinned
-helper container automatically with `--privileged`. Docker Desktop normally
-provides this support already.
-
-The recipe takes all GDB source metadata from its committed `source.lock`, tries
-the repository's immutable source release before the official GNU endpoint,
-and accepts only the locked checksum. It rejects output containing an ELF
-interpreter or dynamic-library dependencies. Python, Guile, debuginfod,
-Babeltrace, libipt, and source-highlight are disabled to keep the result
-self-contained. License and linked-archive provenance are recorded in the
-recipe's `licenses/NOTICE.md`. Set `BUILD_JOBS` to adjust compilation
-parallelism:
-
-```sh
-BUILD_JOBS=4 ./aarch64_alpine_build_scripts/gdb/build.sh
-```
+See [`recipes/gdb/aarch64/README.md`](recipes/gdb/aarch64/README.md) for GDB's
+prerequisites, source and feature policy, direct command, and output details.
 
 ## Containers
 
-The repository publishes reusable architecture-specific builders and artifact
-images:
+Published images include:
 
-- `ghcr.io/w0ot-net/static_bins-builder:aarch64-alpine-3.24.1-r1` is a reusable
-  static-build toolchain for GDB and other binaries.
-- `ghcr.io/w0ot-net/static_bins-builder:x64-alpine-3.24.1-r1` is the locked
-  x86-64 toolchain for forthcoming migrated recipes.
-- `ghcr.io/w0ot-net/static_bins-gdb:17.2-aarch64` contains the ready-to-run GDB
-  artifact.
+- `ghcr.io/w0ot-net/static_bins-gdb:17.2-aarch64`
+- `ghcr.io/w0ot-net/static_bins-gdb:aarch64-latest`
+- `ghcr.io/w0ot-net/static_bins-builder:aarch64-alpine-3.24.1-r1`
+- `ghcr.io/w0ot-net/static_bins-builder:x64-alpine-3.24.1-r1`
 
-The builders receive architecture-specific `aarch64-latest` or `x64-latest`
-tags, and the GDB artifact receives `aarch64-latest`. All are linked to this
-repository via OCI metadata. Pushes to `main` publish the GDB artifact. Normal
-AArch64 builds and interactive sessions use the locked builder digest and never
-resolve packages or fall back to another image. Start an interactive builder with
-`./aarch64_alpine_build_scripts/run-builder.sh`.
+The `x64-*` builder names are retained public compatibility identifiers; the
+repository uses `x86_64` internally. Normal builds use the immutable builder
+digest committed under `builders/<architecture>/environment.lock` and never
+resolve packages or silently fall back to another image.
 
-Maintainers can validate candidate builders with the matching architecture
-command:
+Builder publication is a separate maintainer operation. Candidate builders can
+be validated with `./builders/aarch64/build.sh` or
+`./builders/x86_64/build.sh`; start the locked AArch64 environment with
+`./builders/aarch64/run.sh`.
 
-```sh
-./aarch64_alpine_build_scripts/build-builder.sh
-./x64_alpine_build_scripts/build-builder.sh
-```
-
-Artifact publication is generated from the validated `recipes.tsv` catalog.
-Builder publication is a separate manual workflow with an explicit
-architecture choice; recipes use a new builder only after its reported digest
-is committed to that architecture's `environment.lock`.
-
-See `doc/adding-a-binary.md` for the recipe contract. Build conventions and
-artifact requirements are documented in `AGENTS.md`.
+See [`doc/adding-a-binary.md`](doc/adding-a-binary.md) for the recipe contract
+and [`AGENTS.md`](AGENTS.md) for repository-wide build and validation rules.

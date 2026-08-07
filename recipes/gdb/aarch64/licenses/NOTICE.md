@@ -1,6 +1,6 @@
 # GDB 17.2 distribution notice
 
-`aarch64_bins/gdb` and the matching container image are built from the exact
+`artifacts/aarch64/gdb` and the matching container image are built from the exact
 archive recorded in `../source.lock`. That archive is mirrored in this
 repository's immutable `gdb-17.2-source` release; the official GNU URL remains
 the authoritative upstream location and checksum-equivalent fallback.

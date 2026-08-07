@@ -8,23 +8,26 @@ Repository contract:
 
 - A committed binary must have a corresponding committed build script. Do not
   add binaries of unknown origin or binaries that can only be rebuilt by hand.
-- Put binaries in `<architecture>_bins/` and build automation in
-  `<architecture>_alpine_build_scripts/`. Keep a tool's container definition,
-  guest-side build script, patches, and host-side entry point together in one
-  tool-named directory when more than one file is needed.
+- Put binaries in `artifacts/<architecture>/`, tool builds in
+  `recipes/<tool>/<architecture>/`, and reusable build environments in
+  `builders/<architecture>/`. Internal architecture identifiers are `aarch64`
+  and `x86_64`; translate them to OCI names only at container boundaries.
+- Keep a tool's container definition, guest-side build script, patches, source
+  lock, licenses, and host-side entry point together in its recipe directory.
 - Prefer one obvious host-side command per artifact. It should create or replace
-  the expected file in `<architecture>_bins/` and fail with a useful message if
-  prerequisites or validation are missing.
+  the expected file in `artifacts/<architecture>/` and fail with a useful
+  message if prerequisites or validation are missing.
 - Treat an architecture label as a promise about the executable's host
   architecture, not merely the kind of code it can inspect or process. For
-  example, `aarch64_bins/gdb` must itself execute on AArch64 Linux.
+  example, `artifacts/aarch64/gdb` must itself execute on AArch64 Linux.
 - Preserve existing artifacts and build paths unless the task explicitly
   replaces or removes them.
-- Every publishable recipe must have one valid `recipes.tsv` row. Keep generic
-  dispatch and publication metadata there; keep source, configure, license, and
-  smoke-test logic in the tool-owned recipe directory. Follow
-  `doc/adding-a-binary.md` and run `python3 scripts/recipes.py validate` when a
-  recipe or catalog field changes.
+- Every publishable recipe must have one valid `recipes/catalog.tsv` row. Keep
+  only its name, architecture, and enabled state there; derive paths, version,
+  image, tags, runner, and platform from repository conventions and locks. Keep
+  source, configure, license, and smoke-test logic in the tool-owned recipe.
+  Follow `doc/adding-a-binary.md` and run `python3 scripts/recipes.py validate`
+  when a recipe or catalog field changes.
 
 Reproducible build guidance:
 

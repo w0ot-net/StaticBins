@@ -3,7 +3,7 @@
 set -euo pipefail
 
 readonly SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
-readonly REPO_ROOT="$(cd -- "${SCRIPT_DIR}/.." && pwd)"
+readonly REPO_ROOT="$(cd -- "${SCRIPT_DIR}/../.." && pwd)"
 readonly ENVIRONMENT_LOCK="${SCRIPT_DIR}/environment.lock"
 readonly PLATFORM="linux/arm64"
 
@@ -33,7 +33,7 @@ fi
 
 if ! docker pull --platform "${PLATFORM}" "${BUILDER_IMAGE}"; then
     echo "error: could not pull ${BUILDER_IMAGE}" >&2
-    echo "Publish and lock a replacement with build-builder.sh and publish-builder.yml." >&2
+    echo "Publish and lock a replacement with build.sh and publish-builder.yml." >&2
     exit 1
 fi
 

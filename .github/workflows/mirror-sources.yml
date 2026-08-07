@@ -24,7 +24,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          source aarch64_alpine_build_scripts/gdb/source.lock
+          source recipes/gdb/aarch64/source.lock
           expected_mirror="https://github.com/${GITHUB_REPOSITORY}/releases/download/${SOURCE_RELEASE_TAG}/${SOURCE_ARCHIVE}"
           test "${SOURCE_MIRROR_URL}" = "${expected_mirror}"
           test "${SOURCE_UPSTREAM_URL}" != "${SOURCE_MIRROR_URL}"
@@ -64,9 +64,9 @@ jobs:
           curl --fail --location --retry 5 --retry-all-errors \
             --output "mirror-assets/${SOURCE_ARCHIVE}" "${SOURCE_UPSTREAM_URL}"
           echo "${SOURCE_SHA256}  mirror-assets/${SOURCE_ARCHIVE}" | sha256sum -c -
-          cp aarch64_alpine_build_scripts/gdb/source.lock mirror-assets/source.lock
+          cp recipes/gdb/aarch64/source.lock mirror-assets/source.lock
           tar -czf mirror-assets/gdb-distribution-materials.tar.gz \
-            -C aarch64_alpine_build_scripts/gdb source.lock licenses
+            -C recipes/gdb/aarch64 source.lock licenses
 
       - name: Publish immutable source release once
         env:

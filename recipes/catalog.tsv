@@ -1,0 +1,2 @@
+name	architecture	enabled
+gdb	aarch64	true

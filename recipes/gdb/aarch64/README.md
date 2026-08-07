@@ -1,0 +1,31 @@
+# AArch64 GDB recipe
+
+This recipe builds GDB 17.2 as a stripped static AArch64 executable. From the
+repository root, use the stable dispatcher or the direct recipe command:
+
+```sh
+./build.sh gdb
+./recipes/gdb/aarch64/build.sh
+```
+
+Both commands require Bash, Docker, and access to the public images and source
+URLs named by the committed locks. The build consumes the exact builder digest
+in `builders/aarch64/environment.lock`, validates the candidate, and writes
+`artifacts/aarch64/gdb`. On non-AArch64 Linux hosts it uses QEMU user-mode
+emulation and may register the pinned `binfmt_misc` helper with `--privileged`
+when support is absent. Set `BUILD_JOBS` to tune compilation parallelism:
+
+```sh
+BUILD_JOBS=4 ./build.sh gdb
+```
+
+`source.lock` owns the version, archive, checksum, immutable repository mirror,
+official fallback URL, and license identifier. Either URL is accepted only
+after the same locked checksum passes. Reviewed license material and the exact
+linked-archive provenance inventory are under `licenses/` and are copied into
+the artifact image.
+
+The build rejects an ELF interpreter, dynamic dependencies, a wrong machine,
+or an incomplete link inventory. Python, Guile, debuginfod, Babeltrace, libipt,
+and source-highlight are intentionally disabled to keep the artifact
+self-contained.

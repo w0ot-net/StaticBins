@@ -3,15 +3,15 @@
 set -euo pipefail
 
 readonly SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
-readonly REPO_ROOT="$(cd -- "${SCRIPT_DIR}/../.." && pwd)"
-readonly OUTPUT_DIR="${REPO_ROOT}/aarch64_bins"
+readonly REPO_ROOT="$(cd -- "${SCRIPT_DIR}/../../.." && pwd)"
+readonly OUTPUT_DIR="${REPO_ROOT}/artifacts/aarch64"
 readonly OUTPUT_FILE="${OUTPUT_DIR}/gdb"
-readonly ENVIRONMENT_LOCK="${SCRIPT_DIR}/../environment.lock"
+readonly ENVIRONMENT_LOCK="${REPO_ROOT}/builders/aarch64/environment.lock"
 readonly SOURCE_LOCK="${SCRIPT_DIR}/source.lock"
 readonly PLATFORM="linux/arm64"
 readonly BUILD_JOBS="${BUILD_JOBS:-8}"
 
-# shellcheck source=../environment.lock
+# shellcheck source=../../../builders/aarch64/environment.lock
 . "${ENVIRONMENT_LOCK}"
 
 : "${ALPINE_IMAGE:?missing ALPINE_IMAGE in environment.lock}"
@@ -58,7 +58,7 @@ fi
 echo "Checking for the published reusable builder..."
 if ! docker pull --platform "${PLATFORM}" "${BUILDER_IMAGE}"; then
     echo "error: could not pull locked builder ${BUILDER_IMAGE}" >&2
-    echo "Publish and lock a replacement with ./aarch64_alpine_build_scripts/build-builder.sh and .github/workflows/publish-builder.yml." >&2
+    echo "Publish and lock a replacement with ./builders/aarch64/build.sh and .github/workflows/publish-builder.yml." >&2
     exit 1
 fi
 

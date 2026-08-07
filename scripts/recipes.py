@@ -16,40 +16,21 @@ from typing import Iterable
 
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
-FIELDS = (
-    "name",
-    "architecture",
-    "version",
-    "recipe_dir",
-    "build_script",
-    "output",
-    "image",
-    "tags",
-    "cache_scope",
-    "runner",
-    "enabled",
-)
+FIELDS = ("name", "architecture", "enabled")
 ARCHITECTURES = {
     "aarch64": {
         "runner": "ubuntu-24.04-arm",
         "platform": "linux/arm64",
-        "scripts_dir": "aarch64_alpine_build_scripts",
-        "bins_dir": "aarch64_bins",
+        "tag_suffix": "aarch64",
     },
-    "x64": {
+    "x86_64": {
         "runner": "ubuntu-24.04",
         "platform": "linux/amd64",
-        "scripts_dir": "x64_alpine_build_scripts",
-        "bins_dir": "x64_bins",
+        "tag_suffix": "x86_64",
     },
 }
 IDENTIFIER_RE = re.compile(r"[a-z0-9][a-z0-9_-]*\Z")
 VERSION_RE = re.compile(r"[A-Za-z0-9][A-Za-z0-9._+-]*\Z")
-IMAGE_RE = re.compile(
-    r"ghcr[.]io/[a-z0-9](?:[a-z0-9-]*[a-z0-9])?/"
-    r"static_bins-[a-z0-9][a-z0-9._-]*\Z"
-)
-TAG_RE = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]{0,127}\Z")
 DIGEST_IMAGE_RE = re.compile(r"[^@\s]+@sha256:[0-9a-f]{64}\Z")
 SHA256_RE = re.compile(r"[0-9a-f]{64}\Z")
 LOCK_ASSIGNMENT_RE = re.compile(r"([A-Z][A-Z0-9_]*)=([^\s#]+)\Z")
@@ -67,32 +48,17 @@ class Recipe:
     recipe_dir: str
     build_script: str
     output: str
-    image: str
-    tags: tuple[str, ...]
+    image_name: str
+    tag_suffixes: tuple[str, str]
     cache_scope: str
     runner: str
+    platform: str
+    environment_lock: str
     enabled: bool
 
 
 def _error(line_number: int, message: str) -> CatalogError:
     return CatalogError(f"line {line_number}: {message}")
-
-
-def _safe_relative_path(root: Path, value: str, field: str, line_number: int) -> Path:
-    if "\\" in value:
-        raise _error(line_number, f"{field} must use POSIX separators")
-    path = PurePosixPath(value)
-    if path.is_absolute() or value != path.as_posix():
-        raise _error(line_number, f"{field} must be a normalized relative path")
-    if not path.parts or any(part in {"", ".", ".."} for part in path.parts):
-        raise _error(line_number, f"{field} contains an unsafe path component")
-
-    root_resolved = root.resolve()
-    candidate = root.joinpath(*path.parts)
-    candidate_resolved = candidate.resolve(strict=False)
-    if os.path.commonpath((root_resolved, candidate_resolved)) != str(root_resolved):
-        raise _error(line_number, f"{field} escapes the repository")
-    return candidate
 
 
 def _git_index_mode(root: Path, relative_path: str) -> str | None:
@@ -117,8 +83,7 @@ def _require_executable(root: Path, relative_path: str, line_number: int) -> Non
         if mode != "100755":
             raise _error(line_number, f"tracked executable has Git mode {mode}: {relative_path}")
         return
-    path = root / relative_path
-    if not os.access(path, os.X_OK):
+    if not os.access(root / relative_path, os.X_OK):
         raise _error(line_number, f"untracked file is not executable: {relative_path}")
 
 
@@ -143,8 +108,15 @@ def _read_lock(path: Path, line_number: int) -> dict[str, str]:
 
 
 def _require_file(path: Path, field: str, line_number: int) -> None:
-    if not path.is_file():
+    if path.is_symlink() or not path.is_file():
         raise _error(line_number, f"missing {field}: {path}")
+
+
+def _require_inside(root: Path, path: Path, field: str, line_number: int) -> None:
+    root_resolved = root.resolve()
+    path_resolved = path.resolve(strict=False)
+    if os.path.commonpath((root_resolved, path_resolved)) != str(root_resolved):
+        raise _error(line_number, f"{field} escapes the repository: {path}")
 
 
 def _validate_recipe(root: Path, row: dict[str, str], line_number: int) -> Recipe:
@@ -164,47 +136,40 @@ def _validate_recipe(root: Path, row: dict[str, str], line_number: int) -> Recip
     if architecture_config is None:
         raise _error(line_number, f"unsupported architecture: {architecture}")
 
-    version = row["version"]
-    if VERSION_RE.fullmatch(version) is None:
-        raise _error(line_number, f"invalid version: {version}")
+    if row["enabled"] not in {"true", "false"}:
+        raise _error(line_number, "enabled must be true or false")
 
-    scripts_dir = architecture_config["scripts_dir"]
-    bins_dir = architecture_config["bins_dir"]
-    expected_recipe_dir = f"{scripts_dir}/{name}"
-    expected_build_script = f"{expected_recipe_dir}/build.sh"
-    expected_output = f"{bins_dir}/{name}"
-    if row["recipe_dir"] != expected_recipe_dir:
-        raise _error(line_number, f"recipe_dir must be {expected_recipe_dir}")
-    if row["build_script"] != expected_build_script:
-        raise _error(line_number, f"build_script must be {expected_build_script}")
-    if row["output"] != expected_output:
-        raise _error(line_number, f"output must be {expected_output}")
+    recipe_dir = f"recipes/{name}/{architecture}"
+    build_script = f"{recipe_dir}/build.sh"
+    output = f"artifacts/{architecture}/{name}"
+    environment_lock = f"builders/{architecture}/environment.lock"
+    recipe_path = root / recipe_dir
 
-    recipe_dir = _safe_relative_path(root, row["recipe_dir"], "recipe_dir", line_number)
-    build_script = _safe_relative_path(root, row["build_script"], "build_script", line_number)
-    output = _safe_relative_path(root, row["output"], "output", line_number)
-    if not recipe_dir.is_dir():
-        raise _error(line_number, f"missing recipe directory: {row['recipe_dir']}")
-    _require_file(build_script, "build script", line_number)
-    _require_file(output, "committed output", line_number)
-    _require_executable(root, row["build_script"], line_number)
-    _require_executable(root, row["output"], line_number)
+    if recipe_path.is_symlink() or not recipe_path.is_dir():
+        raise _error(line_number, f"missing recipe directory: {recipe_dir}")
+    required_paths = (
+        (root / build_script, "build script"),
+        (root / output, "committed output"),
+        (recipe_path / "Dockerfile", "Dockerfile"),
+        (recipe_path / "source.lock", "source lock"),
+        (recipe_path / "licenses" / "NOTICE.md", "distribution notice"),
+        (recipe_path / "licenses" / "archive-inventory.tsv", "linked-archive inventory"),
+        (root / environment_lock, "environment lock"),
+    )
+    _require_inside(root, recipe_path, "recipe directory", line_number)
+    for path, field in required_paths:
+        _require_inside(root, path, field, line_number)
+        _require_file(path, field, line_number)
+    _require_executable(root, build_script, line_number)
+    _require_executable(root, output, line_number)
 
-    dockerfile = recipe_dir / "Dockerfile"
-    source_lock = recipe_dir / "source.lock"
-    notice = recipe_dir / "licenses" / "NOTICE.md"
-    inventory = recipe_dir / "licenses" / "archive-inventory.tsv"
-    _require_file(dockerfile, "Dockerfile", line_number)
-    _require_file(source_lock, "source lock", line_number)
-    _require_file(notice, "distribution notice", line_number)
-    _require_file(inventory, "linked-archive inventory", line_number)
-
-    source_values = _read_lock(source_lock, line_number)
+    source_values = _read_lock(recipe_path / "source.lock", line_number)
     required_source_fields = {
         "SOURCE_VERSION",
         "SOURCE_ARCHIVE",
         "SOURCE_SHA256",
         "SOURCE_UPSTREAM_URL",
+        "SOURCE_RELEASE_TAG",
         "SOURCE_MIRROR_URL",
         "SOURCE_LICENSE",
     }
@@ -214,60 +179,43 @@ def _validate_recipe(root: Path, row: dict[str, str], line_number: int) -> Recip
             line_number,
             f"source.lock is missing: {', '.join(missing_source_fields)}",
         )
-    if source_values["SOURCE_VERSION"] != version:
-        raise _error(line_number, "catalog version does not match SOURCE_VERSION")
+
+    version = source_values["SOURCE_VERSION"]
+    if VERSION_RE.fullmatch(version) is None:
+        raise _error(line_number, f"invalid SOURCE_VERSION: {version}")
     if SHA256_RE.fullmatch(source_values["SOURCE_SHA256"]) is None:
         raise _error(line_number, "SOURCE_SHA256 must be 64 lowercase hexadecimal characters")
+    source_archive = source_values["SOURCE_ARCHIVE"]
+    if PurePosixPath(source_archive).name != source_archive or source_archive in {".", ".."}:
+        raise _error(line_number, "SOURCE_ARCHIVE must be a safe filename")
+    release_tag = source_values["SOURCE_RELEASE_TAG"]
+    if VERSION_RE.fullmatch(release_tag) is None:
+        raise _error(line_number, "SOURCE_RELEASE_TAG must be a safe release tag")
     for url_field in ("SOURCE_UPSTREAM_URL", "SOURCE_MIRROR_URL"):
         if not source_values[url_field].startswith("https://"):
             raise _error(line_number, f"{url_field} must use HTTPS")
+    mirror_suffix = f"/{release_tag}/{source_archive}"
+    if not source_values["SOURCE_MIRROR_URL"].endswith(mirror_suffix):
+        raise _error(line_number, "SOURCE_MIRROR_URL does not match the release tag and archive")
 
-    environment_relative = f"{scripts_dir}/environment.lock"
-    environment_lock = _safe_relative_path(
-        root, environment_relative, "environment lock", line_number
-    )
-    _require_file(environment_lock, "environment lock", line_number)
-    environment_values = _read_lock(environment_lock, line_number)
-    builder_image = environment_values.get("BUILDER_IMAGE", "")
-    if DIGEST_IMAGE_RE.fullmatch(builder_image) is None:
+    environment_values = _read_lock(root / environment_lock, line_number)
+    if DIGEST_IMAGE_RE.fullmatch(environment_values.get("BUILDER_IMAGE", "")) is None:
         raise _error(line_number, "environment lock must pin BUILDER_IMAGE by SHA-256 digest")
 
-    image = row["image"]
-    if IMAGE_RE.fullmatch(image) is None:
-        raise _error(line_number, f"invalid GHCR image: {image}")
-
-    tags = tuple(row["tags"].split(";"))
-    if any(TAG_RE.fullmatch(tag) is None for tag in tags) or len(set(tags)) != len(tags):
-        raise _error(line_number, "tags must be unique valid container tags")
-    required_tags = {f"{version}-{architecture}", f"{architecture}-latest"}
-    if set(tags) != required_tags:
-        raise _error(
-            line_number,
-            "tags must contain exactly the versioned and architecture-latest tags",
-        )
-
-    expected_cache_scope = f"{architecture}-{name}"
-    if row["cache_scope"] != expected_cache_scope:
-        raise _error(line_number, f"cache_scope must be {expected_cache_scope}")
-    if row["runner"] != architecture_config["runner"]:
-        raise _error(
-            line_number,
-            f"runner for {architecture} must be {architecture_config['runner']}",
-        )
-    if row["enabled"] not in {"true", "false"}:
-        raise _error(line_number, "enabled must be true or false")
-
+    tag_suffix = architecture_config["tag_suffix"]
     return Recipe(
         name=name,
         architecture=architecture,
         version=version,
-        recipe_dir=row["recipe_dir"],
-        build_script=row["build_script"],
-        output=row["output"],
-        image=image,
-        tags=tags,
-        cache_scope=row["cache_scope"],
-        runner=row["runner"],
+        recipe_dir=recipe_dir,
+        build_script=build_script,
+        output=output,
+        image_name=f"static_bins-{name}",
+        tag_suffixes=(f"{version}-{tag_suffix}", f"{tag_suffix}-latest"),
+        cache_scope=f"{architecture}-{name}",
+        runner=architecture_config["runner"],
+        platform=architecture_config["platform"],
+        environment_lock=environment_lock,
         enabled=row["enabled"] == "true",
     )
 
@@ -294,25 +242,10 @@ def load_catalog(root: Path, catalog_path: Path) -> list[Recipe]:
         raise CatalogError("catalog has no enabled recipes")
 
     seen_names: set[str] = set()
-    seen_paths: set[str] = set()
-    seen_scopes: set[str] = set()
-    seen_image_tags: set[str] = set()
     for recipe in recipes:
         if recipe.name in seen_names:
             raise CatalogError(f"duplicate recipe name: {recipe.name}")
         seen_names.add(recipe.name)
-        for path in (recipe.recipe_dir, recipe.build_script, recipe.output):
-            if path in seen_paths:
-                raise CatalogError(f"duplicate recipe path: {path}")
-            seen_paths.add(path)
-        if recipe.cache_scope in seen_scopes:
-            raise CatalogError(f"duplicate cache scope: {recipe.cache_scope}")
-        seen_scopes.add(recipe.cache_scope)
-        for tag in recipe.tags:
-            image_tag = f"{recipe.image}:{tag}"
-            if image_tag in seen_image_tags:
-                raise CatalogError(f"duplicate image tag: {image_tag}")
-            seen_image_tags.add(image_tag)
     return recipes
 
 
@@ -321,21 +254,18 @@ def matrix(recipes: Iterable[Recipe]) -> dict[str, list[dict[str, str]]]:
     for recipe in sorted(
         (recipe for recipe in recipes if recipe.enabled), key=lambda item: item.name
     ):
-        architecture_config = ARCHITECTURES[recipe.architecture]
         include.append(
             {
                 "architecture": recipe.architecture,
                 "cache_scope": recipe.cache_scope,
                 "context": recipe.recipe_dir,
                 "dockerfile": f"{recipe.recipe_dir}/Dockerfile",
-                "environment_lock": (
-                    f"{architecture_config['scripts_dir']}/environment.lock"
-                ),
-                "image": recipe.image,
+                "environment_lock": recipe.environment_lock,
+                "image_name": recipe.image_name,
                 "name": recipe.name,
-                "platform": architecture_config["platform"],
+                "platform": recipe.platform,
                 "runner": recipe.runner,
-                "tags": "\n".join(f"{recipe.image}:{tag}" for tag in recipe.tags),
+                "tag_suffixes": "\n".join(recipe.tag_suffixes),
                 "version": recipe.version,
             }
         )
@@ -346,7 +276,7 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("command", choices=("validate", "matrix"))
     parser.add_argument("--root", type=Path, default=REPOSITORY_ROOT)
-    parser.add_argument("--catalog", type=Path, default=Path("recipes.tsv"))
+    parser.add_argument("--catalog", type=Path, default=Path("recipes/catalog.tsv"))
     args = parser.parse_args(argv)
 
     root = args.root.resolve()

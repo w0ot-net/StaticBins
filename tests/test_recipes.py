@@ -36,20 +36,18 @@ class CatalogFixture:
         *,
         architecture: str = "aarch64",
         version: str = "1.0",
-        image: str | None = None,
         enabled: str = "true",
         script_body: str = "#!/usr/bin/env bash\nexit 37\n",
     ) -> dict[str, str]:
-        config = recipes.ARCHITECTURES[architecture]
-        scripts_dir = config["scripts_dir"]
-        bins_dir = config["bins_dir"]
-        recipe_dir = self.root / scripts_dir / name
+        recipe_dir = self.root / "recipes" / name / architecture
         license_dir = recipe_dir / "licenses"
-        output = self.root / bins_dir / name
+        builder_dir = self.root / "builders" / architecture
+        output = self.root / "artifacts" / architecture / name
         license_dir.mkdir(parents=True, exist_ok=True)
+        builder_dir.mkdir(parents=True, exist_ok=True)
         output.parent.mkdir(parents=True, exist_ok=True)
 
-        (self.root / scripts_dir / "environment.lock").write_text(
+        (builder_dir / "environment.lock").write_text(
             "BUILDER_IMAGE=ghcr.io/example/static_bins-builder@sha256:"
             + "1" * 64
             + "\n",
@@ -61,11 +59,12 @@ class CatalogFixture:
             f"SOURCE_ARCHIVE={name}-{version}.tar.xz\n"
             f"SOURCE_SHA256={'2' * 64}\n"
             f"SOURCE_UPSTREAM_URL=https://upstream.invalid/{name}.tar.xz\n"
-            f"SOURCE_MIRROR_URL=https://mirror.invalid/{name}.tar.xz\n"
+            f"SOURCE_RELEASE_TAG={name}-{version}-source\n"
+            f"SOURCE_MIRROR_URL=https://mirror.invalid/releases/download/"
+            f"{name}-{version}-source/{name}-{version}.tar.xz\n"
             "SOURCE_LICENSE=GPL-3.0-or-later\n",
             encoding="utf-8",
         )
-        (recipe_dir / "Dockerfile").write_text("FROM scratch\n", encoding="utf-8")
         (recipe_dir / "build.sh").write_text(script_body, encoding="utf-8")
         (license_dir / "NOTICE.md").write_text("notice\n", encoding="utf-8")
         (license_dir / "archive-inventory.tsv").write_text(
@@ -78,21 +77,14 @@ class CatalogFixture:
         row = {
             "name": name,
             "architecture": architecture,
-            "version": version,
-            "recipe_dir": f"{scripts_dir}/{name}",
-            "build_script": f"{scripts_dir}/{name}/build.sh",
-            "output": f"{bins_dir}/{name}",
-            "image": image or f"ghcr.io/example/static_bins-{name}",
-            "tags": f"{version}-{architecture};{architecture}-latest",
-            "cache_scope": f"{architecture}-{name}",
-            "runner": config["runner"],
             "enabled": enabled,
         }
         self.rows.append(row)
         return row
 
     def write_catalog(self, header: tuple[str, ...] = recipes.FIELDS) -> Path:
-        catalog = self.root / "recipes.tsv"
+        catalog = self.root / "recipes" / "catalog.tsv"
+        catalog.parent.mkdir(parents=True, exist_ok=True)
         lines = ["\t".join(header)]
         for row in self.rows:
             lines.append("\t".join(row[field] for field in recipes.FIELDS))
@@ -100,10 +92,18 @@ class CatalogFixture:
         return catalog
 
     def track(self) -> None:
-        subprocess.run(["git", "-C", str(self.root), "add", "--", "."], check=True)
+        subprocess.run(
+            ["git", "-C", str(self.root), "add", "--", "artifacts", "builders", "recipes"],
+            check=True,
+        )
         executable_paths = []
         for row in self.rows:
-            executable_paths.extend((row["build_script"], row["output"]))
+            executable_paths.extend(
+                (
+                    f"recipes/{row['name']}/{row['architecture']}/build.sh",
+                    f"artifacts/{row['architecture']}/{row['name']}",
+                )
+            )
         subprocess.run(
             [
                 "git",
@@ -127,6 +127,7 @@ class RecipeCatalogTests(unittest.TestCase):
         temporary_directory, fixture = self.make_fixture()
         self.addCleanup(temporary_directory.cleanup)
         fixture.add_recipe()
+        fixture.add_recipe("tool", architecture="x86_64", version="2.5")
         catalog = fixture.write_catalog()
         fixture.track()
 
@@ -134,12 +135,29 @@ class RecipeCatalogTests(unittest.TestCase):
         first = recipes.matrix(loaded)
         second = recipes.matrix(recipes.load_catalog(fixture.root, catalog))
         self.assertEqual(first, second)
-        self.assertEqual(["gdb"], [entry["name"] for entry in first["include"]])
+        self.assertEqual(["gdb", "tool"], [entry["name"] for entry in first["include"]])
         self.assertEqual("linux/arm64", first["include"][0]["platform"])
+        self.assertEqual("linux/amd64", first["include"][1]["platform"])
+        self.assertEqual("static_bins-gdb", first["include"][0]["image_name"])
         self.assertEqual(
-            "ghcr.io/example/static_bins-gdb:1.0-aarch64\n"
-            "ghcr.io/example/static_bins-gdb:aarch64-latest",
-            first["include"][0]["tags"],
+            "1.0-aarch64\naarch64-latest",
+            first["include"][0]["tag_suffixes"],
+        )
+        self.assertEqual(
+            "2.5-x86_64\nx86_64-latest",
+            first["include"][1]["tag_suffixes"],
+        )
+
+    def test_version_is_derived_from_source_lock(self) -> None:
+        temporary_directory, fixture = self.make_fixture()
+        self.addCleanup(temporary_directory.cleanup)
+        fixture.add_recipe(version="7.4")
+        catalog = fixture.write_catalog()
+        fixture.track()
+        loaded = recipes.load_catalog(fixture.root, catalog)
+        self.assertEqual("7.4", loaded[0].version)
+        self.assertEqual(
+            ("7.4-aarch64", "aarch64-latest"), loaded[0].tag_suffixes
         )
 
     def test_unknown_header_is_rejected(self) -> None:
@@ -160,27 +178,16 @@ class RecipeCatalogTests(unittest.TestCase):
         with self.assertRaisesRegex(recipes.CatalogError, "duplicate recipe name"):
             recipes.load_catalog(fixture.root, catalog)
 
-    def test_duplicate_full_image_tag_is_rejected(self) -> None:
-        temporary_directory, fixture = self.make_fixture()
-        self.addCleanup(temporary_directory.cleanup)
-        first = fixture.add_recipe("gdb", image="ghcr.io/example/static_bins-tools")
-        second = fixture.add_recipe("tool", image="ghcr.io/example/static_bins-tools")
-        second["tags"] = first["tags"]
-        catalog = fixture.write_catalog()
-        fixture.track()
-        with self.assertRaisesRegex(recipes.CatalogError, "duplicate image tag"):
-            recipes.load_catalog(fixture.root, catalog)
-
-    def test_path_traversal_and_wrong_output_are_rejected(self) -> None:
+    def test_unsafe_name_and_unsupported_architecture_are_rejected(self) -> None:
         for field, value, expected_message in (
-            ("recipe_dir", "../gdb", "recipe_dir must be"),
-            ("output", "x64_bins/gdb", "output must be"),
+            ("name", "../gdb", "invalid recipe name"),
+            ("architecture", "amd64", "unsupported architecture"),
         ):
             with self.subTest(field=field):
                 temporary_directory, fixture = self.make_fixture()
                 self.addCleanup(temporary_directory.cleanup)
                 row = fixture.add_recipe()
-                fixture.write_catalog()
+                catalog = fixture.write_catalog()
                 fixture.track()
                 row[field] = value
                 catalog = fixture.write_catalog()
@@ -189,10 +196,12 @@ class RecipeCatalogTests(unittest.TestCase):
 
     def test_missing_required_recipe_files_are_rejected(self) -> None:
         for relative_path, expected_message in (
-            ("aarch64_alpine_build_scripts/gdb/Dockerfile", "Dockerfile"),
-            ("aarch64_alpine_build_scripts/gdb/build.sh", "build script"),
-            ("aarch64_alpine_build_scripts/gdb/source.lock", "source lock"),
-            ("aarch64_alpine_build_scripts/gdb/licenses/NOTICE.md", "notice"),
+            ("recipes/gdb/aarch64/Dockerfile", "Dockerfile"),
+            ("recipes/gdb/aarch64/build.sh", "build script"),
+            ("recipes/gdb/aarch64/source.lock", "source lock"),
+            ("recipes/gdb/aarch64/licenses/NOTICE.md", "notice"),
+            ("artifacts/aarch64/gdb", "committed output"),
+            ("builders/aarch64/environment.lock", "environment lock"),
         ):
             with self.subTest(relative_path=relative_path):
                 temporary_directory, fixture = self.make_fixture()
@@ -207,10 +216,11 @@ class RecipeCatalogTests(unittest.TestCase):
     def test_tracked_executable_mode_comes_from_git_index(self) -> None:
         temporary_directory, fixture = self.make_fixture()
         self.addCleanup(temporary_directory.cleanup)
-        row = fixture.add_recipe()
+        fixture.add_recipe()
         catalog = fixture.write_catalog()
         fixture.track()
-        os.chmod(fixture.root / row["build_script"], 0o755)
+        build_script = "recipes/gdb/aarch64/build.sh"
+        os.chmod(fixture.root / build_script, 0o755)
         subprocess.run(
             [
                 "git",
@@ -219,21 +229,21 @@ class RecipeCatalogTests(unittest.TestCase):
                 "update-index",
                 "--chmod=-x",
                 "--",
-                row["build_script"],
+                build_script,
             ],
             check=True,
         )
         with self.assertRaisesRegex(recipes.CatalogError, "Git mode 100644"):
             recipes.load_catalog(fixture.root, catalog)
 
-    def test_invalid_runner_and_disabled_only_catalog_are_rejected(self) -> None:
+    def test_malformed_boolean_and_disabled_only_catalog_are_rejected(self) -> None:
         temporary_directory, fixture = self.make_fixture()
         self.addCleanup(temporary_directory.cleanup)
         row = fixture.add_recipe()
-        row["runner"] = "self-hosted"
+        row["enabled"] = "yes"
         catalog = fixture.write_catalog()
         fixture.track()
-        with self.assertRaisesRegex(recipes.CatalogError, "runner"):
+        with self.assertRaisesRegex(recipes.CatalogError, "enabled must be"):
             recipes.load_catalog(fixture.root, catalog)
 
         temporary_directory2, fixture2 = self.make_fixture()
@@ -243,21 +253,6 @@ class RecipeCatalogTests(unittest.TestCase):
         fixture2.track()
         with self.assertRaisesRegex(recipes.CatalogError, "no enabled recipes"):
             recipes.load_catalog(fixture2.root, catalog2)
-
-    def test_malformed_boolean_and_tag_list_are_rejected(self) -> None:
-        for field, value, expected_message in (
-            ("enabled", "yes", "enabled must be"),
-            ("tags", "1.0-aarch64;1.0-aarch64", "tags must be unique"),
-        ):
-            with self.subTest(field=field):
-                temporary_directory, fixture = self.make_fixture()
-                self.addCleanup(temporary_directory.cleanup)
-                row = fixture.add_recipe()
-                row[field] = value
-                catalog = fixture.write_catalog()
-                fixture.track()
-                with self.assertRaisesRegex(recipes.CatalogError, expected_message):
-                    recipes.load_catalog(fixture.root, catalog)
 
     def test_disabled_recipe_is_excluded_from_matrix(self) -> None:
         temporary_directory, fixture = self.make_fixture()
@@ -316,6 +311,34 @@ class RecipeCatalogTests(unittest.TestCase):
             [str(dispatcher), "gdb"], check=False, capture_output=True, text=True
         )
         self.assertEqual(2, disabled.returncode)
+
+    def test_dispatcher_rejects_duplicate_malformed_and_missing_script(self) -> None:
+        for mutation in ("duplicate", "malformed", "missing"):
+            with self.subTest(mutation=mutation):
+                temporary_directory, fixture = self.make_fixture()
+                self.addCleanup(temporary_directory.cleanup)
+                fixture.add_recipe()
+                fixture.write_catalog()
+                dispatcher = fixture.root / "build.sh"
+                shutil.copy2(REPOSITORY_ROOT / "build.sh", dispatcher)
+                os.chmod(dispatcher, 0o755)
+
+                if mutation == "duplicate":
+                    fixture.rows.append(dict(fixture.rows[0]))
+                    fixture.write_catalog()
+                elif mutation == "malformed":
+                    fixture.rows[0]["enabled"] = "yes"
+                    fixture.write_catalog()
+                else:
+                    (fixture.root / "recipes/gdb/aarch64/build.sh").unlink()
+
+                result = subprocess.run(
+                    [str(dispatcher), "list"],
+                    check=False,
+                    capture_output=True,
+                    text=True,
+                )
+                self.assertEqual(1, result.returncode)
 
 
 if __name__ == "__main__":

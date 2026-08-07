@@ -10,7 +10,7 @@ on:
         default: aarch64
         options:
           - aarch64
-          - x64
+          - x86_64
 
 permissions:
   contents: read
@@ -21,7 +21,7 @@ env:
 
 jobs:
   publish:
-    runs-on: ${{ inputs.architecture == 'x64' && 'ubuntu-24.04' || 'ubuntu-24.04-arm' }}
+    runs-on: ${{ inputs.architecture == 'x86_64' && 'ubuntu-24.04' || 'ubuntu-24.04-arm' }}
 
     steps:
       - name: Check out repository
@@ -37,18 +37,20 @@ jobs:
 
           case "${ARCHITECTURE}" in
             aarch64)
-              directory=aarch64_alpine_build_scripts
+              directory=builders/aarch64
               expected_machine=aarch64
+              builder_tag_prefix=aarch64
               platform=linux/arm64
               floating_tag=aarch64-latest
               cache_scope=aarch64-builder
               ;;
-            x64)
-              directory=x64_alpine_build_scripts
+            x86_64)
+              directory=builders/x86_64
               expected_machine=x86_64
+              builder_tag_prefix=x64
               platform=linux/amd64
               floating_tag=x64-latest
-              cache_scope=x64-builder
+              cache_scope=x86_64-builder
               ;;
             *)
               echo "error: unsupported architecture ${ARCHITECTURE}" >&2
@@ -67,8 +69,8 @@ jobs:
             *) echo "error: ALPINE_IMAGE must be pinned by digest" >&2; exit 1 ;;
           esac
           case "${BUILDER_TAG}" in
-            "${ARCHITECTURE}"-*) ;;
-            *) echo "error: BUILDER_TAG does not match ${ARCHITECTURE}" >&2; exit 1 ;;
+            "${builder_tag_prefix}"-*) ;;
+            *) echo "error: BUILDER_TAG does not match ${builder_tag_prefix}" >&2; exit 1 ;;
           esac
 
           echo "directory=${directory}" >> "${GITHUB_OUTPUT}"

@@ -3,8 +3,8 @@
 set -euo pipefail
 
 readonly SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
-readonly CATALOG="${SCRIPT_DIR}/recipes.tsv"
-readonly HEADER=$'name\tarchitecture\tversion\trecipe_dir\tbuild_script\toutput\timage\ttags\tcache_scope\trunner\tenabled'
+readonly CATALOG="${SCRIPT_DIR}/recipes/catalog.tsv"
+readonly HEADER=$'name\tarchitecture\tenabled'
 
 usage() {
     echo "usage: ./build.sh list | ./build.sh <recipe>" >&2
@@ -43,18 +43,14 @@ while IFS= read -r catalog_line || [[ -n "${catalog_line}" ]]; do
         exit 1
     }
     IFS=$'\t' read -r -a columns <<< "${catalog_line}"
-    if [[ ${#columns[@]} -ne 11 ]]; then
+    if [[ ${#columns[@]} -ne 3 ]]; then
         echo "error: malformed recipe catalog row" >&2
         exit 1
     fi
 
     name="${columns[0]}"
     architecture="${columns[1]}"
-    version="${columns[2]}"
-    recipe_dir="${columns[3]}"
-    build_script="${columns[4]}"
-    output="${columns[5]}"
-    enabled="${columns[10]}"
+    enabled="${columns[2]}"
 
     if [[ ! "${name}" =~ ^[a-z0-9][a-z0-9_-]*$ || "${name}" == "list" ]]; then
         echo "error: invalid recipe name in catalog: ${name}" >&2
@@ -65,8 +61,22 @@ while IFS= read -r catalog_line || [[ -n "${catalog_line}" ]]; do
         exit 1
     fi
     seen_names["${name}"]=1
+    case "${architecture}" in
+        aarch64 | x86_64) ;;
+        *)
+            echo "error: unsupported architecture for ${name}: ${architecture}" >&2
+            exit 1
+            ;;
+    esac
     if [[ "${enabled}" != "true" && "${enabled}" != "false" ]]; then
         echo "error: invalid enabled value for ${name}" >&2
+        exit 1
+    fi
+
+    build_script="recipes/${name}/${architecture}/build.sh"
+    absolute_script="${SCRIPT_DIR}/${build_script}"
+    if [[ "${enabled}" == "true" && (! -f "${absolute_script}" || ! -x "${absolute_script}") ]]; then
+        echo "error: recipe build script is missing or not executable: ${absolute_script}" >&2
         exit 1
     fi
 
@@ -77,29 +87,11 @@ while IFS= read -r catalog_line || [[ -n "${catalog_line}" ]]; do
         continue
     fi
 
-    if [[ "${name}" != "${requested_recipe}" ]]; then
-        continue
+    if [[ "${name}" == "${requested_recipe}" ]]; then
+        match_count=$((match_count + 1))
+        matched_enabled="${enabled}"
+        matched_script="${absolute_script}"
     fi
-    match_count=$((match_count + 1))
-    matched_enabled="${enabled}"
-
-    case "${architecture}" in
-        aarch64 | x64) ;;
-        *)
-            echo "error: unsupported architecture for ${name}: ${architecture}" >&2
-            exit 1
-            ;;
-    esac
-    expected_recipe_dir="${architecture}_alpine_build_scripts/${name}"
-    expected_script="${expected_recipe_dir}/build.sh"
-    expected_output="${architecture}_bins/${name}"
-    if [[ "${recipe_dir}" != "${expected_recipe_dir}" ||
-          "${build_script}" != "${expected_script}" ||
-          "${output}" != "${expected_output}" ]]; then
-        echo "error: unsafe or nonstandard paths for recipe ${name}" >&2
-        exit 1
-    fi
-    matched_script="${SCRIPT_DIR}/${build_script}"
 done < <(tail -n +2 "${CATALOG}")
 
 if [[ "${requested_recipe}" == "list" ]]; then
@@ -116,10 +108,6 @@ fi
 if [[ "${matched_enabled}" != "true" ]]; then
     echo "error: recipe is disabled: ${requested_recipe}" >&2
     exit 2
-fi
-if [[ ! -f "${matched_script}" || ! -x "${matched_script}" ]]; then
-    echo "error: recipe build script is missing or not executable: ${matched_script}" >&2
-    exit 1
 fi
 
 cd -- "${SCRIPT_DIR}"

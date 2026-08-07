@@ -1,2 +1,0 @@
-name	architecture	version	recipe_dir	build_script	output	image	tags	cache_scope	runner	enabled
-gdb	aarch64	17.2	aarch64_alpine_build_scripts/gdb	aarch64_alpine_build_scripts/gdb/build.sh	aarch64_bins/gdb	ghcr.io/w0ot-net/static_bins-gdb	17.2-aarch64;aarch64-latest	aarch64-gdb	ubuntu-24.04-arm	true

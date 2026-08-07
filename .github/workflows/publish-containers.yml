@@ -5,9 +5,10 @@ on:
     branches: [main]
     paths:
       - ".github/workflows/publish-containers.yml"
-      - "recipes.tsv"
+      - "recipes/catalog.tsv"
       - "scripts/recipes.py"
-      - "*_alpine_build_scripts/**"
+      - "builders/**"
+      - "recipes/**"
   workflow_dispatch:
 
 permissions:
@@ -66,6 +67,25 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Compose registry tags
+        id: registry
+        shell: bash
+        env:
+          IMAGE_NAME: ${{ matrix.image_name }}
+          TAG_SUFFIXES: ${{ matrix.tag_suffixes }}
+        run: |
+          set -euo pipefail
+          owner="${GITHUB_REPOSITORY_OWNER,,}"
+          image="ghcr.io/${owner}/${IMAGE_NAME}"
+          echo "image=${image}" >> "${GITHUB_OUTPUT}"
+          {
+            echo 'tags<<EOF'
+            while IFS= read -r tag_suffix; do
+              printf '%s:%s\n' "${image}" "${tag_suffix}"
+            done <<< "${TAG_SUFFIXES}"
+            echo EOF
+          } >> "${GITHUB_OUTPUT}"
+
       - name: Build and publish artifact
         uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7.3.0
         with:
@@ -76,7 +96,7 @@ jobs:
             BUILDER_IMAGE=${{ steps.environment.outputs.builder_image }}
             BUILD_JOBS=4
           push: true
-          tags: ${{ matrix.tags }}
+          tags: ${{ steps.registry.outputs.tags }}
           labels: |
             org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
             org.opencontainers.image.version=${{ matrix.version }}

@@ -1,1 +1,1 @@
-aarch64_alpine_build_scripts/gdb/licenses/*.txt -whitespace
+recipes/gdb/aarch64/licenses/*.txt -whitespace
