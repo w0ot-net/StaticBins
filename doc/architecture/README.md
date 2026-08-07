@@ -19,13 +19,13 @@ Buildx guest build -> temporary candidate -> ELF and functional checks
        |
        v
 artifacts/<architecture>/<tool> -> artifacts/SHA256SUMS
-       |
-       +---- optional native exact rebuild -> GitHub attestation
 ```
 
 Repository validation authenticates and checks tracked inputs independently of
-the artifact build shown above. A failure at either boundary stops the relevant
-operation.
+the artifact build shown above. Independent exact rebuilds or attestations may
+be retained as supplemental historical evidence, but they are not part of the
+normal acceptance path. A failure at either required boundary stops the
+relevant operation.
 
 ## Authority rules
 

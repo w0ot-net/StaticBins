@@ -36,10 +36,11 @@ repository, commits the provisioning and test harness rather than a disk image,
 and still installs only the validated utility. It does not replace Buildx as
 the artifact build backend.
 
-This path is distinct from `python3 scripts/recipes.py validate`. The validator
+This path is distinct from the root `./validate.sh` command. That command
 checks repository structure, tracked evidence, authentication, locks, modes,
-and artifact-manifest consistency without compiling. A build independently
-rechecks the bytes it consumes and the executable it produces.
+artifact-manifest consistency, focused unit tests, dispatcher listing, and
+tracked shell syntax without compiling. A build independently rechecks the
+bytes it consumes and the executable it produces.
 
 Docker Buildx is the only host-side build backend. There is no direct guest
 execution or classic `docker build` fallback, and a recipe must not resolve a

@@ -8,16 +8,17 @@ For the stable system-level trust boundaries behind these live records, see
 the [trust-chain architecture](doc/architecture/trust/TRUST_CHAIN.md) and
 [automation and governance](doc/architecture/trust/AUTOMATION_AND_GOVERNANCE.md).
 
-Run the repository's existing validator with `gpgv` installed:
+Run the repository's fast offline validation with `gpgv` installed:
 
 ```sh
-python3 scripts/recipes.py validate
+./validate.sh
 ```
 
-The command works offline. It verifies tracked archive checksums first, then
-uses only each recipe's tracked detached signature and minimal signing keyring.
-It accepts a PGP record only when `gpgv` reports the full fingerprint pinned in
-`source.lock`; it does not use a personal keyring, keyserver, or network lookup.
+The source validator composed by this command verifies tracked archive
+checksums first, then uses only each recipe's tracked detached signature and
+minimal signing keyring. It accepts a PGP record only when `gpgv` reports the
+full fingerprint pinned in `source.lock`; it does not use a personal keyring,
+keyserver, or network lookup.
 
 | Source | Authentication | Full signer fingerprint | Official evidence |
 | --- | --- | --- | --- |
@@ -63,7 +64,7 @@ signature. An authentic release establishes origin; repeatable builds and
 static ELF checks provide different evidence about how the distributed binary
 was produced.
 
-## Artifact assurance
+## Artifact records
 
 From the repository root, check every distributed file against the committed
 integrity manifest:
@@ -75,23 +76,28 @@ sha256sum -c artifacts/SHA256SUMS
 This detects missing or changed bytes relative to the checked-out manifest. It
 does not identify who built a binary or establish its provenance.
 
-| Artifact | Source authentication | Artifact status |
-| --- | --- | --- |
-| `artifacts/aarch64/gdb` | Upstream PGP | `Not verified` |
-| `artifacts/aarch64/gdbserver` | Upstream PGP | `Not verified` |
-| `artifacts/aarch64/lsof` | Checksum only | `Not verified` |
-| `artifacts/aarch64/socat` | Checksum only | `Not verified` |
-| `artifacts/aarch64/strace` | Checksum only | `Not verified` |
-| `artifacts/x86_64/tcpdump` | Upstream PGP for tcpdump and libpcap | `Exact rebuild + GitHub attestation` |
-| `artifacts/x86_64/gdbserver` | Upstream PGP | `Not verified` |
-| `artifacts/x86_64/lsof` | Checksum only | `Not verified` |
-| `artifacts/x86_64/socat` | Checksum only | `Not verified` |
-| `artifacts/x86_64/strace` | Checksum only | `Not verified` |
+| Artifact | Source authentication | Build validation | Independent evidence |
+| --- | --- | --- | --- |
+| `artifacts/aarch64/gdb` | Upstream PGP | Committed recipe and target checks passed | One native exact-rebuild mismatch |
+| `artifacts/aarch64/gdbserver` | Upstream PGP | Committed recipe and target checks passed | None |
+| `artifacts/aarch64/lsof` | Checksum only | Committed recipe and target checks passed | None |
+| `artifacts/aarch64/socat` | Checksum only | Committed recipe and target checks passed | None |
+| `artifacts/aarch64/strace` | Checksum only | Committed recipe and target checks passed | None |
+| `artifacts/x86_64/tcpdump` | Upstream PGP for tcpdump and libpcap | Committed recipe and target checks passed | Exact native rebuild and historical GitHub attestation |
+| `artifacts/x86_64/gdbserver` | Upstream PGP | Committed recipe and target checks passed | None |
+| `artifacts/x86_64/lsof` | Checksum only | Committed recipe and target checks passed | None |
+| `artifacts/x86_64/socat` | Checksum only | Committed recipe and target checks passed | None |
+| `artifacts/x86_64/strace` | Checksum only | Committed recipe and target checks passed | None |
 
-`Exact rebuild + GitHub attestation` means a clean native build passed the
-recipe checks, reproduced the committed SHA-256 exactly, and the repository
-workflow attested that same rebuilt file. Verify tcpdump with a current GitHub
-CLI:
+Build validation records that the maintainer built the artifact through its
+committed recipe and that the recipe's source, link, ELF, architecture, version,
+and focused functional checks passed. Target execution may be native or use the
+recipe's supported Buildx/QEMU path. `None` in the independent-evidence column
+does not mean those build checks were skipped.
+
+The tcpdump evidence records a clean native build that reproduced the committed
+SHA-256 exactly and a past repository workflow that attested the same rebuilt
+file. Verify that historical attestation with a current GitHub CLI:
 
 ```sh
 gh attestation verify artifacts/x86_64/tcpdump \
@@ -100,8 +106,7 @@ gh attestation verify artifacts/x86_64/tcpdump \
   --source-ref refs/heads/main
 ```
 
-`Not verified` means no exact rebuild-and-attestation claim is available. The
-initial native checks on 2026-08-07 reproduced tcpdump as
+The initial native checks on 2026-08-07 reproduced tcpdump as
 `cdd8f895dceb63d428f137ed910cc083dde2bc76d1006e3468b6f8d654c053b1`.
 The single required GDB check produced
 `8e729a88937e2187a9288ae9914748ae3946285227a76ce37232802df8319f4a`
@@ -109,30 +114,33 @@ instead of the committed
 `5e96e51367020e6be6e2cb0a7f0014573da838a8f7d1d099fd2e5a4a55c820ab`;
 the committed file was restored unchanged and no retry was made.
 
-An attestation ties exact bytes to a repository workflow execution and commit;
-it does not prove that the source is safe, reviewed, malware-free, or free of
+The signer workflow identity above is literal historical evidence even though
+that workflow is no longer part of the repository's acceptance mechanism. An
+attestation ties exact bytes to one past workflow execution and commit; it does
+not prove that the source is safe, reviewed, malware-free, or free of
 vulnerabilities.
 
 ## Repository governance
 
 The active [`main-history` ruleset](https://github.com/w0ot-net/static_bins/rules/20544422)
 targets only `main` and blocks deletion and non-fast-forward updates. Direct
-pushes are allowed; pull requests and successful CI checks are not required
-before a commit reaches `main`. The `recipe-validation` and
-`artifact-assurance` jobs remain useful post-push signals when their workflow
-triggers select a change. Repository Actions policy requires every
-[`uses:` reference](.github/workflows) to name a full commit SHA.
+pushes are allowed; pull requests and successful hosted checks are not required
+before a commit reaches `main`. Maintainers run `./validate.sh` before pushing
+and run the narrow recipe or builder validation when those paths change. The
+remaining builder-publication workflow is a separate maintainer operation;
+repository Actions policy requires each of its `uses:` references to name a
+full commit SHA.
 
-These controls protect existing history from destructive updates and make
-workflow dependencies explicit, but they do not guarantee review or a
-successful check before publication. Repository write access and the owner who
-can change settings or push directly therefore remain explicit trust
-boundaries, alongside GitHub's identity, Actions, attestation, and ruleset
-services and the upstream sources and builders described above.
+These controls protect existing history from destructive updates, but they do
+not guarantee review or successful local validation before publication.
+Repository write access and the owner who can change settings or push directly
+therefore remain explicit trust boundaries, alongside the upstream sources,
+builders, registry, and ruleset services described above.
 
-When verifying an attestation, require repository `w0ot-net/static_bins`, signer
-workflow [`.github/workflows/verify-artifacts.yml`](.github/workflows/verify-artifacts.yml),
-and source ref `refs/heads/main`. The successful GitHub CLI output identifies
-the source commit; users can additionally confirm that commit remains reachable
-from the protected `main` history. Neither history protection nor that identity
-check establishes that the program is benign.
+When verifying the historical tcpdump attestation, require repository
+`w0ot-net/static_bins`, signer workflow
+`w0ot-net/static_bins/.github/workflows/verify-artifacts.yml`, and source ref
+`refs/heads/main`. The successful GitHub CLI output identifies the source
+commit; users can additionally confirm that commit remains reachable from the
+protected `main` history. Neither history protection nor that identity check
+establishes that the program is benign.

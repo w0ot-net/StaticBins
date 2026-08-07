@@ -19,9 +19,10 @@ Check all files against the committed integrity manifest:
 sha256sum -c artifacts/SHA256SUMS
 ```
 
-Only artifacts explicitly marked `Exact rebuild + GitHub attestation` have
-build provenance. See [`TRUST.md`](TRUST.md) for current per-file status and the
-GitHub CLI verification command.
+Every distributed artifact has passed its committed recipe's source, static
+link, ELF, architecture, and functional checks. See [`TRUST.md`](TRUST.md) for
+the separate source-authentication, build-validation, and independent-evidence
+records, including the historical tcpdump attestation verification command.
 
 ## Build
 
@@ -36,6 +37,12 @@ Buildx plugin:
 ./build.sh socat aarch64
 ./build.sh strace x86_64
 ./build.sh tcpdump x86_64
+```
+
+Run the repository's fast offline checks before committing or pushing:
+
+```sh
+./validate.sh
 ```
 
 The root command reads the minimal allowlist in `recipes/catalog.tsv` and
@@ -72,7 +79,8 @@ Builder publication is a separate maintainer operation. Candidate builders can
 be validated with `./builders/aarch64/build.sh`, `./builders/armv7/build.sh`, or
 `./builders/x86_64/build.sh`; start the locked AArch64 environment with
 `./builders/aarch64/run.sh`. Candidate builder validation also requires Docker
-Buildx. Repository CI validates recipes but does not publish utility images.
+Buildx. Maintainers run `./validate.sh` locally; the remaining GitHub workflow
+publishes reusable builders only and never publishes utility images.
 
 See [`doc/adding-a-binary.md`](doc/adding-a-binary.md) for the recipe contract.
 The broader documentation map and system architecture start at

@@ -30,11 +30,12 @@ Repository contract:
   paths from repository layout and validate source versions from recipe locks.
   Keep source, configure, license, and smoke-test logic in the tool-owned
   recipe. Follow `doc/adding-a-binary.md` and run
-  `python3 scripts/recipes.py validate` when a recipe or catalog field changes.
+  `./validate.sh` when a recipe or catalog field changes.
 - Keep `artifacts/SHA256SUMS` complete and exact for every distributed file,
-  excluding the manifest itself. Record every artifact in `TRUST.md` as either
-  `Exact rebuild + GitHub attestation` or `Not verified`; checksums and source
-  authentication alone do not establish artifact provenance.
+  excluding the manifest itself. Record every artifact's source
+  authentication, recipe build validation, and any independent evidence in
+  `TRUST.md`; checksums and source authentication alone do not establish who
+  built an artifact.
 
 Reproducible build guidance:
 
@@ -101,10 +102,10 @@ Static artifact validation:
   the artifact's purpose. Report the final size and SHA-256 checksum.
 - When changing a build, rebuild and validate its artifact. Do not assume script
   review alone proves that the checked-in binary matches the recipe.
-- Add an artifact to the attestation workflow only after one clean native build
-  reproduces its committed bytes exactly. The attestation job must rebuild,
-  compare, and attest the same file in one job. Do not retry a qualification
-  mismatch or automatically grant attested status to new catalog rows.
+- Native and Buildx/QEMU target execution are equally acceptable ways to
+  satisfy a recipe's architecture-specific smoke-test boundary. Record any
+  independent exact rebuild or attestation as supplemental evidence, not as a
+  prerequisite for accepting a recipe-validated artifact.
 
 Documentation and distribution:
 
@@ -125,14 +126,16 @@ Documentation and distribution:
   logs, cores, or unrelated test outputs.
 - Code and scripts should remain ASCII unless a file already uses another
   character set or the change clearly requires it.
-- Adding a conforming tool must not require copying or specializing the recipe
-  validation workflow. Extend the architecture allowlist only when genuinely
-  adding support for a new architecture.
+- Adding a conforming tool must not require copying or specializing repository
+  validation. Extend the architecture allowlist only when genuinely adding
+  support for a new architecture.
 
 Validation efficiency:
 
 - Start with syntax checks and `git diff --check`, then run the narrowest real
   build and target-architecture smoke test that prove the change.
+- Run `./validate.sh` before committing and pushing. A recipe or builder change
+  additionally requires its narrow real build and target-architecture checks.
 - Do not repeat a known-good expensive compilation merely to re-run a late
   validation step. Preserve the build tree and diagnostic artifacts needed to
   retry that step, or move the retry to a native/cacheable builder.
@@ -149,11 +152,9 @@ Git workflow:
 - `main` is protected by the `main-history` ruleset against deletion and
   non-fast-forward updates. Direct pushes are allowed. Do not create a pull
   request unless the user explicitly asks for one.
-- Preserve the stable workflow job names `recipe-validation` and
-  `artifact-assurance`. They are CI signals rather than required branch gates;
-  the latter may skip expensive builds when no artifact trust boundary changed.
 - Pin every GitHub Actions `uses:` reference to a full 40-character commit SHA.
-  Repository Actions policy enforces this invariant.
+  Repository Actions policy enforces this invariant while the builder
+  publication workflow remains.
 - Always commit and push after code, documentation, recipe, or binary changes.
 - Never use `git add .` or `git add -A`; stage explicit paths only.
 - Commit only files touched for the task and preserve unrelated user changes.

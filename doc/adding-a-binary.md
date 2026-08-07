@@ -2,8 +2,8 @@
 
 A reproducible binary is one conventional tool recipe plus one three-field row
 in `recipes/catalog.tsv`. Tool-specific source, configuration, build, license,
-and smoke-test logic stays inside the recipe; the root dispatcher and recipe
-validation workflow remain generic.
+and smoke-test logic stays inside the recipe; the root dispatcher and local
+repository validation remain generic.
 
 This procedure implements the repository's stable
 [repository model](architecture/repository/REPOSITORY_MODEL.md),
@@ -92,13 +92,12 @@ dispatch but remain subject to repository validation.
 Run the fast checks first:
 
 ```sh
-python3 scripts/recipes.py validate
-python3 -m unittest tests.test_recipes
-./build.sh list
+./validate.sh
 ```
 
-The validator requires `gpgv` and checks all declared PGP records offline using
-only their committed evidence.
+The command composes catalog/source/artifact validation, focused unit tests,
+dispatcher listing, and tracked shell syntax checks. It requires `gpgv` and
+checks all declared PGP records offline using only their committed evidence.
 
 Then build and test the selected recipe through the stable public command:
 
@@ -110,21 +109,20 @@ The architecture may be omitted only while exactly one catalog row has that
 tool name. Multi-architecture tools always require the explicit form.
 
 Verify the resulting architecture, static linkage, version behavior, and the
-tool's focused functional smoke test. Commit the validated executable under
-`artifacts/<architecture>/<tool>`. A relevant push runs fast recipe validation;
-it does not build or publish a utility image. GHCR publication is reserved for
-the separately maintained reusable builders.
+tool's focused functional smoke test on its target architecture, either
+natively or through the recipe's supported QEMU path. Commit the validated
+executable under `artifacts/<architecture>/<tool>`. Local validation does not
+build or publish a utility image. GHCR publication is reserved for the
+separately maintained reusable builders.
 
 Update `artifacts/SHA256SUMS` with exactly one sorted, repository-relative
-SHA-256 record for the new executable, then record one of the two allowed
-artifact statuses in `TRUST.md`: `Exact rebuild + GitHub attestation` or `Not
-verified`. A source-authenticated, statically validated, or checksum-listed file
-does not automatically qualify for build provenance.
+SHA-256 record for the new executable. In `TRUST.md`, record its source
+authentication, that the maintainer-built artifact passed the committed
+recipe's target checks, and any independent exact-rebuild or attestation
+evidence. Use `None` when no independent evidence exists; that does not erase
+the recipe validation. A source signature or checksum still does not identify
+who built the artifact.
 
-Use `Exact rebuild + GitHub attestation` only after one clean native build has
-passed the full recipe checks and reproduced the committed bytes exactly. Add
-the tool explicitly to `.github/workflows/verify-artifacts.yml` so a selected
-job rebuilds, compares, and attests the same file. A mismatch is evidence for
-`Not verified`; do not hide it with a retry or silently replace artifact bytes.
-Future catalog rows remain unverified until this bounded qualification and
-workflow change are reviewed.
+Run `./validate.sh` again after updating the catalog, artifact manifest, and
+TRUST record. Commit and push only after both it and the direct recipe build
+succeed.
