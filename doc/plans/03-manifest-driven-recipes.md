@@ -1,5 +1,7 @@
 # Plan: Manifest-Driven Static Binary Recipes
 
+*Distilled: 2026-08-06*
+
 ## Summary
 
 Define one small line-oriented recipe catalog that drives both a Bash root build

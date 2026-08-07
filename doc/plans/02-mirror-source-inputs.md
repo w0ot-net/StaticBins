@@ -1,5 +1,7 @@
 # Plan: Mirror and Lock GDB Source Inputs
 
+*Distilled: 2026-08-06*
+
 ## Summary
 
 Give the GDB recipe one owner for source metadata and a repository-controlled,

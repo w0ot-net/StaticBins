@@ -1,5 +1,7 @@
 # Plan: Lock the AArch64 Build Environment
 
+*Distilled: 2026-08-06*
+
 ## Summary
 
 Make every ordinary AArch64 GDB build consume one published builder image by
