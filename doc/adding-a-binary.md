@@ -32,9 +32,10 @@ recipes/<tool>/<architecture>/
     ...reviewed license texts...
 ```
 
-Internal architecture names are `aarch64`, `armv7`, and `x86_64`. Recipe host
-commands map them to `linux/arm64`, `linux/arm/v7`, and `linux/amd64`,
-respectively, when exporting local binaries.
+The internal architecture name must have a valid row in
+[`builders/catalog.tsv`](../builders/catalog.tsv). OCI platform translation is
+owned at that builder boundary; target ELF, ABI, and runtime checks remain
+explicit in the architecture-specific recipe.
 
 The architecture must already have a locked, published builder. The recipe's
 host `build.sh` and committed output must be executable. The host command must
@@ -73,7 +74,7 @@ Add one tab-delimited row to `recipes/catalog.tsv`:
 | Field | Contract |
 | --- | --- |
 | `name` | Lowercase tool identifier and artifact filename; unique with architecture |
-| `architecture` | `aarch64`, `armv7`, or `x86_64` |
+| `architecture` | Supported identifier from `builders/catalog.tsv` |
 | `enabled` | `true` to list and build; otherwise `false` |
 
 Do not quote fields or place commands, workflow expressions, tabs, or newlines

@@ -10,9 +10,8 @@ Repository contract:
   add binaries of unknown origin or binaries that can only be rebuilt by hand.
 - Put binaries in `artifacts/<architecture>/`, tool builds in
   `recipes/<tool>/<architecture>/`, and reusable build environments in
-  `builders/<architecture>/`. Internal architecture identifiers are `aarch64`,
-  `armv7`, and `x86_64`; translate them to OCI names only at container
-  boundaries.
+  `builders/<architecture>/`. Supported internal architecture identifiers and
+  their OCI boundary mappings come from `builders/catalog.tsv`.
 - Keep a tool's container definition, guest-side build script, patches, tracked
   source archives, source lock, licenses, and host-side entry point together in
   its recipe directory.
@@ -31,6 +30,10 @@ Repository contract:
   Keep source, configure, license, and smoke-test logic in the tool-owned
   recipe. Follow `doc/adding-a-binary.md` and run
   `./validate.sh` when a recipe or catalog field changes.
+- Every supported internal architecture must have one valid
+  `builders/catalog.tsv` row and a complete conventional builder owner. Follow
+  `doc/adding-an-architecture.md`; publish and lock its immutable builder before
+  activating recipes for it.
 - Keep `artifacts/SHA256SUMS` complete and exact for every distributed file,
   excluding the manifest itself. Record every artifact's source
   authentication, recipe build validation, and any independent evidence in
@@ -130,8 +133,9 @@ Documentation and distribution:
 - Code and scripts should remain ASCII unless a file already uses another
   character set or the change clearly requires it.
 - Adding a conforming tool must not require copying or specializing repository
-  validation. Extend the architecture allowlist only when genuinely adding
-  support for a new architecture.
+  validation. Adding a conforming architecture must require a catalog row and
+  architecture-owned validation, not edits to generic dispatcher, publisher,
+  or recipe-validation allowlists.
 
 Validation efficiency:
 

@@ -17,8 +17,10 @@ from pathlib import Path, PurePosixPath
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
 FIELDS = ("name", "architecture", "enabled")
-ARCHITECTURES = frozenset(("aarch64", "armv7", "x86_64"))
+BUILDER_FIELDS = ("architecture", "platform", "tag_prefix")
 IDENTIFIER_RE = re.compile(r"[a-z0-9][a-z0-9_-]*\Z")
+PLATFORM_RE = re.compile(r"linux/[a-z0-9][a-z0-9_-]*(?:/[a-z0-9][a-z0-9._-]*)?\Z")
+TAG_PREFIX_RE = re.compile(r"[a-z0-9][a-z0-9._-]*-\Z")
 VERSION_RE = re.compile(r"[A-Za-z0-9][A-Za-z0-9._+-]*\Z")
 DIGEST_IMAGE_RE = re.compile(r"[^@\s]+@sha256:[0-9a-f]{64}\Z")
 SHA256_RE = re.compile(r"[0-9a-f]{64}\Z")
@@ -38,6 +40,13 @@ class SourceAuthentication:
     name: str
     mode: str
     fingerprint: str | None
+
+
+@dataclass(frozen=True)
+class BuilderArchitecture:
+    architecture: str
+    platform: str
+    tag_prefix: str
 
 
 @dataclass(frozen=True)
@@ -355,7 +364,117 @@ def _validate_source_authentication(
     return SourceAuthentication(source_name, mode, fingerprint), pgp_fields
 
 
-def _validate_recipe(root: Path, row: dict[str, str], line_number: int) -> Recipe:
+def load_builder_catalog(
+    root: Path, catalog_path: Path | None = None
+) -> dict[str, BuilderArchitecture]:
+    if catalog_path is None:
+        catalog_path = root / "builders/catalog.tsv"
+    if catalog_path.is_symlink() or not catalog_path.is_file():
+        raise CatalogError(f"missing regular builder catalog: {catalog_path}")
+
+    try:
+        catalog_text = catalog_path.read_bytes().decode("ascii")
+    except (OSError, UnicodeError) as error:
+        raise CatalogError(f"cannot read ASCII builder catalog {catalog_path}: {error}") from error
+
+    lines = catalog_text.split("\n")
+    if lines and lines[-1] == "":
+        lines.pop()
+    expected_header = "\t".join(BUILDER_FIELDS)
+    if not lines or lines[0] != expected_header:
+        raise CatalogError("builder catalog header does not match the required schema")
+
+    builders: dict[str, BuilderArchitecture] = {}
+    seen_tag_prefixes: set[str] = set()
+    previous_architecture: str | None = None
+    for line_number, raw_line in enumerate(lines[1:], start=2):
+        if not raw_line:
+            raise _error(line_number, "blank builder catalog row")
+        columns = raw_line.split("\t")
+        if len(columns) != len(BUILDER_FIELDS):
+            raise _error(line_number, "wrong number of tab-delimited builder fields")
+        architecture, platform, tag_prefix = columns
+
+        if IDENTIFIER_RE.fullmatch(architecture) is None:
+            raise _error(line_number, f"invalid builder architecture: {architecture}")
+        if PLATFORM_RE.fullmatch(platform) is None:
+            raise _error(line_number, f"invalid builder platform: {platform}")
+        if TAG_PREFIX_RE.fullmatch(tag_prefix) is None:
+            raise _error(line_number, f"invalid builder tag prefix: {tag_prefix}")
+        if architecture in builders:
+            raise _error(line_number, f"duplicate builder architecture: {architecture}")
+        if previous_architecture is not None and architecture <= previous_architecture:
+            raise _error(line_number, "builder architectures are not sorted")
+        if tag_prefix in seen_tag_prefixes:
+            raise _error(line_number, f"duplicate builder tag prefix: {tag_prefix}")
+
+        builder_relative = f"builders/{architecture}"
+        builder_directory = root / builder_relative
+        _require_inside(root, builder_directory, "builder directory", line_number)
+        if builder_directory.is_symlink() or not builder_directory.is_dir():
+            raise _error(line_number, f"missing builder directory: {builder_relative}")
+        for filename, field in (
+            ("Dockerfile", "builder Dockerfile"),
+            ("packages.lock", "builder package lock"),
+            ("environment.lock", "builder environment lock"),
+        ):
+            path = builder_directory / filename
+            _require_inside(root, path, field, line_number)
+            _require_file(path, field, line_number)
+        _require_executable(root, f"{builder_relative}/build.sh", line_number)
+
+        environment_values = _read_lock(
+            builder_directory / "environment.lock", line_number
+        )
+        required_environment_fields = {
+            "ALPINE_IMAGE",
+            "BINFMT_IMAGE",
+            "BUILDER_TAG",
+            "BUILDER_IMAGE",
+        }
+        missing_environment_fields = sorted(
+            required_environment_fields - environment_values.keys()
+        )
+        if missing_environment_fields:
+            raise _error(
+                line_number,
+                "builder environment lock is missing: "
+                + ", ".join(missing_environment_fields),
+            )
+        for field in ("ALPINE_IMAGE", "BINFMT_IMAGE", "BUILDER_IMAGE"):
+            if DIGEST_IMAGE_RE.fullmatch(environment_values[field]) is None:
+                raise _error(
+                    line_number,
+                    f"builder environment lock must pin {field} by SHA-256 digest",
+                )
+        builder_tag = environment_values["BUILDER_TAG"]
+        if VERSION_RE.fullmatch(builder_tag) is None or not builder_tag.startswith(
+            tag_prefix
+        ):
+            raise _error(
+                line_number,
+                f"builder environment lock BUILDER_TAG must begin with {tag_prefix}",
+            )
+
+        builders[architecture] = BuilderArchitecture(
+            architecture=architecture,
+            platform=platform,
+            tag_prefix=tag_prefix,
+        )
+        seen_tag_prefixes.add(tag_prefix)
+        previous_architecture = architecture
+
+    if not builders:
+        raise CatalogError("builder catalog has no architectures")
+    return builders
+
+
+def _validate_recipe(
+    root: Path,
+    row: dict[str, str],
+    line_number: int,
+    builder_architectures: dict[str, BuilderArchitecture],
+) -> Recipe:
     for field in FIELDS:
         value = row[field]
         if not value or value != value.strip():
@@ -368,7 +487,7 @@ def _validate_recipe(root: Path, row: dict[str, str], line_number: int) -> Recip
         raise _error(line_number, f"invalid recipe name: {name}")
 
     architecture = row["architecture"]
-    if architecture not in ARCHITECTURES:
+    if architecture not in builder_architectures:
         raise _error(line_number, f"unsupported architecture: {architecture}")
 
     if row["enabled"] not in {"true", "false"}:
@@ -531,6 +650,7 @@ def _validate_recipe(root: Path, row: dict[str, str], line_number: int) -> Recip
 
 
 def load_catalog(root: Path, catalog_path: Path) -> list[Recipe]:
+    builder_architectures = load_builder_catalog(root)
     try:
         catalog_file = catalog_path.open(encoding="utf-8", newline="")
     except OSError as error:
@@ -544,7 +664,9 @@ def load_catalog(root: Path, catalog_path: Path) -> list[Recipe]:
         for line_number, row in enumerate(reader, start=2):
             if None in row or any(value is None for value in row.values()):
                 raise _error(line_number, "wrong number of tab-delimited fields")
-            recipes.append(_validate_recipe(root, row, line_number))
+            recipes.append(
+                _validate_recipe(root, row, line_number, builder_architectures)
+            )
 
     if not recipes:
         raise CatalogError("catalog has no recipes")

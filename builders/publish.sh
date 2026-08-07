@@ -4,9 +4,13 @@ set -euo pipefail
 readonly SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 readonly REPO_ROOT="$(cd -- "${SCRIPT_DIR}/.." && pwd)"
 readonly BUILDER_REPOSITORY="ghcr.io/w0ot-net/static_bins-builder"
+readonly BUILDER_CATALOG="${SCRIPT_DIR}/catalog.tsv"
+
+# shellcheck source=../scripts/builder-catalog.sh
+. "${REPO_ROOT}/scripts/builder-catalog.sh"
 
 usage() {
-    echo "usage: $0 <aarch64|armv7|x86_64>" >&2
+    echo "usage: $0 <architecture>" >&2
 }
 
 if (( $# != 1 )); then
@@ -15,31 +19,19 @@ if (( $# != 1 )); then
 fi
 
 readonly ARCHITECTURE=$1
-case "${ARCHITECTURE}" in
-    aarch64)
-        readonly BUILDER_DIRECTORY="${SCRIPT_DIR}/aarch64"
-        readonly PLATFORM="linux/arm64"
-        readonly FLOATING_TAG="aarch64-latest"
-        readonly TAG_PREFIX="aarch64-"
-        ;;
-    armv7)
-        readonly BUILDER_DIRECTORY="${SCRIPT_DIR}/armv7"
-        readonly PLATFORM="linux/arm/v7"
-        readonly FLOATING_TAG="armv7-latest"
-        readonly TAG_PREFIX="armv7-"
-        ;;
-    x86_64)
-        readonly BUILDER_DIRECTORY="${SCRIPT_DIR}/x86_64"
-        readonly PLATFORM="linux/amd64"
-        readonly FLOATING_TAG="x64-latest"
-        readonly TAG_PREFIX="x64-"
-        ;;
-    *)
-        echo "error: unsupported architecture: ${ARCHITECTURE}" >&2
-        usage
-        exit 2
-        ;;
-esac
+load_builder_catalog "${BUILDER_CATALOG}" "${REPO_ROOT}"
+
+if [[ ! "${ARCHITECTURE}" =~ ^[a-z0-9][a-z0-9_-]*$ ]] ||
+    [[ -z "${BUILDER_PLATFORMS[${ARCHITECTURE}]+present}" ]]; then
+    echo "error: unsupported architecture: ${ARCHITECTURE}" >&2
+    usage
+    exit 2
+fi
+
+readonly BUILDER_DIRECTORY="${SCRIPT_DIR}/${ARCHITECTURE}"
+readonly PLATFORM="${BUILDER_PLATFORMS[${ARCHITECTURE}]}"
+readonly TAG_PREFIX="${BUILDER_TAG_PREFIXES[${ARCHITECTURE}]}"
+readonly FLOATING_TAG="${TAG_PREFIX}latest"
 
 readonly ENVIRONMENT_LOCK="${BUILDER_DIRECTORY}/environment.lock"
 

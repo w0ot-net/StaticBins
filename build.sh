@@ -4,7 +4,11 @@ set -euo pipefail
 
 readonly SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 readonly CATALOG="${SCRIPT_DIR}/recipes/catalog.tsv"
+readonly BUILDER_CATALOG="${SCRIPT_DIR}/builders/catalog.tsv"
 readonly HEADER=$'name\tarchitecture\tenabled'
+
+# shellcheck source=scripts/builder-catalog.sh
+. "${SCRIPT_DIR}/scripts/builder-catalog.sh"
 
 usage() {
     echo "usage: ./build.sh list | ./build.sh <recipe> [architecture]" >&2
@@ -20,6 +24,8 @@ if [[ ! -r "${CATALOG}" ]]; then
     exit 1
 fi
 
+load_builder_catalog "${BUILDER_CATALOG}" "${SCRIPT_DIR}"
+
 IFS= read -r catalog_header < "${CATALOG}"
 if [[ "${catalog_header}" != "${HEADER}" ]]; then
     echo "error: recipe catalog header does not match the required schema" >&2
@@ -34,13 +40,11 @@ fi
 
 requested_architecture="${2:-}"
 if [[ -n "${requested_architecture}" ]]; then
-    case "${requested_architecture}" in
-        aarch64 | armv7 | x86_64) ;;
-        *)
-            echo "error: unsupported architecture: ${requested_architecture}" >&2
-            exit 2
-            ;;
-    esac
+    if [[ ! "${requested_architecture}" =~ ^[a-z0-9][a-z0-9_-]*$ ]] ||
+        [[ -z "${BUILDER_PLATFORMS[${requested_architecture}]+present}" ]]; then
+        echo "error: unsupported architecture: ${requested_architecture}" >&2
+        exit 2
+    fi
 fi
 
 match_count=0
@@ -68,13 +72,11 @@ while IFS= read -r catalog_line || [[ -n "${catalog_line}" ]]; do
         echo "error: invalid recipe name in catalog: ${name}" >&2
         exit 1
     fi
-    case "${architecture}" in
-        aarch64 | armv7 | x86_64) ;;
-        *)
-            echo "error: unsupported architecture for ${name}: ${architecture}" >&2
-            exit 1
-            ;;
-    esac
+    if [[ ! "${architecture}" =~ ^[a-z0-9][a-z0-9_-]*$ ]] ||
+        [[ -z "${BUILDER_PLATFORMS[${architecture}]+present}" ]]; then
+        echo "error: unsupported architecture for ${name}: ${architecture}" >&2
+        exit 1
+    fi
     pair="${name}/${architecture}"
     if [[ -n "${seen_pairs[${pair}]:-}" ]]; then
         echo "error: duplicate recipe pair in catalog: ${pair}" >&2

@@ -89,7 +89,7 @@ then run the allowlisted local publisher:
 
 ```sh
 docker login ghcr.io -u w0ot-net
-./builders/publish.sh <aarch64|armv7|x86_64>
+./builders/publish.sh <architecture>
 ```
 
 The command refuses an existing versioned tag, validates the candidate, pushes
@@ -102,6 +102,8 @@ Start the currently locked AArch64 environment with
 `./builders/aarch64/run.sh`.
 
 See [`doc/adding-a-binary.md`](doc/adding-a-binary.md) for the recipe contract.
+See [`doc/adding-an-architecture.md`](doc/adding-an-architecture.md) to add a
+new builder architecture before adding its recipes.
 The broader documentation map and system architecture start at
 [`doc/README.md`](doc/README.md).
 Repository-wide build and validation rules are in

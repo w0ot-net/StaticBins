@@ -11,6 +11,8 @@ the live user, trust, contributor, or recipe documentation.
 - [`TRUST.md`](../TRUST.md) owns current source and artifact assurance status,
   limitations, and verification commands.
 - [`adding-a-binary.md`](adding-a-binary.md) is the contributor procedure.
+- [`adding-an-architecture.md`](adding-an-architecture.md) is the builder-first
+  architecture-onboarding procedure.
 - [`AGENTS.md`](../AGENTS.md) contains repository guardrails for automated
   contributors.
 - Each `recipes/<tool>/<architecture>/README.md` owns its tool's version,

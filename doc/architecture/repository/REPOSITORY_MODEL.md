@@ -11,6 +11,8 @@ between generic orchestration and tool-specific policy. Return to the
   configuration, licenses, build logic, smoke tests, and tool documentation.
 - `builders/<architecture>/` owns the reusable package environment and its
   immutable publication lock.
+- `builders/catalog.tsv` owns the supported internal architecture identifiers,
+  OCI platforms, and public builder-tag prefixes shared by generic tooling.
 - `recipes/catalog.tsv` is the minimal allowlist consumed by the dispatcher and
   validator.
 - `scripts/` and root `build.sh` provide generic validation and dispatch.
@@ -20,10 +22,12 @@ only `name`, `architecture`, and `enabled`; conventional recipe, artifact, and
 builder paths are derived from that pair. Source versions and authentication
 come from the recipe's `source.lock`, not the catalog.
 
-The supported internal architecture identifiers are `aarch64`, `armv7`, and
-`x86_64`. They name repository directories and executable host architecture.
-Container-platform translations belong at the build-environment boundary, as
-documented in [Build environments](../build/BUILD_ENVIRONMENTS.md).
+Builder-catalog membership defines a supported internal architecture. The
+identifier names repository directories and executable host architecture;
+cataloged OCI translation is only a container boundary. Target runtime, ELF,
+endianness, ABI, and smoke-test requirements remain explicit in their
+architecture and recipe owners, as documented in
+[Build environments](../build/BUILD_ENVIRONMENTS.md).
 
 ## Dispatch and validation
 
@@ -40,4 +44,5 @@ derives paths and selects owners; it does not contain tool versions, configure
 flags, license judgments, or smoke-test policy.
 
 See the [contributor procedure](../../adding-a-binary.md) for how to add a
-conforming pair.
+conforming pair and [architecture onboarding](../../adding-an-architecture.md)
+for how to establish a new supported architecture first.

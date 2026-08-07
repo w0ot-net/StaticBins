@@ -28,11 +28,57 @@ class CatalogFixture:
     def __init__(self, root: Path) -> None:
         self.root = root
         self.rows: list[dict[str, str]] = []
+        self.builder_rows: dict[str, dict[str, str]] = {}
         subprocess.run(["git", "init", "-q", str(root)], check=True)
         subprocess.run(
             ["git", "-C", str(root), "config", "core.fileMode", "true"],
             check=True,
         )
+
+    def add_builder(
+        self,
+        architecture: str,
+        *,
+        platform: str | None = None,
+        tag_prefix: str | None = None,
+    ) -> dict[str, str]:
+        if architecture in self.builder_rows:
+            return self.builder_rows[architecture]
+        defaults = {
+            "aarch64": ("linux/arm64", "aarch64-"),
+            "armv7": ("linux/arm/v7", "armv7-"),
+            "x86_64": ("linux/amd64", "x64-"),
+        }
+        default_platform, default_prefix = defaults.get(
+            architecture, (f"linux/{architecture}", f"{architecture}-")
+        )
+        platform = platform or default_platform
+        tag_prefix = tag_prefix or default_prefix
+
+        builder_dir = self.root / "builders" / architecture
+        builder_dir.mkdir(parents=True, exist_ok=True)
+        (builder_dir / "Dockerfile").write_text("FROM scratch\n", encoding="utf-8")
+        (builder_dir / "packages.lock").write_text("bash=1.0-r0\n", encoding="utf-8")
+        (builder_dir / "build.sh").write_text(
+            "#!/usr/bin/env bash\nexit 0\n", encoding="utf-8"
+        )
+        (builder_dir / "environment.lock").write_text(
+            "ALPINE_IMAGE=alpine:1@sha256:" + "2" * 64 + "\n"
+            "BINFMT_IMAGE=example/binfmt@sha256:" + "3" * 64 + "\n"
+            f"BUILDER_TAG={tag_prefix}test-r1\n"
+            "BUILDER_IMAGE=ghcr.io/example/static_bins-builder@sha256:"
+            + "1" * 64
+            + "\n",
+            encoding="utf-8",
+        )
+        os.chmod(builder_dir / "build.sh", 0o755)
+        row = {
+            "architecture": architecture,
+            "platform": platform,
+            "tag_prefix": tag_prefix,
+        }
+        self.builder_rows[architecture] = row
+        return row
 
     def add_recipe(
         self,
@@ -47,19 +93,12 @@ class CatalogFixture:
         recipe_dir = self.root / "recipes" / name / architecture
         license_dir = recipe_dir / "licenses"
         source_dir = recipe_dir / "sources"
-        builder_dir = self.root / "builders" / architecture
         output = self.root / "artifacts" / architecture / name
         license_dir.mkdir(parents=True, exist_ok=True)
         source_dir.mkdir(parents=True, exist_ok=True)
-        builder_dir.mkdir(parents=True, exist_ok=True)
+        self.add_builder(architecture)
         output.parent.mkdir(parents=True, exist_ok=True)
 
-        (builder_dir / "environment.lock").write_text(
-            "BUILDER_IMAGE=ghcr.io/example/static_bins-builder@sha256:"
-            + "1" * 64
-            + "\n",
-            encoding="utf-8",
-        )
         (recipe_dir / "Dockerfile").write_text("FROM scratch\n", encoding="utf-8")
         if authentication == "pgp":
             source_archive = "tcpdump-4.99.4.tar.gz"
@@ -132,11 +171,24 @@ class CatalogFixture:
         return row
 
     def write_catalog(self, header: tuple[str, ...] = recipes.FIELDS) -> Path:
+        self.write_builder_catalog()
         catalog = self.root / "recipes" / "catalog.tsv"
         catalog.parent.mkdir(parents=True, exist_ok=True)
         lines = ["\t".join(header)]
         for row in self.rows:
             lines.append("\t".join(row[field] for field in recipes.FIELDS))
+        catalog.write_text("\n".join(lines) + "\n", encoding="utf-8")
+        return catalog
+
+    def write_builder_catalog(
+        self, header: tuple[str, ...] = recipes.BUILDER_FIELDS
+    ) -> Path:
+        catalog = self.root / "builders" / "catalog.tsv"
+        catalog.parent.mkdir(parents=True, exist_ok=True)
+        lines = ["\t".join(header)]
+        for architecture in sorted(self.builder_rows):
+            row = self.builder_rows[architecture]
+            lines.append("\t".join(row[field] for field in recipes.BUILDER_FIELDS))
         catalog.write_text("\n".join(lines) + "\n", encoding="utf-8")
         return catalog
 
@@ -153,6 +205,19 @@ class CatalogFixture:
         manifest.write_text("\n".join(records) + "\n", encoding="utf-8")
         return manifest
 
+    def install_dispatcher(self) -> Path:
+        dispatcher = self.root / "build.sh"
+        self.install_builder_helper()
+        shutil.copy2(REPOSITORY_ROOT / "build.sh", dispatcher)
+        os.chmod(dispatcher, 0o755)
+        return dispatcher
+
+    def install_builder_helper(self) -> Path:
+        helper = self.root / "scripts/builder-catalog.sh"
+        helper.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(REPOSITORY_ROOT / "scripts/builder-catalog.sh", helper)
+        return helper
+
     def track(self) -> None:
         self.write_artifact_manifest()
         subprocess.run(
@@ -160,6 +225,10 @@ class CatalogFixture:
             check=True,
         )
         executable_paths = []
+        executable_paths.extend(
+            f"builders/{architecture}/build.sh"
+            for architecture in self.builder_rows
+        )
         for row in self.rows:
             executable_paths.extend(
                 (
@@ -206,6 +275,191 @@ class RecipeCatalogTests(unittest.TestCase):
             ["artifacts/aarch64/gdb", "artifacts/x86_64/tool"],
             [recipe.output for recipe in first],
         )
+
+    def test_real_builder_catalog_has_exact_public_mappings(self) -> None:
+        loaded = recipes.load_builder_catalog(REPOSITORY_ROOT)
+        self.assertEqual(
+            {
+                "aarch64": ("linux/arm64", "aarch64-"),
+                "armv7": ("linux/arm/v7", "armv7-"),
+                "x86_64": ("linux/amd64", "x64-"),
+            },
+            {
+                architecture: (builder.platform, builder.tag_prefix)
+                for architecture, builder in loaded.items()
+            },
+        )
+
+        helper = REPOSITORY_ROOT / "scripts/builder-catalog.sh"
+        shell_result = subprocess.run(
+            [
+                "bash",
+                "-c",
+                (
+                    'source "$1"; load_builder_catalog "$2" "$3"; '
+                    'for architecture in "${BUILDER_ARCHITECTURES[@]}"; do '
+                    'printf "%s\\t%s\\t%s\\n" "${architecture}" '
+                    '"${BUILDER_PLATFORMS[${architecture}]}" '
+                    '"${BUILDER_TAG_PREFIXES[${architecture}]}"; done'
+                ),
+                "builder-catalog-test",
+                str(helper),
+                str(REPOSITORY_ROOT / "builders/catalog.tsv"),
+                str(REPOSITORY_ROOT),
+            ],
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+        self.assertEqual(0, shell_result.returncode, shell_result.stderr)
+        self.assertEqual(
+            "aarch64\tlinux/arm64\taarch64-\n"
+            "armv7\tlinux/arm/v7\tarmv7-\n"
+            "x86_64\tlinux/amd64\tx64-\n",
+            shell_result.stdout,
+        )
+
+    def test_builder_catalog_rejects_malformed_or_incomplete_state(self) -> None:
+        cases = (
+            ("header", "header"),
+            ("empty", "no architectures"),
+            ("blank", "blank builder catalog row"),
+            ("malformed", "wrong number"),
+            ("unsafe architecture", "invalid builder architecture"),
+            ("unsafe platform", "invalid builder platform"),
+            ("unsafe prefix", "invalid builder tag prefix"),
+            ("non-ASCII", "ASCII builder catalog"),
+            ("duplicate architecture", "duplicate builder architecture"),
+            ("unsorted", "not sorted"),
+            ("duplicate prefix", "duplicate builder tag prefix"),
+            ("missing owner", "builder package lock"),
+            ("tag mismatch", "BUILDER_TAG must begin"),
+        )
+        header = "\t".join(recipes.BUILDER_FIELDS)
+        for mutation, expected_message in cases:
+            with self.subTest(mutation=mutation):
+                temporary_directory, fixture = self.make_fixture()
+                self.addCleanup(temporary_directory.cleanup)
+                fixture.add_builder("aarch64")
+                catalog = fixture.write_builder_catalog()
+
+                if mutation == "header":
+                    fixture.write_builder_catalog(header=("wrong", "platform", "tag_prefix"))
+                elif mutation == "empty":
+                    catalog.write_text(header + "\n", encoding="utf-8")
+                elif mutation == "blank":
+                    catalog.write_text(
+                        catalog.read_text(encoding="utf-8") + "\n", encoding="utf-8"
+                    )
+                elif mutation == "malformed":
+                    catalog.write_text(header + "\naarch64\tlinux/arm64\n", encoding="utf-8")
+                elif mutation == "unsafe architecture":
+                    catalog.write_text(
+                        header + "\n../arm\tlinux/arm64\taarch64-\n", encoding="utf-8"
+                    )
+                elif mutation == "unsafe platform":
+                    catalog.write_text(
+                        header + "\naarch64\tlinux/../arm64\taarch64-\n",
+                        encoding="utf-8",
+                    )
+                elif mutation == "unsafe prefix":
+                    catalog.write_text(
+                        header + "\naarch64\tlinux/arm64\tAARCH64-\n", encoding="utf-8"
+                    )
+                elif mutation == "non-ASCII":
+                    catalog.write_text(
+                        header + "\naarch64\tlinux/arm64\tarchit\u00e9cture-\n",
+                        encoding="utf-8",
+                    )
+                elif mutation == "duplicate architecture":
+                    row = "aarch64\tlinux/arm64\taarch64-"
+                    catalog.write_text(header + f"\n{row}\n{row}\n", encoding="utf-8")
+                elif mutation == "unsorted":
+                    fixture.add_builder("armv7")
+                    catalog.write_text(
+                        header
+                        + "\narmv7\tlinux/arm/v7\tarmv7-"
+                        + "\naarch64\tlinux/arm64\taarch64-\n",
+                        encoding="utf-8",
+                    )
+                elif mutation == "duplicate prefix":
+                    fixture.add_builder("armv7")
+                    catalog.write_text(
+                        header
+                        + "\naarch64\tlinux/arm64\taarch64-"
+                        + "\narmv7\tlinux/arm/v7\taarch64-\n",
+                        encoding="utf-8",
+                    )
+                elif mutation == "missing owner":
+                    (fixture.root / "builders/aarch64/packages.lock").unlink()
+                else:
+                    lock = fixture.root / "builders/aarch64/environment.lock"
+                    lock.write_text(
+                        lock.read_text(encoding="utf-8").replace(
+                            "BUILDER_TAG=aarch64-", "BUILDER_TAG=wrong-"
+                        ),
+                        encoding="utf-8",
+                    )
+
+                with self.assertRaisesRegex(recipes.CatalogError, expected_message):
+                    recipes.load_builder_catalog(fixture.root, catalog)
+
+    def test_builder_catalog_shell_rejects_invalid_state(self) -> None:
+        temporary_directory, fixture = self.make_fixture()
+        self.addCleanup(temporary_directory.cleanup)
+        fixture.add_builder("aarch64")
+        catalog = fixture.write_builder_catalog()
+        helper = fixture.install_builder_helper()
+        catalog.write_text(
+            "architecture\tplatform\ttag_prefix\n"
+            "aarch64\tlinux/../arm64\taarch64-\n",
+            encoding="utf-8",
+        )
+        result = subprocess.run(
+            [
+                "bash",
+                "-c",
+                'source "$1"; load_builder_catalog "$2" "$3"',
+                "builder-catalog-test",
+                str(helper),
+                str(catalog),
+                str(fixture.root),
+            ],
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+        self.assertEqual(1, result.returncode)
+        self.assertIn("invalid platform", result.stderr)
+
+    def test_publisher_rejects_unknown_architecture_before_docker(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            command_directory = Path(temporary_directory)
+            marker = command_directory / "docker-called"
+            docker = command_directory / "docker"
+            docker.write_text(
+                "#!/usr/bin/env bash\n"
+                f"touch {marker}\n"
+                "exit 99\n",
+                encoding="utf-8",
+            )
+            os.chmod(docker, 0o755)
+            environment = dict(
+                os.environ,
+                PATH=f"{command_directory}:{os.environ['PATH']}",
+            )
+            for architecture in ("not_supported", "../unsafe"):
+                with self.subTest(architecture=architecture):
+                    result = subprocess.run(
+                        [str(REPOSITORY_ROOT / "builders/publish.sh"), architecture],
+                        check=False,
+                        capture_output=True,
+                        text=True,
+                        env=environment,
+                    )
+                    self.assertEqual(2, result.returncode)
+                    self.assertIn("unsupported architecture", result.stderr)
+                    self.assertFalse(marker.exists())
 
     def test_artifact_manifest_is_complete_and_exact(self) -> None:
         cases = (
@@ -634,9 +888,7 @@ class RecipeCatalogTests(unittest.TestCase):
             "builders/armv7/environment.lock", loaded[0].environment_lock
         )
 
-        dispatcher = fixture.root / "build.sh"
-        shutil.copy2(REPOSITORY_ROOT / "build.sh", dispatcher)
-        os.chmod(dispatcher, 0o755)
+        dispatcher = fixture.install_dispatcher()
         listed = subprocess.run(
             [str(dispatcher), "list"], check=False, capture_output=True, text=True
         )
@@ -752,9 +1004,7 @@ class RecipeCatalogTests(unittest.TestCase):
             )
         )
         fixture.write_catalog()
-        dispatcher = fixture.root / "build.sh"
-        shutil.copy2(REPOSITORY_ROOT / "build.sh", dispatcher)
-        os.chmod(dispatcher, 0o755)
+        dispatcher = fixture.install_dispatcher()
 
         listed = subprocess.run(
             [str(dispatcher), "list"], check=False, capture_output=True, text=True
@@ -826,9 +1076,7 @@ class RecipeCatalogTests(unittest.TestCase):
             script_body="#!/usr/bin/env bash\nexit 42\n",
         )
         fixture.write_catalog()
-        dispatcher = fixture.root / "build.sh"
-        shutil.copy2(REPOSITORY_ROOT / "build.sh", dispatcher)
-        os.chmod(dispatcher, 0o755)
+        dispatcher = fixture.install_dispatcher()
 
         listed = subprocess.run(
             [str(dispatcher), "list"], check=False, capture_output=True, text=True
@@ -869,9 +1117,7 @@ class RecipeCatalogTests(unittest.TestCase):
                 self.addCleanup(temporary_directory.cleanup)
                 fixture.add_recipe()
                 fixture.write_catalog()
-                dispatcher = fixture.root / "build.sh"
-                shutil.copy2(REPOSITORY_ROOT / "build.sh", dispatcher)
-                os.chmod(dispatcher, 0o755)
+                dispatcher = fixture.install_dispatcher()
 
                 if mutation == "duplicate":
                     fixture.rows.append(dict(fixture.rows[0]))

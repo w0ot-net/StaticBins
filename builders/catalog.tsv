@@ -1,0 +1,4 @@
+architecture	platform	tag_prefix
+aarch64	linux/arm64	aarch64-
+armv7	linux/arm/v7	armv7-
+x86_64	linux/amd64	x64-
