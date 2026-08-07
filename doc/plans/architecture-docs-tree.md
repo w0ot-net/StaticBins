@@ -123,25 +123,34 @@ Give every lower-level page a short authority statement and keep its content
 within these boundaries:
 
 - `repository/REPOSITORY_MODEL.md`: own the directory responsibilities,
-  `(name, architecture)` recipe identity, conventional path derivation,
-  three-field catalog role, and the separation between generic orchestration
-  and tool-owned policy.
+  `(name, architecture)` recipe identity, internal architecture identifiers,
+  conventional path derivation, three-field catalog role, and the separation
+  between generic orchestration and tool-owned policy.
 - `build/BUILD_PIPELINE.md`: own the execution sequence from root dispatch to
   recipe host script, Buildx, locked builder, guest build, temporary candidate
-  validation, and atomic installation. Explain failure scope and why there is no
-  direct-container or classic-Docker fallback.
+  validation, installation, and post-install equality checks. Distinguish this
+  ordinary build path from the separate repository validator, explain failure
+  scope, and explain why there is no direct-container or classic-Docker
+  fallback.
 - `build/SOURCE_INPUTS.md`: own tracked archive and `source.lock` roles,
   checksum acceptance, `pgp` versus `checksum-only`, offline verification,
-  multi-source recipe ownership, and license/input inventory boundaries. Link
-  to `TRUST.md` for current fingerprints and status.
+  and the enforcement split: the repository validator authenticates tracked
+  inputs while the guest build rechecks committed archive checksums before
+  extraction. Cover multi-source recipe ownership and license/input inventory
+  boundaries, and link to `TRUST.md` for current fingerprints and status.
 - `build/BUILD_ENVIRONMENTS.md`: own architecture builder directories,
   package and environment locks, immutable digests, publish-before-adopt
-  lifecycle, native versus emulated execution, and the separation between
-  reusable builder publication and ordinary artifact builds.
+  lifecycle, internal-to-OCI and native-runner name translations, the public
+  `x64-*` builder-tag compatibility spelling, native versus emulated execution,
+  and the separation between reusable builder publication and ordinary
+  artifact builds.
 - `artifacts/ARTIFACT_CONTRACT.md`: own destination architecture semantics,
   static ELF and executable-type checks, stripping, smoke tests, temporary
-  candidate replacement rules, `SHA256SUMS`, and the distinction between
-  validation, exact rebuilding, and provenance.
+  candidate replacement and post-install equality rules, `SHA256SUMS`, and the
+  distinction between validation, exact rebuilding, and provenance. Explain
+  that attested status requires explicit per-artifact qualification after one
+  clean native exact rebuild and that a mismatch remains unverified rather than
+  being retried.
 - `trust/TRUST_CHAIN.md`: own the composed assurance model from upstream
   evidence through locked inputs, builders, recipe validation, exact rebuilds,
   checksums, attestations, and protected history. State what each link proves
@@ -150,12 +159,13 @@ within these boundaries:
 - `trust/AUTOMATION_AND_GOVERNANCE.md`: own the three workflow roles, minimal
   permission boundaries, stable `recipe-validation` and
   `artifact-assurance` gates, full-SHA action references, protected-`main`
-  ruleset, and the residual repository-owner/GitHub trust boundary. Record
+  ruleset, explicit artifact selection, same-job rebuild/compare/attest
+  behavior, and the residual repository-owner/GitHub trust boundary. Record
   behavior and stable names, not workflow run IDs or the ruleset's numeric ID.
 - `distribution/DISTRIBUTION_MODEL.md`: own Git-tracked executables under
   `artifacts/` as the utility distribution surface, GHCR as builder-only,
-  absence of utility images and releases, source-retention rationale, checksum
-  manifest role, and license/notice obligations.
+  the policy against utility images and releases, source-retention rationale,
+  checksum manifest role, and license/notice obligations.
 
 Prefer links to existing authoritative tables and commands over copied text.
 Use only small ASCII diagrams where they materially clarify ownership or
@@ -221,7 +231,9 @@ compatibility layer for nonexistent documentation consumers.
   return readers to the nearest authority rather than creating orphan pages.
 - Compare the repository/build pages with `build.sh`,
   `scripts/recipes.py`, `recipes/catalog.tsv`, `builders/*`, and a
-  representative recipe host/guest path. Run `./build.sh list`,
+  representative recipe host/guest path. Check architecture-name translations,
+  the separate validator/build enforcement points, and actual post-install
+  semantics. Run `./build.sh list`,
   `python3 scripts/recipes.py validate`, and
   `python3 -m unittest tests.test_recipes`; do not compile an artifact for
   documentation-only changes.
