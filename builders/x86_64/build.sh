@@ -102,7 +102,7 @@ docker run --rm \
 
         for command_name in \
             autoreconf automake bison cc c++ file flex libressl libtoolize make \
-            pkg-config readelf rpcgen sha256sum strip tar wget xz; do
+            makeinfo pkg-config readelf rpcgen sha256sum strip tar wget xz; do
             if ! command -v "${command_name}" >/dev/null 2>&1; then
                 echo "error: candidate builder is missing ${command_name}" >&2
                 validation_errors=$((validation_errors + 1))
@@ -114,15 +114,55 @@ docker run --rm \
             /usr/lib/libc.a \
             /usr/lib/libcrypto.a \
             /usr/lib/libexpat.a \
+            /usr/lib/libgmp.a \
+            /usr/lib/libmpfr.a \
+            /usr/lib/libncursesw.a \
             /usr/lib/libssl.a \
             /usr/lib/libtirpc.a \
             /usr/lib/libtirpc-nokrb.a \
+            /usr/lib/liblzma.a \
+            /usr/lib/libz.a \
+            /usr/lib/libzstd.a \
             "${libgcc_archive}"; do
             if [ ! -f "${archive_path}" ]; then
                 echo "error: candidate builder is missing ${archive_path}" >&2
                 validation_errors=$((validation_errors + 1))
             fi
         done
+
+        if [ "${validation_errors}" -ne 0 ]; then
+            exit 1
+        fi
+
+        validate_archive_metadata() {
+            archive_path=$1
+            expected_package=$2
+            expected_license=$3
+            expected_version=$(sed -n "s/^${expected_package}=//p" /tmp/packages.lock)
+            if [ -z "${expected_version}" ]; then
+                echo "error: no locked version for ${expected_package}" >&2
+                validation_errors=$((validation_errors + 1))
+                return
+            fi
+            installed_owner=$(apk info -W "${archive_path}" | sed "s/.* is owned by //")
+            if [ "${installed_owner}" != "${expected_package}-${expected_version}" ]; then
+                echo "error: ${archive_path}: expected ${expected_package}-${expected_version}, found ${installed_owner}" >&2
+                validation_errors=$((validation_errors + 1))
+            fi
+            installed_license=$(sed -n "/^P:${expected_package}$/,/^$/s/^L://p" /lib/apk/db/installed)
+            if [ "${installed_license}" != "${expected_license}" ]; then
+                echo "error: ${expected_package}: expected license ${expected_license}, found ${installed_license}" >&2
+                validation_errors=$((validation_errors + 1))
+            fi
+        }
+
+        validate_archive_metadata /usr/lib/libexpat.a expat-static MIT
+        validate_archive_metadata /usr/lib/libgmp.a gmp-static "LGPL-3.0-or-later OR GPL-2.0-or-later"
+        validate_archive_metadata /usr/lib/libmpfr.a mpfr-dev LGPL-3.0-or-later
+        validate_archive_metadata /usr/lib/libncursesw.a ncurses-static X11
+        validate_archive_metadata /usr/lib/liblzma.a xz-static "GPL-2.0-or-later AND 0BSD AND Public-Domain AND LGPL-2.1-or-later"
+        validate_archive_metadata /usr/lib/libz.a zlib-static Zlib
+        validate_archive_metadata /usr/lib/libzstd.a zstd-static "BSD-3-Clause OR GPL-2.0-or-later"
 
         if [ "${validation_errors}" -ne 0 ]; then
             exit 1
@@ -175,7 +215,40 @@ docker run --rm \
             > /tmp/expat-probe.c
         cc -static -no-pie /tmp/expat-probe.c -lexpat -o /tmp/expat-probe
 
-        for probe in /tmp/base-probe /tmp/tirpc-probe /tmp/libressl-probe /tmp/expat-probe; do
+        cat > /tmp/gdb-dependencies-probe.cc <<"EOF"
+#include <curses.h>
+#include <expat.h>
+#include <gmp.h>
+#include <lzma.h>
+#include <mpfr.h>
+#include <zlib.h>
+#include <zstd.h>
+
+int main()
+{
+    XML_Parser parser = XML_ParserCreate(nullptr);
+    mpz_t integer;
+    mpfr_t floating;
+    mpz_init(integer);
+    mpfr_init2(floating, 64);
+    const bool versions_available =
+        XML_ExpatVersion() != nullptr && gmp_version != nullptr &&
+        mpfr_get_version() != nullptr && curses_version() != nullptr &&
+        lzma_version_number() != 0 && zlibVersion() != nullptr &&
+        ZSTD_versionNumber() != 0;
+    mpfr_clear(floating);
+    mpz_clear(integer);
+    XML_ParserFree(parser);
+    return versions_available ? 0 : 1;
+}
+EOF
+        c++ -static -no-pie /tmp/gdb-dependencies-probe.cc \
+            -lexpat -lmpfr -lgmp -lncursesw -llzma -lz -lzstd \
+            -o /tmp/gdb-dependencies-probe
+
+        for probe in \
+            /tmp/base-probe /tmp/tirpc-probe /tmp/libressl-probe \
+            /tmp/expat-probe /tmp/gdb-dependencies-probe; do
             if ! validate_static_probe "${probe}"; then
                 validation_errors=$((validation_errors + 1))
             fi

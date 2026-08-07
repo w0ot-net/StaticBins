@@ -74,7 +74,7 @@ GHCR publishes reusable build environments only:
 
 - `ghcr.io/w0ot-net/static_bins-builder:aarch64-alpine-3.24.1-r2`
 - `ghcr.io/w0ot-net/static_bins-builder:armv7-alpine-3.24.1-r2`
-- `ghcr.io/w0ot-net/static_bins-builder:x64-alpine-3.24.1-r2`
+- `ghcr.io/w0ot-net/static_bins-builder:x64-alpine-3.24.1-r3`
 
 The `x64-*` builder names are retained public compatibility identifiers; the
 repository uses `x86_64` internally. The internal `armv7` identifier maps to

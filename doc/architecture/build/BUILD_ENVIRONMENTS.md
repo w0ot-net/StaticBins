@@ -12,6 +12,16 @@ translation. Return to the [architecture index](../README.md).
 The external `x64-*` spelling is retained for public compatibility; repository
 paths and catalog rows use `x86_64`.
 
+| Internal identifier | Current immutable tag | Current recipe consumers |
+| --- | --- | --- |
+| `aarch64` | `aarch64-alpine-3.24.1-r2` | GDB, GDBserver, lsof, socat, strace, tcpdump |
+| `armv7` | `armv7-alpine-3.24.1-r2` | GDB, GDBserver, lsof, socat, strace, tcpdump |
+| `x86_64` | `x64-alpine-3.24.1-r3` | GDB-ready; GDBserver, lsof, socat, strace, tcpdump |
+
+The x86-64 r3 environment adds the established GDB 17.2 static dependency set:
+Expat, GMP, MPFR, ncurses, xz, zlib, and zstd. Its candidate validation links
+and executes one static C++ probe against that complete set before publication.
+
 Each `builders/<architecture>/` owns a Dockerfile, exact `packages.lock`, and
 `environment.lock`. The environment lock pins the Alpine base and binfmt helper
 by digest, a non-replaceable builder tag, and the exact published
