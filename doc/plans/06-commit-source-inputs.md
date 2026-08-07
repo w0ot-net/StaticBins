@@ -45,6 +45,9 @@ In scope:
   below the recipes that consume them.
 - Make Dockerfile and direct-container builds consume only those tracked source
   bytes and verify the locked checksum before extraction.
+- Bring the GDB host path up to the repository's temporary-candidate contract:
+  require its validation tools, assert its existing AArch64 `ET_DYN` static-PIE
+  shape, and complete its target-architecture smoke test before installation.
 - Remove source-release tags and mirror URLs from recipe locks, validation,
   tests, notices, and active documentation while retaining official HTTPS URLs
   as provenance.
@@ -93,21 +96,27 @@ build fallbacks.
 
 The catalog validator checks the actual tracked state instead of derived
 release metadata. For each supported archive record it requires a regular,
-non-symlink file at the derived recipe-local path, computes SHA-256, and rejects
-a missing or mismatched archive. Retain the existing bounded tcpdump validation
-for its second libpcap input rather than introducing a general dependency
-schema. Reject unexpected lock fields for both enabled recipes so obsolete
-mirror fields or unreviewed extra inputs cannot silently survive.
+non-symlink file at the derived recipe-local path with Git index mode `100644`,
+computes SHA-256, and rejects a missing, untracked, wrongly typed, or mismatched
+archive. Retain the existing bounded tcpdump validation for its second libpcap
+input rather than introducing a general dependency schema. Reject unexpected
+lock fields for both enabled recipes so obsolete mirror fields or unreviewed
+extra inputs cannot silently survive.
 
 Dockerfiles copy the recipe's `sources/` directory into the builder stage. The
 direct-container branches mount that directory read-only at the same guest
 path. Guest scripts copy the selected archive to build scratch space, verify
 its locked checksum, and extract only after verification; they no longer
 require or invoke `wget` or `curl` to obtain source. A corrupt or missing
-tracked archive fails before compilation, and the previous committed artifact
-remains untouched under the existing host-side temporary-candidate contract.
-The final scratch images continue to contain only the executable and reviewed
-distribution materials, not build inputs.
+tracked archive fails before compilation. Preserve tcpdump's current
+candidate-before-install behavior and correct the GDB host path, which currently
+installs before its host checks and target smoke test: require `file`, `readelf`,
+and `sha256sum`; validate the temporary GDB candidate's AArch64 `ET_DYN`
+static-PIE type, absence of an interpreter and `DT_NEEDED`, stripped state, and
+version behavior inside the target container; then install and repeat the cheap
+host checks. Thus a failed build leaves the previous committed artifact
+untouched. The final scratch images continue to contain only the executable and
+reviewed distribution materials, not build inputs.
 
 Delete `.github/workflows/mirror-sources.yml` rather than repurposing it. Source
 ingest is a reviewed repository change: a maintainer downloads the exact
@@ -131,7 +140,10 @@ the three raw files from that exact remote commit. Only then delete releases
 `gdb-17.2-source` and `tcpdump-4.99.4-libpcap-1.10.4-source`, delete their tags,
 and verify the public release list is empty. Record that GitHub permanently
 reserves tag names formerly attached to immutable releases; never attempt to
-reuse them.
+reuse them. Immediately before deletion, resolve the public releases and tags
+again and require the release set, immutable state, asset names, and tag targets
+to match the recorded two-release inventory. Stop without deleting anything if
+remote state drifted or any unexpected release exists.
 
 ## Affected Components
 
@@ -145,8 +157,9 @@ reuse them.
 - `recipes/{gdb/aarch64,tcpdump/x86_64}/Dockerfile`: copy tracked source inputs
   into the builder stage without adding them to the final artifact image.
 - `recipes/{gdb/aarch64,tcpdump/x86_64}/build.sh`: mount recipe-local source
-  directories in the direct-container path and preserve candidate-before-
-  install behavior.
+  directories in the direct-container path, preserve tcpdump's candidate-before-
+  install behavior, and move GDB's full host validation ahead of installation
+  while explicitly enforcing its existing AArch64 `ET_DYN` static-PIE type.
 - `recipes/{gdb/aarch64,tcpdump/x86_64}/build-in-container.sh`: replace mirror
   and upstream downloads with checksum-verified local input consumption.
 - `recipes/{gdb/aarch64,tcpdump/x86_64}/licenses/NOTICE.md`: identify the
@@ -157,7 +170,8 @@ reuse them.
 - `scripts/recipes.py`: validate derived local archive paths and bytes, reject
   obsolete or unknown lock state, and stop deriving release URL invariants.
 - `tests/test_recipes.py`: materially cover present, missing, corrupt, unsafe,
-  multi-source, and obsolete-release-field cases for local source inputs.
+  untracked, wrong-Git-mode, multi-source, and obsolete-release-field cases for
+  local source inputs.
 - `.github/workflows/mirror-sources.yml`: remove the main-repository
   source-release publisher.
 - `AGENTS.md`: replace the release-mirror rule with the committed-source rule,
@@ -182,11 +196,15 @@ reuse them.
    SHA-256 values, inspect their sizes, and add them under the consuming
    recipes' `sources/` directories.
 3. Reduce both source locks to local acceptance metadata plus official
-   provenance. Update the validator and focused tests to require and hash the
-   actual recipe-local archives and to reject the old release fields.
+   provenance. Explicitly stage the archives, then update the validator and
+   focused tests to require Git-tracked, non-executable regular recipe-local
+   archives, hash their actual bytes, and reject the old release fields.
 4. Update both Dockerfiles and both host/guest build paths to copy or mount the
    same local inputs and remove normal-build source downloads. Update notices
-   and the nearest recipe documentation in the same ownership change.
+   and the nearest recipe documentation in the same ownership change. Refactor
+   GDB's host checks around the temporary candidate and require its current
+   AArch64 `ET_DYN` static-PIE type, stripped state, and target smoke test before
+   installing it.
 5. Delete the source-mirror workflow and revise `AGENTS.md`, the onboarding
    guide, and the root README to make tracked artifacts and tracked source
    inputs the authoritative repository contract.
@@ -199,10 +217,13 @@ reuse them.
    container publication succeeds with the enlarged recipe contexts, then
    anonymously fetch all three source archives from the exact pushed commit and
    compare their hashes with the locks.
-8. Delete exactly the two source-only releases and their tags. Confirm the
-   repository release API returns no published releases, both old asset URLs no
-   longer resolve, all active code and documentation are free of those URLs and
-   tags, and clean-checkout builds still use the tracked inputs.
+8. Re-query the release API and tags and stop if the exact immutable releases,
+   assets, and tag targets differ from the initial inventory or if any
+   unexpected release exists. Otherwise delete exactly the two source-only
+   releases and their tags. Confirm the repository release API returns no
+   published releases, both old asset URLs no longer resolve, all active code
+   and documentation are free of those URLs and tags, and clean-checkout builds
+   still use the tracked inputs.
 9. Finalize the plan record with the migration commit, artifact hashes, remote
    source verification, container publication result, and irreversible release
    deletion outcome.
@@ -219,9 +240,10 @@ reuse them.
   `1c036c0d72e4b3d1fb5c94c88632add6f9d76f4d7c4d2ea793c12a9f19a3228c`,
   `0232231bb2f29d6bf2426e70a08a7e0c63a0d59a9b44863b7f5e2357a6e49fea`,
   and `ed19a0383fad72e3ad435fd239d7cd80d64916b87269550159d20e47160ebe5f`.
-- Exercise validator fixtures proving a missing archive, symlink, checksum
-  mismatch, unsafe filename, stale mirror field, and incomplete tcpdump pair
-  fail before build or matrix emission.
+- Exercise validator fixtures proving a missing archive, symlink, untracked
+  archive, non-`100644` Git mode, checksum mismatch, unsafe filename, stale
+  mirror field, and incomplete tcpdump pair fail before build or matrix
+  emission.
 - Search active contracts and implementation paths (`AGENTS.md`, `README.md`,
   `doc/adding-a-binary.md`, `.github/workflows/`, `recipes/`, `scripts/`, and
   `tests/`) for `SOURCE_RELEASE_TAG`, `SOURCE_MIRROR_URL`,
@@ -232,9 +254,12 @@ reuse them.
   extraction. Confirm Docker builds receive the archives from their existing
   bounded recipe contexts and final scratch images do not contain them.
 - Run `./build.sh gdb` and `./build.sh tcpdump`. On each temporary candidate and
-  installed artifact, repeat the existing `file`, `readelf`, stripping,
-  architecture, version, linked-archive inventory, and focused functional smoke
-  checks defined by its recipe.
+  installed artifact, repeat the `file`, `readelf`, stripping, architecture,
+  version, linked-archive inventory, and focused functional smoke checks defined
+  by its recipe. Specifically assert GDB remains an AArch64 `ET_DYN` static-PIE
+  executable and tcpdump remains an x86-64 `ET_EXEC` executable; force a
+  pre-install GDB validation failure and prove the committed output hash does not
+  change.
 - Before deleting external state, download every asset from both immutable
   releases and reconcile it with the three committed archives, current notices,
   locks, or repository history. After pushing, download each raw archive from
@@ -245,7 +270,9 @@ reuse them.
 - Delete only `gdb-17.2-source` and
   `tcpdump-4.99.4-libpcap-1.10.4-source`, clean up their tags, then query the
   public GitHub releases and tags APIs to confirm both are absent and no other
-  external object was changed.
+  external object was changed. Immediately before deletion, prove the public
+  release set and both tag targets still equal the recorded inventory; treat any
+  drift as a hard stop.
 - Confirm unrelated legacy artifacts, builder digests, recipe feature profiles,
   GHCR names, catalog architecture mappings, and pre-existing user work remain
   unchanged.
@@ -257,7 +284,10 @@ reuse them.
   committed checksum before a build starts.
 - Normal GDB and tcpdump builds obtain no source from the network, verify local
   bytes before extraction, retain their one-command interfaces, and produce
-  validated artifacts with unchanged versions and intended features.
+  validated artifacts with unchanged versions, ELF types, and intended features.
+- Both host paths fully validate a temporary candidate before installation, so
+  a source, build, architecture, linkage, stripping, or smoke-test failure leaves
+  the previous committed artifact untouched.
 - Active locks, implementation, tests, notices, and documentation contain no
   main-repository source-release tags, mirror URLs, or release-shape contract;
   `.github/workflows/mirror-sources.yml` no longer exists.
