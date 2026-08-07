@@ -51,21 +51,64 @@ jobs:
           fi
 
           selected=false
-          while IFS= read -r path; do
-            case "${path}" in
-              .github/workflows/verify-artifacts.yml|\
-              artifacts/SHA256SUMS|\
-              artifacts/x86_64/tcpdump|\
-              build.sh|\
-              builders/x86_64/*|\
-              recipes/catalog.tsv|\
-              recipes/tcpdump/x86_64/*|\
-              scripts/recipes.py|\
-              tests/test_recipes.py)
+          catalog_changed=false
+          manifest_changed=false
+          if ! changed_paths=$(git diff --name-only "${comparison_base}" "${GITHUB_SHA}"); then
+            selected=true
+          else
+            while IFS= read -r path; do
+              case "${path}" in
+                .github/workflows/verify-artifacts.yml|\
+                artifacts/x86_64/tcpdump|\
+                build.sh|\
+                builders/x86_64/*|\
+                recipes/tcpdump/x86_64/*|\
+                scripts/recipes.py|\
+                tests/test_recipes.py)
+                  selected=true
+                  ;;
+                artifacts/SHA256SUMS)
+                  manifest_changed=true
+                  ;;
+                recipes/catalog.tsv)
+                  catalog_changed=true
+                  ;;
+              esac
+            done <<< "${changed_paths}"
+          fi
+
+          if [[ "${catalog_changed}" == "true" ]]; then
+            if ! base_catalog=$(git show "${comparison_base}:recipes/catalog.tsv") ||
+              ! head_catalog=$(cat recipes/catalog.tsv); then
+              selected=true
+            else
+              base_count=$(awk -F '\t' '$1 == "tcpdump" && $2 == "x86_64" { count++ } END { print count + 0 }' <<< "${base_catalog}")
+              head_count=$(awk -F '\t' '$1 == "tcpdump" && $2 == "x86_64" { count++ } END { print count + 0 }' <<< "${head_catalog}")
+              base_record=$(awk -F '\t' '$1 == "tcpdump" && $2 == "x86_64" { print }' <<< "${base_catalog}")
+              head_record=$(awk -F '\t' '$1 == "tcpdump" && $2 == "x86_64" { print }' <<< "${head_catalog}")
+              if [[ "${base_count}" != "1" || "${head_count}" != "1" ||
+                "${base_record}" != "${head_record}" ]]; then
                 selected=true
-                ;;
-            esac
-          done < <(git diff --name-only "${comparison_base}" "${GITHUB_SHA}")
+              fi
+            fi
+          fi
+
+          if [[ "${manifest_changed}" == "true" ]]; then
+            if ! base_manifest=$(git show "${comparison_base}:artifacts/SHA256SUMS") ||
+              ! head_manifest=$(cat artifacts/SHA256SUMS); then
+              selected=true
+            else
+              base_count=$(awk '$2 == "artifacts/x86_64/tcpdump" { count++ } END { print count + 0 }' <<< "${base_manifest}")
+              head_count=$(awk '$2 == "artifacts/x86_64/tcpdump" { count++ } END { print count + 0 }' <<< "${head_manifest}")
+              base_record=$(awk '$2 == "artifacts/x86_64/tcpdump" { print }' <<< "${base_manifest}")
+              head_record=$(awk '$2 == "artifacts/x86_64/tcpdump" { print }' <<< "${head_manifest}")
+              if [[ "${base_count}" != "1" || "${head_count}" != "1" ||
+                "${base_record}" != "${head_record}" ]]; then
+                selected=true
+              fi
+            fi
+          fi
+
           echo "tcpdump=${selected}" >> "${GITHUB_OUTPUT}"
 
   verify-pull-request:
