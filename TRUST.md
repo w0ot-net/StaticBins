@@ -27,6 +27,7 @@ keyserver, or network lookup.
 | [GDB 17.2 (x86-64)](recipes/gdb/x86_64/source.lock) | Upstream PGP | `F40ADB902B24264AA42E50BF92EDB04BFF325CF3` | [signature](https://ftp.gnu.org/gnu/gdb/gdb-17.2.tar.xz.sig); [GNU keyring](https://ftp.gnu.org/gnu/gnu-keyring.gpg) |
 | [GDB 16.3 (GDBserver, AArch64)](recipes/gdbserver/aarch64/source.lock) | Upstream PGP | `F40ADB902B24264AA42E50BF92EDB04BFF325CF3` | [signature](https://ftp.gnu.org/gnu/gdb/gdb-16.3.tar.xz.sig); [GNU keyring](https://ftp.gnu.org/gnu/gnu-keyring.gpg) |
 | [GDB 16.3 (GDBserver, ARMv7)](recipes/gdbserver/armv7/source.lock) | Upstream PGP | `F40ADB902B24264AA42E50BF92EDB04BFF325CF3` | [signature](https://ftp.gnu.org/gnu/gdb/gdb-16.3.tar.xz.sig); [GNU keyring](https://ftp.gnu.org/gnu/gnu-keyring.gpg) |
+| [GDB 16.3 (GDBserver, x86)](recipes/gdbserver/x86/source.lock) | Upstream PGP | `F40ADB902B24264AA42E50BF92EDB04BFF325CF3` | [signature](https://ftp.gnu.org/gnu/gdb/gdb-16.3.tar.xz.sig); [GNU keyring](https://ftp.gnu.org/gnu/gnu-keyring.gpg) |
 | [GDB 16.3 (GDBserver, x86-64)](recipes/gdbserver/x86_64/source.lock) | Upstream PGP | `F40ADB902B24264AA42E50BF92EDB04BFF325CF3` | [signature](https://ftp.gnu.org/gnu/gdb/gdb-16.3.tar.xz.sig); [GNU keyring](https://ftp.gnu.org/gnu/gnu-keyring.gpg) |
 | [lsof 4.99.5 (AArch64)](recipes/lsof/aarch64/source.lock) | Checksum only | Not available | [GitHub release](https://github.com/lsof-org/lsof/releases/tag/4.99.5) |
 | [lsof 4.99.5 (ARMv7)](recipes/lsof/armv7/source.lock) | Checksum only | Not available | [GitHub release](https://github.com/lsof-org/lsof/releases/tag/4.99.5) |
@@ -66,6 +67,15 @@ Alpine 3.22.5 `vmlinuz-lts`, recorded in their respective
 [`strace vm.lock`](recipes/strace/armv7/vm.lock). Its published configuration
 and an evidence boot establish the required QEMU `virt`, PL011 console, and
 generated-initramfs support. The same checksum-only kernel limitation applies.
+
+The x86 GDBserver functional test boots the checksum-locked Alpine 3.22.5 x86
+`vmlinuz-lts` recorded in its
+[`vm.lock`](recipes/gdbserver/x86/vm.lock). The published configuration and a
+successful QEMU PC boot establish 32-bit x86, initramfs, devtmpfs, procfs, and
+8250 serial-console support; the guest also verifies that the fixed `qemu32`
+CPU exposes CMOV and SSE2. The kernel remains a smoke-test environment input,
+not a linked input or distributed artifact, and its checksum does not
+authenticate its origin.
 
 strace publishes a detached release signature, but these recipes have not
 adopted a signer key backed by authenticated official full-fingerprint
@@ -111,6 +121,7 @@ does not identify who built a binary or establish its provenance.
 | `artifacts/armv7/socat` | Checksum only | Committed recipe and target checks passed | None |
 | `artifacts/armv7/strace` | Checksum only | Committed recipe and target checks passed | None |
 | `artifacts/armv7/tcpdump` | Upstream PGP for tcpdump and libpcap | Committed recipe and target checks passed | None |
+| `artifacts/x86/gdbserver` | Upstream PGP | Committed recipe and target checks passed | None |
 | `artifacts/x86/lsof` | Checksum only | Committed recipe and target checks passed | None |
 | `artifacts/x86/socat` | Checksum only | Committed recipe and target checks passed | None |
 | `artifacts/x86/tcpdump` | Upstream PGP for tcpdump and libpcap | Committed recipe and target checks passed | None |
