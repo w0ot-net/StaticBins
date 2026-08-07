@@ -96,6 +96,12 @@ state. Make the policy durable in `AGENTS.md` and the adding-a-binary guide;
 focused execution and source inspection are sufficient validation without
 teaching the recipe catalog parser to interpret shell implementation details.
 
+The implementation push necessarily matches the `recipes/**` and `builders/**`
+path filters in `.github/workflows/publish-containers.yml`. Keep that workflow
+unchanged and do not dispatch an extra run, but require the automatically
+triggered catalog and artifact-publication jobs to succeed before completing
+the plan.
+
 ## Affected Components
 
 - `recipes/gdb/aarch64/build.sh`: require Buildx and delete direct execution of
@@ -135,6 +141,9 @@ teaching the recipe catalog parser to interpret shell implementation details.
    changed.
 7. Stage only the plan-owned scripts, documentation, and any validated changed
    artifacts; commit and push them without including unrelated worktree state.
+8. Observe the automatically triggered container-publication run for the
+   implementation commit and require both enabled matrix entries to succeed;
+   do not manually dispatch a duplicate run.
 
 ## Validation
 
@@ -162,8 +171,9 @@ teaching the recipe catalog parser to interpret shell implementation details.
   previously committed artifacts.
 - Inspect `.github/workflows/publish-builder.yml` and
   `.github/workflows/publish-containers.yml` to confirm they still set up
-  Buildx and have no alternate backend; do not dispatch publication solely for
-  this host-script change.
+  Buildx and have no alternate backend. After the implementation push, verify
+  that the automatically triggered `publish-containers.yml` run succeeds for
+  both enabled recipe entries without a manual retry.
 
 ## Success Criteria
 
@@ -179,3 +189,5 @@ teaching the recipe catalog parser to interpret shell implementation details.
 - Both builder candidates and both enabled artifacts pass their existing
   validations through the single Buildx path, and active documentation names
   Buildx as a prerequisite.
+- The implementation commit's automatic artifact-publication run succeeds for
+  both enabled recipes without workflow changes or a duplicate dispatch.
