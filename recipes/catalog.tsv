@@ -16,6 +16,7 @@ socat	x86	true
 socat	x86_64	true
 strace	aarch64	true
 strace	armv7	true
+strace	x86	true
 strace	x86_64	true
 tcpdump	aarch64	true
 tcpdump	armv7	true

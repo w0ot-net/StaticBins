@@ -1,0 +1,5 @@
+VM_KERNEL_RELEASE=alpine-3.22.5
+VM_KERNEL_FILE=vmlinuz-lts
+VM_KERNEL_URL=https://dl-cdn.alpinelinux.org/alpine/v3.22/releases/x86/netboot-3.22.5/vmlinuz-lts
+VM_KERNEL_SHA256=d6140e16c715081556eac132146a4f17c5572699c623021326eb2197c7a2f148
+VM_KERNEL_AUTHENTICATION=checksum-only

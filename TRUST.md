@@ -39,6 +39,7 @@ keyserver, or network lookup.
 | [socat 1.8.1.3 (x86-64)](recipes/socat/x86_64/source.lock) | Checksum only | Not available | [official Git repository](https://repo.or.cz/socat.git) |
 | [strace 6.16 (AArch64)](recipes/strace/aarch64/source.lock) | Checksum only | Not adopted | [official release](https://strace.io/files/6.16/) |
 | [strace 6.16 (ARMv7)](recipes/strace/armv7/source.lock) | Checksum only | Not adopted | [official release](https://strace.io/files/6.16/) |
+| [strace 6.16 (x86)](recipes/strace/x86/source.lock) | Checksum only | Not adopted | [official release](https://strace.io/files/6.16/) |
 | [strace 6.16 (x86-64)](recipes/strace/x86_64/source.lock) | Checksum only | Not adopted | [official release](https://strace.io/files/6.16/) |
 | [tcpdump 4.99.4 (AArch64)](recipes/tcpdump/aarch64/source.lock) | Upstream PGP | `1F166A5742ABB9E0249A8D30E089DEF1D9C15D0D` | [signature](https://www.tcpdump.org/release/tcpdump-4.99.4.tar.gz.sig); [Tcpdump Group key](https://www.tcpdump.org/release/signing-key-RSA-E089DEF1D9C15D0D.asc) |
 | [libpcap 1.10.4 (AArch64)](recipes/tcpdump/aarch64/source.lock) | Upstream PGP | `1F166A5742ABB9E0249A8D30E089DEF1D9C15D0D` | [signature](https://www.tcpdump.org/release/libpcap-1.10.4.tar.gz.sig); [Tcpdump Group key](https://www.tcpdump.org/release/signing-key-RSA-E089DEF1D9C15D0D.asc) |
@@ -68,11 +69,12 @@ Alpine 3.22.5 `vmlinuz-lts`, recorded in their respective
 and an evidence boot establish the required QEMU `virt`, PL011 console, and
 generated-initramfs support. The same checksum-only kernel limitation applies.
 
-The x86 GDBserver functional test boots the checksum-locked Alpine 3.22.5 x86
-`vmlinuz-lts` recorded in its
-[`vm.lock`](recipes/gdbserver/x86/vm.lock). The published configuration and a
-successful QEMU PC boot establish 32-bit x86, initramfs, devtmpfs, procfs, and
-8250 serial-console support; the guest also verifies that the fixed `qemu32`
+The x86 GDBserver and strace functional tests boot the same checksum-locked
+Alpine 3.22.5 x86 `vmlinuz-lts`, recorded in their respective
+[`GDBserver vm.lock`](recipes/gdbserver/x86/vm.lock) and
+[`strace vm.lock`](recipes/strace/x86/vm.lock). The published configuration and
+successful QEMU PC boots establish 32-bit x86, initramfs, devtmpfs, procfs, and
+8250 serial-console support; both guests also verify that the fixed `qemu32`
 CPU exposes CMOV and SSE2. The kernel remains a smoke-test environment input,
 not a linked input or distributed artifact, and its checksum does not
 authenticate its origin.
@@ -124,6 +126,7 @@ does not identify who built a binary or establish its provenance.
 | `artifacts/x86/gdbserver` | Upstream PGP | Committed recipe and target checks passed | None |
 | `artifacts/x86/lsof` | Checksum only | Committed recipe and target checks passed | None |
 | `artifacts/x86/socat` | Checksum only | Committed recipe and target checks passed | None |
+| `artifacts/x86/strace` | Checksum only | Committed recipe and target checks passed | None |
 | `artifacts/x86/tcpdump` | Upstream PGP for tcpdump and libpcap | Committed recipe and target checks passed | None |
 | `artifacts/x86_64/gdb` | Upstream PGP | Committed recipe and target checks passed | None |
 | `artifacts/x86_64/tcpdump` | Upstream PGP for tcpdump and libpcap | Committed recipe and target checks passed | Exact native rebuild and historical GitHub attestation |
