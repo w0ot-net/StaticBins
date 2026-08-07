@@ -1,5 +1,7 @@
 # Plan: Present and Preserve the Complete Utility Matrix
 
+*Distilled: 2026-08-07*
+
 ## Summary
 
 Replace the crowded architecture-summary table with a compact utility matrix:
