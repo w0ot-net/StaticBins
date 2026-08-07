@@ -104,3 +104,17 @@ tool's focused functional smoke test. Commit the validated executable under
 `artifacts/<architecture>/<tool>`. A relevant push runs fast recipe validation;
 it does not build or publish a utility image. GHCR publication is reserved for
 the separately maintained reusable builders.
+
+Update `artifacts/SHA256SUMS` with exactly one sorted, repository-relative
+SHA-256 record for the new executable, then record one of the two allowed
+artifact statuses in `TRUST.md`: `Exact rebuild + GitHub attestation` or `Not
+verified`. A source-authenticated, statically validated, or checksum-listed file
+does not automatically qualify for build provenance.
+
+Use `Exact rebuild + GitHub attestation` only after one clean native build has
+passed the full recipe checks and reproduced the committed bytes exactly. Add
+the tool explicitly to `.github/workflows/verify-artifacts.yml` so a selected
+job rebuilds, compares, and attests the same file. A mismatch is evidence for
+`Not verified`; do not hide it with a retry or silently replace artifact bytes.
+Future catalog rows remain unverified until this bounded qualification and
+workflow change are reviewed.

@@ -29,6 +29,10 @@ Repository contract:
   Keep source, configure, license, and smoke-test logic in the tool-owned
   recipe. Follow `doc/adding-a-binary.md` and run
   `python3 scripts/recipes.py validate` when a recipe or catalog field changes.
+- Keep `artifacts/SHA256SUMS` complete and exact for every distributed file,
+  excluding the manifest itself. Record every artifact in `TRUST.md` as either
+  `Exact rebuild + GitHub attestation` or `Not verified`; checksums and source
+  authentication alone do not establish artifact provenance.
 
 Reproducible build guidance:
 
@@ -93,6 +97,10 @@ Static artifact validation:
   the artifact's purpose. Report the final size and SHA-256 checksum.
 - When changing a build, rebuild and validate its artifact. Do not assume script
   review alone proves that the checked-in binary matches the recipe.
+- Add an artifact to the attestation workflow only after one clean native build
+  reproduces its committed bytes exactly. The attestation job must rebuild,
+  compare, and attest the same file in one job. Do not retry a qualification
+  mismatch or automatically grant attested status to new catalog rows.
 
 Documentation and distribution:
 

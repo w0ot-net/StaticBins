@@ -38,3 +38,49 @@ Every source record declares one of two modes:
 signature. An authentic release establishes origin; repeatable builds and
 static ELF checks provide different evidence about how the distributed binary
 was produced.
+
+## Artifact assurance
+
+From the repository root, check every distributed file against the committed
+integrity manifest:
+
+```sh
+sha256sum -c artifacts/SHA256SUMS
+```
+
+This detects missing or changed bytes relative to the checked-out manifest. It
+does not identify who built a binary or establish its provenance.
+
+| Artifact | Source authentication | Artifact status |
+| --- | --- | --- |
+| `artifacts/aarch64/gdb` | Upstream PGP | `Not verified` |
+| `artifacts/x86_64/tcpdump` | Upstream PGP for tcpdump and libpcap | `Exact rebuild + GitHub attestation` |
+| `artifacts/x86_64/gdbserver` | Legacy; no recipe evidence | `Not verified` |
+| `artifacts/x86_64/lsof` | Legacy; no recipe evidence | `Not verified` |
+| `artifacts/x86_64/socat` | Legacy; no recipe evidence | `Not verified` |
+| `artifacts/x86_64/strace` | Legacy; no recipe evidence | `Not verified` |
+
+`Exact rebuild + GitHub attestation` means a clean native build passed the
+recipe checks, reproduced the committed SHA-256 exactly, and the repository
+workflow attested that same rebuilt file. Verify tcpdump with a current GitHub
+CLI:
+
+```sh
+gh attestation verify artifacts/x86_64/tcpdump \
+  --repo w0ot-net/static_bins \
+  --signer-workflow w0ot-net/static_bins/.github/workflows/verify-artifacts.yml \
+  --source-ref refs/heads/main
+```
+
+`Not verified` means no exact rebuild-and-attestation claim is available. The
+initial native checks on 2026-08-07 reproduced tcpdump as
+`cdd8f895dceb63d428f137ed910cc083dde2bc76d1006e3468b6f8d654c053b1`.
+The single required GDB check produced
+`8e729a88937e2187a9288ae9914748ae3946285227a76ce37232802df8319f4a`
+instead of the committed
+`5e96e51367020e6be6e2cb0a7f0014573da838a8f7d1d099fd2e5a4a55c820ab`;
+the committed file was restored unchanged and no retry was made.
+
+An attestation ties exact bytes to a repository workflow execution and commit;
+it does not prove that the source is safe, reviewed, malware-free, or free of
+vulnerabilities.

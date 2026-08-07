@@ -22,6 +22,9 @@ IDENTIFIER_RE = re.compile(r"[a-z0-9][a-z0-9_-]*\Z")
 VERSION_RE = re.compile(r"[A-Za-z0-9][A-Za-z0-9._+-]*\Z")
 DIGEST_IMAGE_RE = re.compile(r"[^@\s]+@sha256:[0-9a-f]{64}\Z")
 SHA256_RE = re.compile(r"[0-9a-f]{64}\Z")
+ARTIFACT_MANIFEST_LINE_RE = re.compile(
+    r"([0-9a-f]{64})  (artifacts/[^\r\n]+)\Z"
+)
 FINGERPRINT_RE = re.compile(r"[0-9A-F]{40}\Z")
 LOCK_ASSIGNMENT_RE = re.compile(r"([A-Z][A-Z0-9_]*)=([^\s#]+)\Z")
 
@@ -143,6 +146,103 @@ def _require_source_archive(
             digest.update(chunk)
     if digest.hexdigest() != expected_sha256:
         raise _error(line_number, f"{field} checksum does not match source.lock: {relative_path}")
+
+
+def _sha256_file(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as input_file:
+        for chunk in iter(lambda: input_file.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def _validate_artifact_manifest(root: Path) -> None:
+    manifest_relative = "artifacts/SHA256SUMS"
+    manifest_path = root / manifest_relative
+    if manifest_path.is_symlink() or not manifest_path.is_file():
+        raise CatalogError(f"missing regular artifact manifest: {manifest_relative}")
+    manifest_mode = _git_index_mode(root, manifest_relative)
+    if manifest_mode is None:
+        raise CatalogError(f"untracked artifact manifest: {manifest_relative}")
+    if manifest_mode != "100644":
+        raise CatalogError(
+            f"artifact manifest has Git mode {manifest_mode}: {manifest_relative}"
+        )
+
+    errors: list[str] = []
+    records: dict[str, tuple[str, int]] = {}
+    record_paths: list[str] = []
+    for line_number, raw_line in enumerate(
+        manifest_path.read_text(encoding="utf-8").splitlines(), start=1
+    ):
+        match = ARTIFACT_MANIFEST_LINE_RE.fullmatch(raw_line)
+        if match is None:
+            errors.append(f"SHA256SUMS line {line_number}: malformed record")
+            continue
+        expected_digest, relative_path = match.groups()
+        posix_path = PurePosixPath(relative_path)
+        if (
+            "\\" in relative_path
+            or posix_path.is_absolute()
+            or posix_path.as_posix() != relative_path
+            or any(part in {".", ".."} for part in posix_path.parts)
+            or not posix_path.parts
+            or posix_path.parts[0] != "artifacts"
+            or relative_path == manifest_relative
+        ):
+            errors.append(
+                f"SHA256SUMS line {line_number}: unsafe artifact path: {relative_path}"
+            )
+            continue
+        if relative_path in records:
+            errors.append(
+                f"SHA256SUMS line {line_number}: duplicate artifact path: {relative_path}"
+            )
+            continue
+        records[relative_path] = (expected_digest, line_number)
+        record_paths.append(relative_path)
+
+    if record_paths != sorted(record_paths):
+        errors.append("SHA256SUMS artifact paths are not sorted")
+
+    artifacts_root = root / "artifacts"
+    actual_paths: set[str] = set()
+    if artifacts_root.is_dir():
+        for path in artifacts_root.rglob("*"):
+            relative_path = path.relative_to(root).as_posix()
+            if relative_path == manifest_relative:
+                continue
+            if path.is_symlink():
+                errors.append(f"artifact is not a regular file: {relative_path}")
+                continue
+            if path.is_dir():
+                continue
+            if not path.is_file():
+                errors.append(f"artifact is not a regular file: {relative_path}")
+                continue
+            actual_paths.add(relative_path)
+
+    for relative_path in sorted(actual_paths - records.keys()):
+        errors.append(f"artifact missing from SHA256SUMS: {relative_path}")
+    for relative_path in sorted(records.keys() - actual_paths):
+        errors.append(f"SHA256SUMS names missing artifact: {relative_path}")
+    for relative_path in sorted(actual_paths & records.keys()):
+        expected_digest, line_number = records[relative_path]
+        mode = _git_index_mode(root, relative_path)
+        if mode is None:
+            errors.append(f"untracked artifact: {relative_path}")
+            continue
+        if mode != "100755":
+            errors.append(f"artifact has Git mode {mode}: {relative_path}")
+            continue
+        actual_digest = _sha256_file(root / relative_path)
+        if actual_digest != expected_digest:
+            errors.append(
+                f"SHA256SUMS line {line_number}: checksum mismatch: {relative_path}"
+            )
+
+    if errors:
+        raise CatalogError("artifact manifest validation failed:\n- " + "\n- ".join(errors))
 
 
 def _safe_filename(value: str, field: str, line_number: int) -> None:
@@ -456,6 +556,7 @@ def load_catalog(root: Path, catalog_path: Path) -> list[Recipe]:
         if recipe.name in seen_names:
             raise CatalogError(f"duplicate recipe name: {recipe.name}")
         seen_names.add(recipe.name)
+    _validate_artifact_manifest(root)
     return recipes
 
 

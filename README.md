@@ -11,6 +11,18 @@ recipes.
 Clone the repository or follow an artifact link to obtain the standalone
 executable. GHCR is not used to distribute utility binaries.
 
+## Verify
+
+Check all files against the committed integrity manifest:
+
+```sh
+sha256sum -c artifacts/SHA256SUMS
+```
+
+Only artifacts explicitly marked `Exact rebuild + GitHub attestation` have
+build provenance. See [`TRUST.md`](TRUST.md) for current per-file status and the
+GitHub CLI verification command.
+
 ## Build
 
 List the enabled recipes, then build one with Bash, Docker, and the Docker
@@ -53,7 +65,6 @@ be validated with `./builders/aarch64/build.sh` or
 `./builders/aarch64/run.sh`. Candidate builder validation also requires Docker
 Buildx. Repository CI validates recipes but does not publish utility images.
 
-See [`doc/adding-a-binary.md`](doc/adding-a-binary.md) for the recipe contract
-and [`TRUST.md`](TRUST.md) for source-authentication status and assurance
-limits. Repository-wide build and validation rules are in
+See [`doc/adding-a-binary.md`](doc/adding-a-binary.md) for the recipe contract.
+Repository-wide build and validation rules are in
 [`AGENTS.md`](AGENTS.md).

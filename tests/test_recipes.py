@@ -140,7 +140,21 @@ class CatalogFixture:
         catalog.write_text("\n".join(lines) + "\n", encoding="utf-8")
         return catalog
 
+    def write_artifact_manifest(self) -> Path:
+        manifest = self.root / "artifacts" / "SHA256SUMS"
+        manifest.parent.mkdir(parents=True, exist_ok=True)
+        records = []
+        for path in sorted((self.root / "artifacts").glob("*/*")):
+            if path.is_file():
+                relative_path = path.relative_to(self.root).as_posix()
+                records.append(
+                    f"{hashlib.sha256(path.read_bytes()).hexdigest()}  {relative_path}"
+                )
+        manifest.write_text("\n".join(records) + "\n", encoding="utf-8")
+        return manifest
+
     def track(self) -> None:
+        self.write_artifact_manifest()
         subprocess.run(
             ["git", "-C", str(self.root), "add", "--", "artifacts", "builders", "recipes"],
             check=True,
@@ -192,6 +206,76 @@ class RecipeCatalogTests(unittest.TestCase):
             ["artifacts/aarch64/gdb", "artifacts/x86_64/tool"],
             [recipe.output for recipe in first],
         )
+
+    def test_artifact_manifest_is_complete_and_exact(self) -> None:
+        cases = (
+            ("missing manifest", "missing regular artifact manifest"),
+            ("omitted artifact", "artifact missing from SHA256SUMS"),
+            ("extra record", "SHA256SUMS names missing artifact"),
+            ("duplicate record", "duplicate artifact path"),
+            ("unsorted records", "artifact paths are not sorted"),
+            ("unsafe path", "unsafe artifact path"),
+            ("malformed record", "malformed record"),
+            ("corrupt artifact", "checksum mismatch"),
+            ("untracked extra artifact", "artifact missing from SHA256SUMS"),
+        )
+        for mutation, expected_message in cases:
+            with self.subTest(mutation=mutation):
+                temporary_directory, fixture = self.make_fixture()
+                self.addCleanup(temporary_directory.cleanup)
+                fixture.add_recipe()
+                catalog = fixture.write_catalog()
+                fixture.track()
+                manifest = fixture.root / "artifacts/SHA256SUMS"
+                record = manifest.read_text(encoding="utf-8").strip()
+
+                if mutation == "missing manifest":
+                    manifest.unlink()
+                elif mutation == "omitted artifact":
+                    manifest.write_text("", encoding="utf-8")
+                elif mutation == "extra record":
+                    manifest.write_text(
+                        record + "\n" + "0" * 64 + "  artifacts/x86_64/absent\n",
+                        encoding="utf-8",
+                    )
+                elif mutation == "duplicate record":
+                    manifest.write_text(record + "\n" + record + "\n", encoding="utf-8")
+                elif mutation == "unsorted records":
+                    extra = fixture.root / "artifacts/x86_64/extra"
+                    extra.parent.mkdir(parents=True, exist_ok=True)
+                    extra.write_bytes(b"extra")
+                    subprocess.run(
+                        [
+                            "git",
+                            "-C",
+                            str(fixture.root),
+                            "add",
+                            "--",
+                            "artifacts/x86_64/extra",
+                        ],
+                        check=True,
+                    )
+                    extra_record = (
+                        f"{hashlib.sha256(extra.read_bytes()).hexdigest()}  "
+                        "artifacts/x86_64/extra"
+                    )
+                    manifest.write_text(extra_record + "\n" + record + "\n", encoding="utf-8")
+                elif mutation == "unsafe path":
+                    manifest.write_text(
+                        "0" * 64 + "  artifacts/../outside\n", encoding="utf-8"
+                    )
+                elif mutation == "malformed record":
+                    manifest.write_text(record.replace("  ", " ") + "\n", encoding="utf-8")
+                elif mutation == "corrupt artifact":
+                    (fixture.root / "artifacts/aarch64/gdb").write_bytes(b"changed")
+                else:
+                    (fixture.root / "artifacts/x86_64/extra").parent.mkdir(
+                        parents=True, exist_ok=True
+                    )
+                    (fixture.root / "artifacts/x86_64/extra").write_bytes(b"extra")
+
+                with self.assertRaisesRegex(recipes.CatalogError, expected_message):
+                    recipes.load_catalog(fixture.root, catalog)
 
     def test_source_version_is_validated(self) -> None:
         temporary_directory, fixture = self.make_fixture()

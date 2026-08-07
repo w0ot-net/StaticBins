@@ -1,0 +1,190 @@
+name: Verify artifacts
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  detect:
+    name: Select artifact checks
+    runs-on: ubuntu-24.04
+    outputs:
+      tcpdump: ${{ steps.changes.outputs.tcpdump }}
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+
+      - name: Select trust-critical artifacts
+        id: changes
+        shell: bash
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          BEFORE_SHA: ${{ github.event.before }}
+          EVENT_NAME: ${{ github.event_name }}
+        run: |
+          set -euo pipefail
+
+          if [[ "${EVENT_NAME}" == "workflow_dispatch" ]]; then
+            if [[ "${GITHUB_REF}" != "refs/heads/main" ]]; then
+              echo "error: attestations may be refreshed only from main" >&2
+              exit 1
+            fi
+            echo "tcpdump=true" >> "${GITHUB_OUTPUT}"
+            exit 0
+          fi
+
+          if [[ "${EVENT_NAME}" == "pull_request" ]]; then
+            comparison_base=${BASE_SHA}
+          elif [[ "${BEFORE_SHA}" == "0000000000000000000000000000000000000000" ]]; then
+            echo "tcpdump=true" >> "${GITHUB_OUTPUT}"
+            exit 0
+          else
+            comparison_base=${BEFORE_SHA}
+          fi
+
+          selected=false
+          while IFS= read -r path; do
+            case "${path}" in
+              .github/workflows/verify-artifacts.yml|\
+              artifacts/SHA256SUMS|\
+              artifacts/x86_64/tcpdump|\
+              build.sh|\
+              builders/x86_64/*|\
+              recipes/catalog.tsv|\
+              recipes/tcpdump/x86_64/*|\
+              scripts/recipes.py|\
+              tests/test_recipes.py)
+                selected=true
+                ;;
+            esac
+          done < <(git diff --name-only "${comparison_base}" "${GITHUB_SHA}")
+          echo "tcpdump=${selected}" >> "${GITHUB_OUTPUT}"
+
+  verify-pull-request:
+    name: Exact rebuild (${{ matrix.name }})
+    needs: detect
+    if: needs.detect.outputs.tcpdump == 'true' && github.event_name == 'pull_request'
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: tcpdump
+            runner: ubuntu-24.04
+            artifact: artifacts/x86_64/tcpdump
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@bb05f3f5519dd87d3ba754cc423b652a5edd6d2c # v4.2.0
+
+      - name: Rebuild and compare exact bytes
+        shell: bash
+        env:
+          ARTIFACT: ${{ matrix.artifact }}
+          RECIPE: ${{ matrix.name }}
+        run: |
+          set -euo pipefail
+          expected=$(awk -v path="${ARTIFACT}" '$2 == path { print $1 }' artifacts/SHA256SUMS)
+          if [[ ! "${expected}" =~ ^[0-9a-f]{64}$ ]]; then
+            echo "error: missing or invalid manifest record for ${ARTIFACT}" >&2
+            exit 1
+          fi
+          printf '%s  %s\n' "${expected}" "${ARTIFACT}" | sha256sum --check --strict
+          ./build.sh "${RECIPE}"
+          printf '%s  %s\n' "${expected}" "${ARTIFACT}" | sha256sum --check --strict
+
+  attest-main:
+    name: Rebuild and attest (${{ matrix.name }})
+    needs: detect
+    if: >-
+      needs.detect.outputs.tcpdump == 'true' &&
+      github.ref == 'refs/heads/main' &&
+      (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+    runs-on: ${{ matrix.runner }}
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: tcpdump
+            runner: ubuntu-24.04
+            artifact: artifacts/x86_64/tcpdump
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@bb05f3f5519dd87d3ba754cc423b652a5edd6d2c # v4.2.0
+
+      - name: Rebuild and compare exact bytes
+        shell: bash
+        env:
+          ARTIFACT: ${{ matrix.artifact }}
+          RECIPE: ${{ matrix.name }}
+        run: |
+          set -euo pipefail
+          expected=$(awk -v path="${ARTIFACT}" '$2 == path { print $1 }' artifacts/SHA256SUMS)
+          if [[ ! "${expected}" =~ ^[0-9a-f]{64}$ ]]; then
+            echo "error: missing or invalid manifest record for ${ARTIFACT}" >&2
+            exit 1
+          fi
+          printf '%s  %s\n' "${expected}" "${ARTIFACT}" | sha256sum --check --strict
+          ./build.sh "${RECIPE}"
+          printf '%s  %s\n' "${expected}" "${ARTIFACT}" | sha256sum --check --strict
+
+      - name: Attest exact artifact
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        with:
+          subject-path: ${{ matrix.artifact }}
+
+  assurance:
+    name: artifact-assurance
+    if: always()
+    needs:
+      - detect
+      - verify-pull-request
+      - attest-main
+    runs-on: ubuntu-24.04
+    env:
+      ATTEST_RESULT: ${{ needs.attest-main.result }}
+      DETECT_RESULT: ${{ needs.detect.result }}
+      EVENT_NAME: ${{ github.event_name }}
+      SELECTED: ${{ needs.detect.outputs.tcpdump }}
+      VERIFY_RESULT: ${{ needs.verify-pull-request.result }}
+
+    steps:
+      - name: Enforce selected checks
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "${DETECT_RESULT}" != "success" ]]; then
+            echo "error: artifact selection failed" >&2
+            exit 1
+          fi
+          if [[ "${SELECTED}" != "true" ]]; then
+            exit 0
+          fi
+          if [[ "${EVENT_NAME}" == "pull_request" ]]; then
+            required_result=${VERIFY_RESULT}
+          else
+            required_result=${ATTEST_RESULT}
+          fi
+          if [[ "${required_result}" != "success" ]]; then
+            echo "error: selected artifact assurance job did not succeed" >&2
+            exit 1
+          fi
