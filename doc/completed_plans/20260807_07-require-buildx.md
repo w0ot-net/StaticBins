@@ -197,3 +197,38 @@ the same commit, while an implementation failure requires a corrective commit.
 - The implementation commit's automatic artifact-publication run succeeds for
   both enabled recipes without workflow changes or a separate workflow
   dispatch.
+
+## Execution Notes
+
+Completed on 2026-08-07.
+
+- Implementation commit `65197fa3e3c15ecf05cb59ed35637a0fcc2ef166`
+  made Docker Buildx an early, mandatory prerequisite in both recipe commands
+  and both reusable-builder candidate commands. It removed the direct
+  guest-script and classic-Docker fallback branches and updated the active
+  repository, recipe, and contributor documentation.
+- The standard Ubuntu `docker-buildx` package was installed on the execution
+  host to supply Buildx 0.30.1. This was a host prerequisite only and did not
+  change repository locks or builder inputs.
+- Controlled missing-Buildx tests covered all four commands. Each exited with
+  the documented error after only `docker buildx version`; none attempted
+  daemon access, binfmt registration, an image pull, a build, or artifact
+  installation. Source inspection confirmed exactly one `docker buildx build`
+  invocation per command and no remaining automatic backend branch.
+- Both AArch64 and x86-64 reusable-builder candidate commands passed their
+  existing platform, package, command, label, and static-toolchain checks. An
+  existing AArch64 package-list shell case needed `#` escaped for Alpine
+  `/bin/sh`; the cached candidate was rechecked after that narrow correction.
+- The one tcpdump Buildx recipe build reproduced
+  `cdd8f895dceb63d428f137ed910cc083dde2bc76d1006e3468b6f8d654c053b1`
+  exactly. The one emulated GDB Buildx recipe build produced the already-known
+  valid QEMU variant
+  `5e96e51367020e6be6e2cb0a7f0014573da838a8f7d1d099fd2e5a4a55c820ab`,
+  which replaced the byte-different native artifact as required by this plan.
+  Both final files retain mode `100755` and passed architecture, ELF type,
+  static-link, stripping, version, and target-architecture smoke checks.
+- Fast validation passed: Bash syntax, `git diff --check`, catalog validation,
+  all 13 recipe unit tests, root recipe listing, backend source searches, and
+  workflow inspection. Automatic Actions run `31154870560` for the exact
+  implementation commit succeeded for catalog, AArch64 GDB, and x86-64
+  tcpdump without a separate dispatch.
