@@ -12,8 +12,9 @@ architecture. Keep target ABI, ELF, and functional checks explicit in the
 architecture and tool owners rather than generalizing policy that genuinely
 differs by target.
 
-Execute this plan after the open ARMv7 artifact plans and before the ordered
-32-bit x86 builder and tcpdump plans.
+Execute this plan after the open ARMv7 artifact plans and the ordered AArch64
+tcpdump and x86-64 GDB plans, and before the 32-bit x86 builder and recipe
+plans.
 
 ## Problem
 
@@ -167,9 +168,10 @@ architecture.
 
 ## Implementation Sequence
 
-1. Start after the open ARMv7 artifact plans stop changing shared catalog,
-   README, trust, and documentation paths. Snapshot `./build.sh list`, the three
-   current builder mappings, builder locks, and all artifact hashes.
+1. Start after the current three architectures have the complete six-tool set
+   and stop changing shared catalog, README, trust, and documentation paths.
+   Snapshot `./build.sh list`, the three current builder mappings, builder
+   locks, and all artifact hashes.
 2. Add the exact three-row builder catalog and strict Bash loader. Migrate
    `build.sh` and `builders/publish.sh` without changing their public commands,
    current selections, Docker ordering, or failure boundaries.
