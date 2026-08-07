@@ -62,9 +62,11 @@ enforcement, repository scope, and a branch target that matches only `main`.
 Enable the minimum rules:
 
 - require changes through a pull request;
-- require the final fast recipe-validation check;
+- require the stable `recipe-validation` check from
+  `.github/workflows/validate-recipes.yml` with strict, up-to-date branch
+  evaluation;
 - require the stable `artifact-assurance` gate from
-  `.github/workflows/verify-artifacts.yml`;
+  `.github/workflows/verify-artifacts.yml` under the same strict policy;
 - block force pushes; and
 - block deletion of `main`.
 
@@ -73,11 +75,13 @@ provides a stable diff, check association, and audit record without pretending
 that self-review is independent review. Dismissal, CODEOWNERS, and reviewer-team
 rules can be added when another maintainer actually participates.
 
-Use stable gate jobs rather than architecture-specific build job names as
-required checks. The fast validation and artifact-assurance gates must report on
-every pull request; they may internally skip expensive work when their relevant
-paths did not change. This avoids a ruleset that deadlocks documentation-only
-changes because a path-filtered required workflow never starts.
+Use the stable `recipe-validation` and `artifact-assurance` jobs rather than
+architecture-specific build job names as required checks. Both must report on
+every pull request; the artifact gate may internally skip expensive work when
+its relevant paths did not change. This avoids a ruleset that deadlocks
+documentation-only changes because a path-filtered required workflow never
+starts. Require branches to be up to date with `main` before merge so a passing
+result cannot be carried across an intervening trust-workflow or recipe change.
 
 Enable `sha_pinning_required` in repository Actions settings only after scanning
 every workflow `uses:` entry and confirming a 40-character commit SHA. Keep the
@@ -116,27 +120,25 @@ than deleting or broadly replacing repository policy.
    head commit, and exact check names. Scan all `uses:` entries for full commit
    SHAs and fix none here; stop if the prerequisite is not already true.
 3. Create the one active `artifact-trust-main` ruleset with no broad branch
-   pattern and no unrelated policy. Enable full-SHA Actions enforcement.
-4. Open a controlled pull request and prove both required gates report and pass;
-   prove a documentation-only pull request does not wait for an absent build
-   job.
-5. Update and merge the bounded `TRUST.md` and `AGENTS.md` contract through the
-   new protected path, then record the ruleset ID and effective API state in the
-   completed plan.
+   pattern and no unrelated policy. Configure required checks as strict and
+   enable full-SHA Actions enforcement.
+4. Open a controlled documentation-only pull request containing the bounded
+   `TRUST.md` and `AGENTS.md` updates. Prove both required gates report without an
+   absent build job, then merge it through the new protected path.
+5. Re-read the ruleset and Actions policy, then record the ruleset ID and
+   effective API state in the completed plan.
 
 ## Validation
 
 - Query the GitHub branch/ruleset APIs and require exactly one intended active
-  ruleset to target `main`; inspect the returned rules rather than trusting the
-  UI summary.
-- Prove an ordinary direct push to `main`, a force push, and branch deletion are
-  rejected using non-destructive test refs or GitHub's ruleset evaluation where
-  direct testing would risk the real branch.
+  ruleset to target `main`; inspect the returned pull-request, strict required-
+  check, non-fast-forward, and deletion rules rather than trusting the UI
+  summary. Confirm applicability with `gh ruleset check main`.
+- Do not attempt a live direct push, force push, or deletion against `main` merely
+  to test rejection: a throwaway ref would not exercise the main-only target and
+  a misconfiguration would make the real operation succeed.
 - Open a pull request with no trust-critical changes and require both stable
   gates to report successfully without an expensive build.
-- In a test pull request that changes a trust-critical path, require the
-  artifact gate to wait for and reflect the native exact-build jobs; do not merge
-  intentionally altered artifact bytes.
 - Query Actions policy and require `sha_pinning_required=true`; scan every
   workflow and reject tag, branch, or short-SHA `uses:` references.
 - Confirm the ruleset does not require a nonexistent reviewer, signed-history
