@@ -1,5 +1,7 @@
 # Plan: Centralize Architecture Onboarding
 
+*Distilled: 2026-08-07*
+
 ## Summary
 
 Add one minimal builder-architecture catalog that owns the internal identifier,
