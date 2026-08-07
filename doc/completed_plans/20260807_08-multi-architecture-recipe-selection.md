@@ -107,3 +107,23 @@ order. Architecture values remain restricted to `aarch64` and `x86_64`.
   unique `./build.sh gdb` and `./build.sh tcpdump` commands remain valid.
 - Listing exposes architecture and every unsafe, disabled, unknown, or
   ambiguous request fails before a recipe executes.
+
+## Execution Notes
+
+- Implemented `(name, architecture)` catalog identity, explicit architecture
+  dispatch, deterministic pair listing, unambiguous single-row shorthand, and
+  fail-fast handling for invalid, disabled, unknown, duplicate, and ambiguous
+  requests.
+- Updated `build.sh`, `scripts/recipes.py`, focused unit fixtures, `README.md`,
+  `doc/adding-a-binary.md`, and `AGENTS.md`. No recipes, artifacts, catalog
+  rows, or assurance-selection behavior changed.
+- No material deviations from the accepted plan were required.
+- Validation passed with `bash -n build.sh`, `python3 -m unittest
+  tests.test_recipes`, `python3 scripts/recipes.py validate`, `./build.sh
+  list`, and `git diff --check`.
+- Pull request #9 passed `recipe-validation`; its required exact tcpdump build
+  reproduced the committed artifact and `artifact-assurance` passed.
+- Implementation commit: `f4e848b` (`Support architecture-qualified
+  recipes`), merged to `main` as `50b9333`.
+- Deliberately excluded follow-up: tcpdump assurance-selection efficiency
+  remains owned by the next numbered plan.
