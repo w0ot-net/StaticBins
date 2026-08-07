@@ -8,7 +8,7 @@ upstream provenance, while the committed copies are the normal build inputs.
 The unmodified upstream `LICENSE` files from those exact archives are included
 here as `tcpdump-LICENSE.txt` and `libpcap-LICENSE.txt`. The locked x86-64
 builder is
-`ghcr.io/w0ot-net/static_bins-builder@sha256:ed0de561168a27489545d883e790707ae9a34c9412ce6e944c973bc3d848b030`.
+`ghcr.io/w0ot-net/static_bins-builder@sha256:42799e31a407a5d39203e748f46981c20fedd4bb1c4cf20c5127c68d62a8a274`.
 
 `archive-inventory.tsv` is a factual record of every static archive observed in
 the final link. The two project-built archives map to their locked upstream
