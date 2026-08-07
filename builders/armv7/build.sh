@@ -78,6 +78,7 @@ docker run --rm \
     --mount "type=bind,src=${PACKAGE_LOCK},dst=/tmp/packages.lock,readonly" \
     "${LOCAL_IMAGE}" \
     /bin/sh -eu -c '
+        # BEGIN ARMV7 BUILDER VALIDATION
         validation_errors=0
         if [ "$(uname -m)" != armv7l ]; then
             echo "error: candidate runtime is not ARMv7" >&2
@@ -100,21 +101,61 @@ docker run --rm \
             fi
         done < /tmp/packages.lock
 
-        for command_name in cc c++ file make readelf strip; do
+        for command_name in \
+            autoconf automake autoreconf bison cc c++ file flex \
+            libressl-openssl libtoolize make makeinfo perl pkg-config \
+            readelf readlink rpcgen sha256sum strip tar xz; do
             if ! command -v "${command_name}" >/dev/null 2>&1; then
                 echo "error: candidate builder is missing ${command_name}" >&2
                 validation_errors=$((validation_errors + 1))
             fi
         done
 
-        libgcc_archive=$(cc -print-file-name=libgcc.a)
-        libstdcxx_archive=$(c++ -print-file-name=libstdc++.a)
-        for archive_path in /usr/lib/libc.a "${libgcc_archive}" "${libstdcxx_archive}"; do
+        libgcc_archive=$(readlink -f "$(cc -print-file-name=libgcc.a)")
+        libgcc_eh_archive=$(readlink -f "$(cc -print-file-name=libgcc_eh.a)")
+        libstdcxx_archive=$(readlink -f "$(c++ -print-file-name=libstdc++.a)")
+
+        validate_archive_owner() {
+            archive_path=$1
+            expected_owner=$2
+            expected_version=$3
             if [ ! -f "${archive_path}" ]; then
                 echo "error: candidate builder is missing ${archive_path}" >&2
                 validation_errors=$((validation_errors + 1))
+                return
             fi
+            observed_owner=$(apk info --who-owns "${archive_path}" 2>/dev/null || true)
+            expected_record="${archive_path} is owned by ${expected_owner}-${expected_version}"
+            if [ "${observed_owner}" != "${expected_record}" ]; then
+                echo "error: ${archive_path}: expected ${expected_owner}-${expected_version}, found ${observed_owner:-no owner}" >&2
+                validation_errors=$((validation_errors + 1))
+            fi
+        }
+
+        for archive_path in \
+            /usr/lib/libc.a \
+            /usr/lib/libdl.a \
+            /usr/lib/libm.a \
+            /usr/lib/libpthread.a \
+            /usr/lib/librt.a \
+            /usr/lib/libssp_nonshared.a \
+            /usr/lib/libutil.a; do
+            validate_archive_owner "${archive_path}" musl-dev 1.2.6-r2
         done
+        validate_archive_owner /usr/lib/libcrypto.a libressl-static 4.3.1-r0
+        validate_archive_owner /usr/lib/libexpat.a expat-static 2.8.2-r0
+        validate_archive_owner /usr/lib/libgmp.a gmp-static 6.3.0-r4
+        validate_archive_owner /usr/lib/liblzma.a xz-static 5.8.3-r0
+        validate_archive_owner /usr/lib/libmpfr.a mpfr-dev 4.2.2-r0
+        validate_archive_owner /usr/lib/libncursesw.a ncurses-static 6.6_p20260516-r0
+        validate_archive_owner /usr/lib/libssl.a libressl-static 4.3.1-r0
+        validate_archive_owner /usr/lib/libtirpc.a libtirpc-static 1.3.5-r1
+        validate_archive_owner /usr/lib/libtirpc-nokrb.a libtirpc-static 1.3.5-r1
+        validate_archive_owner /usr/lib/libz.a zlib-static 1.3.2-r0
+        validate_archive_owner /usr/lib/libzstd.a zstd-static 1.5.7-r2
+        validate_archive_owner "${libgcc_archive}" libgcc-static 15.2.0-r5
+        validate_archive_owner "${libgcc_eh_archive}" gcc 15.2.0-r5
+        validate_archive_owner "${libstdcxx_archive}" libstdc++-dev 15.2.0-r5
 
         if [ "${validation_errors}" -ne 0 ]; then
             exit 1
@@ -168,7 +209,62 @@ docker run --rm \
         printf "%s\n" "int main() { return 0; }" > /tmp/cxx-probe.cpp
         c++ -static -no-pie /tmp/cxx-probe.cpp -o /tmp/cxx-probe
 
-        for probe in /tmp/c-probe /tmp/cxx-probe; do
+        printf "%s\n" "#include <rpc/xdr.h>" \
+            "int main(void) { return xdr_int == 0; }" \
+            > /tmp/tirpc-probe.c
+        cc -static -no-pie $(pkg-config --cflags libtirpc-nokrb) \
+            /tmp/tirpc-probe.c $(pkg-config --libs --static libtirpc-nokrb) \
+            -o /tmp/tirpc-probe
+
+        printf "%s\n" "#include <openssl/ssl.h>" \
+            "int main(void) { SSL_CTX *ctx = SSL_CTX_new(TLS_method()); SSL_CTX_free(ctx); return ctx == 0; }" \
+            > /tmp/libressl-probe.c
+        cc -static -no-pie /tmp/libressl-probe.c -lssl -lcrypto \
+            -o /tmp/libressl-probe
+
+        printf "%s\n" "#include <expat.h>" \
+            "int main(void) { XML_Parser p = XML_ParserCreate(0); XML_ParserFree(p); return p == 0; }" \
+            > /tmp/expat-probe.c
+        cc -static -no-pie /tmp/expat-probe.c -lexpat -o /tmp/expat-probe
+
+        cat > /tmp/gdb-libraries-probe.cpp <<"EOF"
+#include <expat.h>
+#include <gmp.h>
+#include <lzma.h>
+#include <mpfr.h>
+#include <ncurses.h>
+#include <zlib.h>
+#include <zstd.h>
+
+int main()
+{
+    XML_Parser parser = XML_ParserCreate(nullptr);
+    mpz_t integer;
+    mpfr_t real;
+    mpz_init(integer);
+    mpfr_init2(real, 64);
+    const bool ok = parser != nullptr
+        && curses_version() != nullptr
+        && lzma_version_number() != 0
+        && zlibVersion() != nullptr
+        && ZSTD_versionNumber() != 0;
+    XML_ParserFree(parser);
+    mpfr_clear(real);
+    mpz_clear(integer);
+    return ok ? 0 : 1;
+}
+EOF
+        c++ -static -no-pie /tmp/gdb-libraries-probe.cpp \
+            -lexpat -lmpfr -lgmp -lncursesw -llzma -lzstd -lz -lm \
+            -o /tmp/gdb-libraries-probe
+
+        for probe in \
+            /tmp/c-probe \
+            /tmp/cxx-probe \
+            /tmp/tirpc-probe \
+            /tmp/libressl-probe \
+            /tmp/expat-probe \
+            /tmp/gdb-libraries-probe; do
             if ! validate_static_probe "${probe}"; then
                 validation_errors=$((validation_errors + 1))
             fi
@@ -180,6 +276,7 @@ docker run --rm \
         if [ "${validation_errors}" -ne 0 ]; then
             exit 1
         fi
+        # END ARMV7 BUILDER VALIDATION
     '
 
 image_architecture="$(docker image inspect "${LOCAL_IMAGE}" --format '{{.Architecture}}')"

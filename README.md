@@ -66,7 +66,7 @@ source and feature policy, direct commands, and output details.
 GHCR publishes reusable build environments only:
 
 - `ghcr.io/w0ot-net/static_bins-builder:aarch64-alpine-3.24.1-r2`
-- `ghcr.io/w0ot-net/static_bins-builder:armv7-alpine-3.24.1-r1`
+- `ghcr.io/w0ot-net/static_bins-builder:armv7-alpine-3.24.1-r2`
 - `ghcr.io/w0ot-net/static_bins-builder:x64-alpine-3.24.1-r2`
 
 The `x64-*` builder names are retained public compatibility identifiers; the
