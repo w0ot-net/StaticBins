@@ -1,5 +1,7 @@
 # Plan: Require One Buildx Build Path
 
+*Distilled: 2026-08-07*
+
 ## Summary
 
 Make Docker Buildx the single supported container-build backend for local
