@@ -162,3 +162,26 @@ not the current artifact acceptance mechanism.
   documented as history.
 - Native and QEMU target execution satisfy the same architecture-specific
   artifact contract.
+
+## Execution Notes
+
+Completed on 2026-08-07 in implementation commit
+`4a074dff723156e46e0ef5a624f26c45f67dd971`.
+
+- Added executable root `validate.sh`, which checks its local prerequisites and
+  composes offline recipe validation, focused unit tests, dispatcher listing,
+  and interpreter-appropriate syntax checks for every tracked shell script.
+- Deleted the hosted recipe-validation and artifact-assurance workflows. The
+  builder-publication workflow remains temporarily and all four of its Actions
+  references remain pinned to full commit SHAs.
+- Updated the contributor and architecture authorities to make recipe-owned
+  native or QEMU target validation the acceptance boundary. No artifact,
+  recipe, source, catalog, checksum, builder, or environment-lock file changed.
+- Replaced `TRUST.md` status labels with source-authentication,
+  build-validation, and independent-evidence columns. The literal historical
+  tcpdump signer identity, reproduced SHA-256, and GDB mismatch are preserved.
+- There were no material deviations from the accepted plan.
+- `bash -n validate.sh`, `./validate.sh`, `git diff --check`, executable-mode
+  inspection, stale-reference searches, remaining-workflow enumeration, and
+  full-SHA Actions-reference checks all passed before the implementation
+  commit and push.
