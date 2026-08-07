@@ -252,9 +252,12 @@ by list position, title, or a broad pattern.
    assets, and tag targets differ from the initial inventory or if any
    unexpected release exists. Otherwise delete exactly the two source-only
    releases by their resolved numeric IDs and delete their two exact tag refs.
-   Confirm the repository release API returns no published releases, both old
-   asset URLs no longer resolve, all active code and documentation are free of
-   those URLs and tags, and clean-checkout builds still use the tracked inputs.
+   Confirm the repository release API returns no releases and both tag refs are
+   absent; those are the authoritative remote postconditions. Make bounded
+   fresh anonymous requests to the old asset URLs and record their responses,
+   but do not broaden cleanup or attempt tag recreation if CDN retirement lags.
+   Confirm all active code and documentation are free of those URLs and tags and
+   clean-checkout builds still use the tracked inputs.
 9. Finalize the plan record with the migration commit, artifact hashes, remote
    source verification, container publication result, and irreversible release
    deletion outcome.
@@ -307,7 +310,9 @@ by list position, title, or a broad pattern.
   public GitHub releases and tags APIs to confirm both are absent and no other
   external object was changed. Immediately before deletion, prove the public
   release set and both tag targets still equal the recorded inventory; treat any
-  drift as a hard stop.
+  drift as a hard stop. After deletion, make a bounded fresh anonymous check of
+  every former asset URL and record any cache lag without treating it as
+  authority over the release and Git-ref APIs.
 - Confirm unrelated legacy artifacts, builder digests, recipe feature profiles,
   GHCR names, catalog architecture mappings, and pre-existing user work remain
   unchanged.
