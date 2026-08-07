@@ -11,6 +11,7 @@ lsof	x86	true
 lsof	x86_64	true
 socat	aarch64	true
 socat	armv7	true
+socat	x86	true
 socat	x86_64	true
 strace	aarch64	true
 strace	armv7	true

@@ -34,6 +34,7 @@ keyserver, or network lookup.
 | [lsof 4.99.5 (x86-64)](recipes/lsof/x86_64/source.lock) | Checksum only | Not available | [GitHub release](https://github.com/lsof-org/lsof/releases/tag/4.99.5) |
 | [socat 1.8.1.3 (AArch64)](recipes/socat/aarch64/source.lock) | Checksum only | Not available | [official Git repository](https://repo.or.cz/socat.git) |
 | [socat 1.8.1.3 (ARMv7)](recipes/socat/armv7/source.lock) | Checksum only | Not available | [official Git repository](https://repo.or.cz/socat.git) |
+| [socat 1.8.1.3 (x86)](recipes/socat/x86/source.lock) | Checksum only | Not available | [official Git repository](https://repo.or.cz/socat.git) |
 | [socat 1.8.1.3 (x86-64)](recipes/socat/x86_64/source.lock) | Checksum only | Not available | [official Git repository](https://repo.or.cz/socat.git) |
 | [strace 6.16 (AArch64)](recipes/strace/aarch64/source.lock) | Checksum only | Not adopted | [official release](https://strace.io/files/6.16/) |
 | [strace 6.16 (ARMv7)](recipes/strace/armv7/source.lock) | Checksum only | Not adopted | [official release](https://strace.io/files/6.16/) |
@@ -111,6 +112,7 @@ does not identify who built a binary or establish its provenance.
 | `artifacts/armv7/strace` | Checksum only | Committed recipe and target checks passed | None |
 | `artifacts/armv7/tcpdump` | Upstream PGP for tcpdump and libpcap | Committed recipe and target checks passed | None |
 | `artifacts/x86/lsof` | Checksum only | Committed recipe and target checks passed | None |
+| `artifacts/x86/socat` | Checksum only | Committed recipe and target checks passed | None |
 | `artifacts/x86/tcpdump` | Upstream PGP for tcpdump and libpcap | Committed recipe and target checks passed | None |
 | `artifacts/x86_64/gdb` | Upstream PGP | Committed recipe and target checks passed | None |
 | `artifacts/x86_64/tcpdump` | Upstream PGP for tcpdump and libpcap | Committed recipe and target checks passed | Exact native rebuild and historical GitHub attestation |
