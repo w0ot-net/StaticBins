@@ -350,3 +350,53 @@ by list position, title, or a broad pattern.
   remain unchanged. The two recipe tags are successfully republished at digests
   containing the migration's revised distribution metadata; all unrelated
   artifacts and historical completed-plan records remain unchanged.
+
+## Execution Notes
+
+Completed on 2026-08-07.
+
+- Implementation commit `13c6b9235758e189a762ebe5ef0a30b0009b6da7`
+  committed the three recipe-local source archives, local-source build paths,
+  catalog validation/tests, documentation, source-release workflow removal,
+  and the initially rebuilt GDB artifact. Corrective commit
+  `92c2d3d3900d706ef3379b9790f338a0277205b7` restored the native workflow-built
+  GDB bytes after the valid QEMU and native builds differed.
+- The committed source hashes are GDB
+  `1c036c0d72e4b3d1fb5c94c88632add6f9d76f4d7c4d2ea793c12a9f19a3228c`,
+  tcpdump `0232231bb2f29d6bf2426e70a08a7e0c63a0d59a9b44863b7f5e2357a6e49fea`,
+  and libpcap `ed19a0383fad72e3ad435fd239d7cd80d64916b87269550159d20e47160ebe5f`.
+  Anonymous raw-file downloads from the exact implementation commit matched
+  all three hashes.
+- Fast validation passed: `python3 -m unittest tests.test_recipes` (13 tests),
+  `python3 scripts/recipes.py validate`, `./build.sh list`, Bash/sh syntax,
+  remaining workflow YAML parsing, source-reference searches, and
+  `git diff --check`. A controlled bad GDB source checksum failed before
+  compilation and preserved the committed artifact.
+- The one local tcpdump build reproduced
+  `cdd8f895dceb63d428f137ed910cc083dde2bc76d1006e3468b6f8d654c053b1`.
+  The one QEMU GDB build produced valid candidate
+  `5e96e51367020e6be6e2cb0a7f0014573da838a8f7d1d099fd2e5a4a55c820ab`;
+  the native AArch64 publication build produced valid candidate
+  `8e729a88937e2187a9288ae9914748ae3946285227a76ce37232802df8319f4a`,
+  which matched the protected prior artifact and is the final committed GDB.
+  Both final artifacts retain mode `100755` and passed architecture, ELF type,
+  static linkage, stripping, version, and target-architecture smoke checks.
+- Actions run `31151581807` succeeded for catalog, x86-64 tcpdump, and native
+  AArch64 GDB. Anonymous pulls verified revision label
+  `13c6b9235758e189a762ebe5ef0a30b0009b6da7`; the published image digests were
+  GDB `sha256:dc8e170740cc491e321d946e88fb96877d6b2dec360587331af790e5e49493c0`
+  and tcpdump
+  `sha256:19d8f279a050bc1c9703866247bb52ea897d311bf0a3805d04abdcea8747015d`.
+  Their binaries matched the final committed artifacts after the native GDB
+  reconciliation.
+- Immediately before deletion, the complete release inventory still matched
+  the recorded immutable releases, assets, sizes, and tag targets. Release IDs
+  `366489635` and `366514829` and only tags `gdb-17.2-source` and
+  `tcpdump-4.99.4-libpcap-1.10.4-source` were deleted with HTTP 204 responses.
+  Authenticated and public release APIs now return an empty list, both tag refs
+  are absent, and fresh anonymous requests to all seven former asset URLs
+  returned HTTP 404. The retired immutable-release tag names remain reserved
+  and must not be reused.
+- Local Docker lacked Buildx during this plan, so the still-supported direct
+  path performed the local builds. The ordered Buildx-only plan follows this
+  completion and removes that temporary backend asymmetry.
