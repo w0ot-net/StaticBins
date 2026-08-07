@@ -1,5 +1,7 @@
 # Plan: Remove Utility Image Publication
 
+*Distilled: 2026-08-07*
+
 ## Summary
 
 Make committed files under `artifacts/` the only distributed utility binaries
