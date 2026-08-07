@@ -1,5 +1,7 @@
 # Plan: Add the ARMv7 Little-Endian Builder
 
+*Distilled: 2026-08-07*
+
 ## Summary
 
 Add `armv7` as the repository identifier for 32-bit little-endian ARMv7 and
