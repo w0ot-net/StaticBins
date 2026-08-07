@@ -613,6 +613,43 @@ class RecipeCatalogTests(unittest.TestCase):
             [(recipe.name, recipe.architecture) for recipe in loaded],
         )
 
+    def test_armv7_architecture_is_valid_and_dispatchable(self) -> None:
+        temporary_directory, fixture = self.make_fixture()
+        self.addCleanup(temporary_directory.cleanup)
+        fixture.add_recipe(
+            "tool",
+            architecture="armv7",
+            script_body="#!/usr/bin/env bash\nexit 43\n",
+        )
+        catalog = fixture.write_catalog()
+        fixture.track()
+
+        loaded = recipes.load_catalog(fixture.root, catalog)
+        self.assertEqual(
+            [("tool", "armv7")],
+            [(recipe.name, recipe.architecture) for recipe in loaded],
+        )
+        self.assertEqual("artifacts/armv7/tool", loaded[0].output)
+        self.assertEqual(
+            "builders/armv7/environment.lock", loaded[0].environment_lock
+        )
+
+        dispatcher = fixture.root / "build.sh"
+        shutil.copy2(REPOSITORY_ROOT / "build.sh", dispatcher)
+        os.chmod(dispatcher, 0o755)
+        listed = subprocess.run(
+            [str(dispatcher), "list"], check=False, capture_output=True, text=True
+        )
+        self.assertEqual(0, listed.returncode)
+        self.assertEqual("tool\tarmv7\n", listed.stdout)
+        dispatched = subprocess.run(
+            [str(dispatcher), "tool", "armv7"],
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+        self.assertEqual(43, dispatched.returncode)
+
     def test_duplicate_pair_is_rejected(self) -> None:
         temporary_directory, fixture = self.make_fixture()
         self.addCleanup(temporary_directory.cleanup)
@@ -629,6 +666,9 @@ class RecipeCatalogTests(unittest.TestCase):
         for field, value, expected_message in (
             ("name", "../gdb", "invalid recipe name"),
             ("architecture", "amd64", "unsupported architecture"),
+            ("architecture", "arm", "unsupported architecture"),
+            ("architecture", "armhf", "unsupported architecture"),
+            ("architecture", "armeb", "unsupported architecture"),
         ):
             with self.subTest(field=field):
                 temporary_directory, fixture = self.make_fixture()
@@ -727,6 +767,9 @@ class RecipeCatalogTests(unittest.TestCase):
             ("unknown",),
             ("../gdb",),
             ("gdb", "amd64"),
+            ("gdb", "arm"),
+            ("gdb", "armhf"),
+            ("gdb", "armeb"),
             ("list", "aarch64"),
             ("gdb", "aarch64", "extra"),
         ):

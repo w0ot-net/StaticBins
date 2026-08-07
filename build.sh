@@ -35,7 +35,7 @@ fi
 requested_architecture="${2:-}"
 if [[ -n "${requested_architecture}" ]]; then
     case "${requested_architecture}" in
-        aarch64 | x86_64) ;;
+        aarch64 | armv7 | x86_64) ;;
         *)
             echo "error: unsupported architecture: ${requested_architecture}" >&2
             exit 2
@@ -69,7 +69,7 @@ while IFS= read -r catalog_line || [[ -n "${catalog_line}" ]]; do
         exit 1
     fi
     case "${architecture}" in
-        aarch64 | x86_64) ;;
+        aarch64 | armv7 | x86_64) ;;
         *)
             echo "error: unsupported architecture for ${name}: ${architecture}" >&2
             exit 1

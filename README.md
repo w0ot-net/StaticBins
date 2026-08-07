@@ -53,15 +53,17 @@ feature policy, direct commands, and output details.
 GHCR publishes reusable build environments only:
 
 - `ghcr.io/w0ot-net/static_bins-builder:aarch64-alpine-3.24.1-r2`
+- `ghcr.io/w0ot-net/static_bins-builder:armv7-alpine-3.24.1-r1`
 - `ghcr.io/w0ot-net/static_bins-builder:x64-alpine-3.24.1-r2`
 
 The `x64-*` builder names are retained public compatibility identifiers; the
-repository uses `x86_64` internally. Normal builds use the immutable builder
-digest committed under `builders/<architecture>/environment.lock` and never
-resolve packages or silently fall back to another image.
+repository uses `x86_64` internally. The internal `armv7` identifier maps to
+OCI platform `linux/arm/v7`. Normal builds use the immutable builder digest
+committed under `builders/<architecture>/environment.lock` and never resolve
+packages or silently fall back to another image.
 
 Builder publication is a separate maintainer operation. Candidate builders can
-be validated with `./builders/aarch64/build.sh` or
+be validated with `./builders/aarch64/build.sh`, `./builders/armv7/build.sh`, or
 `./builders/x86_64/build.sh`; start the locked AArch64 environment with
 `./builders/aarch64/run.sh`. Candidate builder validation also requires Docker
 Buildx. Repository CI validates recipes but does not publish utility images.

@@ -10,8 +10,9 @@ Repository contract:
   add binaries of unknown origin or binaries that can only be rebuilt by hand.
 - Put binaries in `artifacts/<architecture>/`, tool builds in
   `recipes/<tool>/<architecture>/`, and reusable build environments in
-  `builders/<architecture>/`. Internal architecture identifiers are `aarch64`
-  and `x86_64`; translate them to OCI names only at container boundaries.
+  `builders/<architecture>/`. Internal architecture identifiers are `aarch64`,
+  `armv7`, and `x86_64`; translate them to OCI names only at container
+  boundaries.
 - Keep a tool's container definition, guest-side build script, patches, tracked
   source archives, source lock, licenses, and host-side entry point together in
   its recipe directory.
@@ -90,6 +91,8 @@ Static artifact validation:
   ELF has a requested program interpreter or any `DT_NEEDED` entries.
 - Verify the exact ELF machine/architecture and executable type expected by the
   destination directory.
+- For 32-bit ARM, also require ELF32, little-endian data, and the intended ARM
+  EABI hard-float flags; an `ARM` machine field alone is insufficient.
 - Run a smoke test on the target architecture, either natively or through the
   same emulation used for the build. For command-line programs, at minimum run
   the version command; add a focused functional test when that would catch

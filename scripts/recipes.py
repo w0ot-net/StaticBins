@@ -17,7 +17,7 @@ from pathlib import Path, PurePosixPath
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
 FIELDS = ("name", "architecture", "enabled")
-ARCHITECTURES = frozenset(("aarch64", "x86_64"))
+ARCHITECTURES = frozenset(("aarch64", "armv7", "x86_64"))
 IDENTIFIER_RE = re.compile(r"[a-z0-9][a-z0-9_-]*\Z")
 VERSION_RE = re.compile(r"[A-Za-z0-9][A-Za-z0-9._+-]*\Z")
 DIGEST_IMAGE_RE = re.compile(r"[^@\s]+@sha256:[0-9a-f]{64}\Z")

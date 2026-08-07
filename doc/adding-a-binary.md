@@ -26,8 +26,9 @@ recipes/<tool>/<architecture>/
     ...reviewed license texts...
 ```
 
-Internal architecture names are `aarch64` and `x86_64`. Recipe host commands
-map them to the corresponding Buildx platforms when exporting local binaries.
+Internal architecture names are `aarch64`, `armv7`, and `x86_64`. Recipe host
+commands map them to `linux/arm64`, `linux/arm/v7`, and `linux/amd64`,
+respectively, when exporting local binaries.
 
 The architecture must already have a locked, published builder. The recipe's
 host `build.sh` and committed output must be executable. The host command must
@@ -66,7 +67,7 @@ Add one tab-delimited row to `recipes/catalog.tsv`:
 | Field | Contract |
 | --- | --- |
 | `name` | Lowercase tool identifier and artifact filename; unique with architecture |
-| `architecture` | `aarch64` or `x86_64` |
+| `architecture` | `aarch64`, `armv7`, or `x86_64` |
 | `enabled` | `true` to list and build; otherwise `false` |
 
 Do not quote fields or place commands, workflow expressions, tabs, or newlines
