@@ -1,5 +1,7 @@
 # Plan: Clarify the Fresh-Clone Rebuild Path
 
+*Distilled: 2026-08-07*
+
 ## Summary
 
 Make the committed user documentation provide one accurate, copy-paste path
