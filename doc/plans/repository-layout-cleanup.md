@@ -7,7 +7,8 @@ committed binaries, `recipes/` for tool builds, and `builders/` for reusable
 architecture environments. Normalize the internal x86 architecture name to
 `x86_64`, reduce `recipes/catalog.tsv` to the three facts that cannot be
 derived, and preserve the root `./build.sh <name>` interface plus all existing
-binary bytes and published GDB contracts.
+binary bytes and published GDB contracts. Complete this migration before adding
+new recipes or executing the active tcpdump rebuild plan.
 
 ## Problem
 
@@ -45,8 +46,10 @@ In scope:
 - Migrate every live script, workflow, test, notice, README/AGENTS contract,
   onboarding document, and the active tcpdump plan to the new paths and names.
 - Keep the root `./build.sh list` and `./build.sh gdb` commands stable, preserve
-  existing artifact bytes, and retain existing public GDB and builder image
-  tags/digests.
+  existing artifact bytes, retain the locked builder image digest, and retain
+  existing public GDB and builder repository/tag names. A successful GDB
+  republish may produce a new manifest/index digest because OCI revision and
+  provenance metadata identify the new commit; the `/gdb` payload stays exact.
 
 Out of scope:
 
@@ -63,6 +66,9 @@ Out of scope:
 - Rewriting completed plan records, whose old paths are historical facts.
 - Adding compatibility wrappers or symlinks for old deep implementation paths;
   only the documented root build interface is a stable user contract.
+- Supporting more than one enabled architecture for the same tool or changing
+  the selector syntax. Recipe names remain globally unique so the stable
+  `./build.sh <name>` interface stays unambiguous.
 
 ## Design
 
@@ -123,6 +129,18 @@ script path, and `exec`s it. It does not invoke Python or reproduce publication
 metadata. Tests continue to read executable bits from the Git index so the
 shared filesystem's permissive modes cannot hide a bad commit.
 
+Because the recipe name is globally unique and the path, image, tags, and cache
+scope are derived from that name plus its architecture, validation needs one
+duplicate-name/row check rather than separate collision machinery for each
+derived value.
+
+Treat the path, catalog, caller, test, workflow, and documentation migration as
+one atomic implementation commit. Run local validation before pushing and do
+not publish an intermediate commit containing only moves or only updated
+callers. If the triggered CI run fails, stop before new recipe or tcpdump work
+and fix or revert that migration commit. Existing GHCR tags continue to point
+at their last successful publication until a replacement publish completes.
+
 Move GDB-specific usage and feature detail out of the landing page into
 `recipes/gdb/aarch64/README.md`. Keep the root README limited to what the
 repository provides, the artifact table, `./build.sh list`,
@@ -140,8 +158,9 @@ repository provides, the artifact table, `./build.sh list`,
   `scripts/recipes.py`: move and reduce the catalog to the three-column
   allowlist and derive dispatcher/matrix values by convention.
 - `tests/test_recipes.py`: migrate fixtures and assertions to the new layout,
-  test version derivation from `source.lock`, and retain malformed, collision,
-  disabled, path/mode, deterministic-matrix, and dispatcher coverage.
+  test version derivation from `source.lock`, retain malformed, duplicate-name,
+  disabled, path/mode, deterministic-matrix, and dispatcher coverage, and
+  remove now-unreachable independent image/tag/cache collision fixtures.
 - `.github/workflows/{publish-builder,publish-containers,mirror-sources}.yml`:
   update contexts/path filters and architecture mapping while preserving locked
   inputs, publication policy, source release identity, and public image names.
@@ -157,8 +176,9 @@ repository provides, the artifact table, `./build.sh list`,
 
 ## Implementation Sequence
 
-1. Record SHA-256 values and Git modes for every committed binary and the
-   locked builder/source inputs before moving anything.
+1. Treat this layout migration as the prerequisite for new recipe work and the
+   active tcpdump plan. Record SHA-256 values and Git modes for every committed
+   binary and the locked builder/source inputs before moving anything.
 2. Use Git-aware moves to create `artifacts/`, `builders/`, and `recipes/`,
    rename builder entry points/locks, and relocate the legacy tcpdump script.
    Do not add old-path wrappers or duplicate files.
@@ -166,15 +186,18 @@ repository provides, the artifact table, `./build.sh list`,
    so all paths, version, image/tag, runner/platform, environment, and cache
    values have one conventional derivation.
 4. Update the Bash dispatcher, GDB host script, builder scripts, all three
-   workflows, and `.gitattributes` to consume the new owners. Preserve exact
-   image digests and source/archive acceptance rules.
+   workflows, and `.gitattributes` to consume the new owners. Preserve locked
+   builder image digests and source/archive acceptance rules.
 5. Shorten the root README, add recipe-local GDB instructions, update AGENTS
    and onboarding contracts, and rebase only the active tcpdump plan. Leave
    completed plans unchanged.
-6. Run fast structural/unit validation first, compare all moved artifact hashes
-   and modes, then run one native catalog-driven GDB publication and inspect
-   the resulting public image. Reuse existing validated bytes/cache and do not
-   repeat a local QEMU compilation solely to prove path changes.
+6. Run fast structural/unit validation and compare all moved artifact hashes
+   and modes before committing. Explicitly stage, commit, and push the complete
+   migration as one atomic change; do not push intermediate broken layouts.
+   Then run one native catalog-driven GDB publication and inspect the resulting
+   public image. Reuse existing validated bytes/cache and do not repeat a local
+   QEMU compilation solely to prove path changes. If CI fails, fix or revert the
+   migration before proceeding to any new recipe or tcpdump work.
 
 ## Validation
 
@@ -204,8 +227,10 @@ repository provides, the artifact table, `./build.sh list`,
 - Run the catalog-driven publication once on the native ARM runner. Confirm the
   catalog gate and GDB job succeed, anonymously pull both existing GDB tags,
   inspect OCI labels plus attestations, and compare `/gdb` with the unchanged
-  committed artifact. Reuse the prior focused remote-debugging result when the
-  payload hash is identical.
+  committed artifact. Expect the republished GDB manifest/index digest to change
+  when revision/provenance metadata changes; require its public repository/tag
+  names and payload bytes to remain stable. Reuse the prior focused
+  remote-debugging result when the payload hash is identical.
 - Read the updated active tcpdump plan end to end and verify its paths,
   architecture terminology, catalog assumptions, and success criteria match
   the new repository contract before later execution.
@@ -222,12 +247,13 @@ repository provides, the artifact table, `./build.sh list`,
   every other build/publication value has one validated conventional or
   lock-file owner.
 - `./build.sh gdb` remains the stable one-command interface, and adding a future
-  conforming recipe requires its conventional directory plus one minimal row,
-  without a workflow edit.
+  conforming recipe with a globally unique tool name requires its conventional
+  directory plus one minimal row, without a workflow edit.
 - Every committed binary retains its exact bytes and executable mode, and the
   existing immutable source release, locked builder digests, GDB GHCR names,
   GDB versioned/floating tags, SBOM, provenance, and runtime behavior remain
-  intact.
+  intact. GDB manifest/index digest churn caused by commit-specific OCI metadata
+  is explicitly allowed; artifact payload churn is not.
 - The concise root README, recipe-local GDB documentation, onboarding guide,
   AGENTS contract, tests, workflows, and active tcpdump plan all describe the
   same layout and naming model.
