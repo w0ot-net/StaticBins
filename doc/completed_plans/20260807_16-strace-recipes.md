@@ -132,3 +132,45 @@ the normal container policy.
   real child successfully.
 - Source-authentication limitations, archive/link/license evidence, checksums,
   and `Not verified` statuses are complete for both architectures.
+
+## Execution Notes
+
+Completed on 2026-08-07.
+
+- Implementation commit `3172aae` added both strace 6.16 recipes, identical
+  2,674,064-byte official source archives, the project and bundled Linux UAPI
+  license materials, complete final-link evidence, catalog/trust records, and
+  two validated artifacts. Offline validation reports both source locks
+  explicitly as `checksum-only`; no unverified signing key or signature
+  fallback was introduced.
+- The native evidence build established the standard Automake `all` target as
+  the required ordering boundary for generated decoder headers. Its linker map
+  reconciled internal `libstrace.a`, musl libc/ssp support, and GCC
+  `libgcc`/`libgcc_eh`; no optional external unwind, libiberty, or SELinux
+  archive entered the final link.
+- The x86-64 target test traced a compiled direct child without extra
+  capability, decoded its exact `openat`, marker-bearing `write`, and
+  `exit_group(0)` calls, and propagated success. The 1,521,720-byte artifact at
+  `7ec3134a655b55ad66b1b9f13d3da5069b2a19fff4c3e398e88e4017607045d5`
+  replaces the 1,484,856-byte legacy file at
+  `05518e2df031134dec0b8b066d7dd211d8262e3950467459178936b0d34ea6a4`.
+- The only AArch64 compilation completed under user-mode emulation in about 12
+  minutes. QEMU user mode then reported `PTRACE_TRACEME` as unimplemented, so
+  the successful build layer was preserved while two tiny static smoke helpers
+  were added. A generated diskless QEMU `virt` initramfs booted the pinned,
+  checksum-verified Alpine 3.22.5 kernel and passed the same real direct-child
+  syscall assertions. The 1,509,288-byte artifact is
+  `104a2703f969396fa921e7a74bea2406c028f1774f49113007a7efddb09b6733`.
+- Both distributed outputs are stripped static native `ET_EXEC` files, report
+  version 6.16, use bundled Linux UAPI headers, and expose only their intended
+  native-personality profiles: `no-m32-mpers no-mx32-mpers` on x86-64 and
+  `no-m32-mpers` on AArch64. Stack unwinding, external libiberty demangling,
+  and SELinux contexts remain absent.
+- Offline validation accepted ten enabled recipes and printed exactly the two
+  expected strace checksum-only notices. All 20 recipe unit tests, shell
+  syntax, dispatcher listing, the complete artifact checksum manifest, and
+  task diff checks passed.
+- Post-push runs `31207583434` (`recipe-validation`) and `31207584233`
+  (`artifact-assurance`) passed. Both tcpdump rebuild jobs were skipped because
+  its trust boundary was unchanged. No utility image, PGP claim, attestation
+  claim, or workflow expansion was added; both artifacts remain `Not verified`.
