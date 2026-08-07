@@ -8,8 +8,9 @@ profile, authenticate the retained archive by checksum, and require a real
 ptrace test that traces deterministic syscalls on each target architecture
 before artifact installation.
 
-This plan depends on `01-multi-architecture-recipe-selection.md` and
-`02-expand-reusable-builders.md`.
+This plan depends on `01-multi-architecture-recipe-selection.md`,
+`02-narrow-tcpdump-assurance-selection.md`, and
+`03-expand-reusable-builders.md`.
 
 ## Problem
 
