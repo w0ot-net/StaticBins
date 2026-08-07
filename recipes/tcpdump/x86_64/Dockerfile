@@ -14,13 +14,6 @@ COPY build-in-container.sh /usr/local/bin/build-static-tcpdump
 
 RUN /usr/local/bin/build-static-tcpdump
 
-FROM scratch
-
-LABEL org.opencontainers.image.source="https://github.com/w0ot-net/static_bins" \
-      org.opencontainers.image.description="Static x86-64 tcpdump binary artifact" \
-      org.opencontainers.image.licenses="BSD-3-Clause"
+FROM scratch AS artifact
 
 COPY --from=builder /out/tcpdump /tcpdump
-COPY source.lock /usr/share/licenses/tcpdump/source.lock
-COPY licenses /usr/share/licenses/tcpdump
-ENTRYPOINT ["/tcpdump"]

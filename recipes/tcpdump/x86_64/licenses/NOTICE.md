@@ -1,10 +1,9 @@
 # tcpdump 4.99.4 distribution notice
 
-`artifacts/x86_64/tcpdump` and the matching container image are built from the
-exact tcpdump 4.99.4 and libpcap 1.10.4 archives recorded in `../source.lock`.
-The accepted copies are retained under `../sources/`; the official tcpdump.org
-URLs in the lock record their upstream provenance, while the committed copies
-are the normal build inputs.
+`artifacts/x86_64/tcpdump` is built from the exact tcpdump 4.99.4 and libpcap
+1.10.4 archives recorded in `../source.lock`. The accepted copies are retained
+under `../sources/`; the official tcpdump.org URLs in the lock record their
+upstream provenance, while the committed copies are the normal build inputs.
 
 The unmodified upstream `LICENSE` files from those exact archives are included
 here as `tcpdump-LICENSE.txt` and `libpcap-LICENSE.txt`. The locked x86-64

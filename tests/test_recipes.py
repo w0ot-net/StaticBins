@@ -136,7 +136,7 @@ class RecipeCatalogTests(unittest.TestCase):
         temporary_directory = tempfile.TemporaryDirectory()
         return temporary_directory, CatalogFixture(Path(temporary_directory.name))
 
-    def test_valid_catalog_and_matrix_are_deterministic(self) -> None:
+    def test_valid_catalog_is_deterministic(self) -> None:
         temporary_directory, fixture = self.make_fixture()
         self.addCleanup(temporary_directory.cleanup)
         fixture.add_recipe()
@@ -145,33 +145,34 @@ class RecipeCatalogTests(unittest.TestCase):
         fixture.track()
 
         loaded = recipes.load_catalog(fixture.root, catalog)
-        first = recipes.matrix(loaded)
-        second = recipes.matrix(recipes.load_catalog(fixture.root, catalog))
+        first = loaded
+        second = recipes.load_catalog(fixture.root, catalog)
         self.assertEqual(first, second)
-        self.assertEqual(["gdb", "tool"], [entry["name"] for entry in first["include"]])
-        self.assertEqual("linux/arm64", first["include"][0]["platform"])
-        self.assertEqual("linux/amd64", first["include"][1]["platform"])
-        self.assertEqual("static_bins-gdb", first["include"][0]["image_name"])
+        self.assertEqual(["gdb", "tool"], [recipe.name for recipe in first])
         self.assertEqual(
-            "1.0-aarch64\naarch64-latest",
-            first["include"][0]["tag_suffixes"],
+            ["aarch64", "x86_64"], [recipe.architecture for recipe in first]
         )
         self.assertEqual(
-            "2.5-x86_64\nx86_64-latest",
-            first["include"][1]["tag_suffixes"],
+            ["artifacts/aarch64/gdb", "artifacts/x86_64/tool"],
+            [recipe.output for recipe in first],
         )
 
-    def test_version_is_derived_from_source_lock(self) -> None:
+    def test_source_version_is_validated(self) -> None:
         temporary_directory, fixture = self.make_fixture()
         self.addCleanup(temporary_directory.cleanup)
         fixture.add_recipe(version="7.4")
         catalog = fixture.write_catalog()
         fixture.track()
-        loaded = recipes.load_catalog(fixture.root, catalog)
-        self.assertEqual("7.4", loaded[0].version)
-        self.assertEqual(
-            ("7.4-aarch64", "aarch64-latest"), loaded[0].tag_suffixes
+        recipes.load_catalog(fixture.root, catalog)
+        source_lock = fixture.root / "recipes/gdb/aarch64/source.lock"
+        source_lock.write_text(
+            source_lock.read_text(encoding="utf-8").replace(
+                "SOURCE_VERSION=7.4", "SOURCE_VERSION=bad/version"
+            ),
+            encoding="utf-8",
         )
+        with self.assertRaisesRegex(recipes.CatalogError, "invalid SOURCE_VERSION"):
+            recipes.load_catalog(fixture.root, catalog)
 
     def test_tcpdump_two_source_lock_is_bounded_and_validated(self) -> None:
         temporary_directory, fixture = self.make_fixture()
@@ -374,16 +375,6 @@ class RecipeCatalogTests(unittest.TestCase):
         fixture2.track()
         with self.assertRaisesRegex(recipes.CatalogError, "no enabled recipes"):
             recipes.load_catalog(fixture2.root, catalog2)
-
-    def test_disabled_recipe_is_excluded_from_matrix(self) -> None:
-        temporary_directory, fixture = self.make_fixture()
-        self.addCleanup(temporary_directory.cleanup)
-        fixture.add_recipe("gdb")
-        fixture.add_recipe("tool", enabled="false")
-        catalog = fixture.write_catalog()
-        fixture.track()
-        catalog_matrix = recipes.matrix(recipes.load_catalog(fixture.root, catalog))
-        self.assertEqual(["gdb"], [entry["name"] for entry in catalog_matrix["include"]])
 
     def test_dispatcher_lists_rejects_and_propagates_exit_status(self) -> None:
         temporary_directory, fixture = self.make_fixture()

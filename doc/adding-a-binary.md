@@ -1,9 +1,9 @@
 # Adding a static binary
 
-A publishable binary is one conventional tool recipe plus one three-field row
+A reproducible binary is one conventional tool recipe plus one three-field row
 in `recipes/catalog.tsv`. Tool-specific source, configuration, build, license,
-and smoke-test logic stays inside the recipe; the root dispatcher and container
-workflow remain generic.
+and smoke-test logic stays inside the recipe; the root dispatcher and recipe
+validation workflow remain generic.
 
 ## Required layout
 
@@ -25,9 +25,8 @@ recipes/<tool>/<architecture>/
     ...reviewed license texts...
 ```
 
-Internal architecture names are `aarch64` and `x86_64`. The publication
-boundary maps them to `linux/arm64` on `ubuntu-24.04-arm` and `linux/amd64` on
-`ubuntu-24.04`, respectively.
+Internal architecture names are `aarch64` and `x86_64`. Recipe host commands
+map them to the corresponding Buildx platforms when exporting local binaries.
 
 The architecture must already have a locked, published builder. The recipe's
 host `build.sh` and committed output must be executable. The host command must
@@ -58,7 +57,7 @@ Add one tab-delimited row to `recipes/catalog.tsv`:
 | --- | --- |
 | `name` | Globally unique lowercase recipe identifier and artifact filename |
 | `architecture` | `aarch64` or `x86_64` |
-| `enabled` | `true` to list, build, and publish; otherwise `false` |
+| `enabled` | `true` to list and build; otherwise `false` |
 
 Do not quote fields or place commands, workflow expressions, tabs, or newlines
 inside values. Every other value is derived and validated:
@@ -66,16 +65,12 @@ inside values. Every other value is derived and validated:
 - recipe: `recipes/<name>/<architecture>/`
 - output: `artifacts/<architecture>/<name>`
 - builder lock: `builders/<architecture>/environment.lock`
-- version: `SOURCE_VERSION` in the recipe lock
-- image: `ghcr.io/<repository-owner>/static_bins-<name>`
-- tags: `<version>-<architecture>` and `<architecture>-latest`
-- cache scope: `<architecture>-<name>`
-- Docker platform and native runner: the fixed architecture mapping above
+- source version and checksums: validated from the recipe's `source.lock`
 
 Disabled rows must still be complete and valid; they are omitted from user
-dispatch and the publication matrix.
+dispatch but remain subject to repository validation.
 
-## Validate and publish
+## Validate and build
 
 Run the fast checks first:
 
@@ -92,7 +87,7 @@ Then build and test the selected recipe through the stable public command:
 ```
 
 Verify the resulting architecture, static linkage, version behavior, and the
-tool's focused functional smoke test. A push that changes the catalog,
-validator, workflow, builders, or recipes generates the enabled matrix and
-publishes versioned and floating GHCR tags with cache, SBOM, provenance, and
-repository OCI labels.
+tool's focused functional smoke test. Commit the validated executable under
+`artifacts/<architecture>/<tool>`. A relevant push runs fast recipe validation;
+it does not build or publish a utility image. GHCR publication is reserved for
+the separately maintained reusable builders.

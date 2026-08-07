@@ -26,8 +26,8 @@ BUILD_JOBS=4 ./build.sh tcpdump
 provenance URLs, and license identifiers. The accepted source copies are
 committed under `sources/` and checksum-verified before extraction; a normal
 build does not download them. Reviewed license material and the exact
-linked-archive provenance inventory are under `licenses/` and are copied into
-the artifact image.
+linked-archive provenance inventory are under `licenses/` and are checked
+against the final static link.
 
 The build rejects an ELF interpreter, dynamic dependencies, a wrong machine,
 retained debug or full symbol-table sections, and an incomplete linked-archive

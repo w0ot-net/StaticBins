@@ -1,0 +1,45 @@
+name: Validate recipes
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/validate-recipes.yml"
+      - "build.sh"
+      - "recipes/catalog.tsv"
+      - "scripts/recipes.py"
+      - "tests/test_recipes.py"
+      - "builders/**"
+      - "recipes/**"
+      - "artifacts/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Validate catalog and dispatcher
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 scripts/recipes.py validate
+          python3 -m unittest tests.test_recipes
+          ./build.sh list
+
+      - name: Check shell syntax
+        shell: bash
+        run: |
+          set -euo pipefail
+          while IFS= read -r script; do
+            case "$(head -n 1 "${script}")" in
+              *bash*) bash -n "${script}" ;;
+              *sh*) sh -n "${script}" ;;
+            esac
+          done < <(git ls-files '*.sh')

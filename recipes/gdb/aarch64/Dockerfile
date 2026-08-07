@@ -13,13 +13,6 @@ COPY build-in-container.sh /usr/local/bin/build-static-gdb
 
 RUN /usr/local/bin/build-static-gdb
 
-FROM scratch
-
-LABEL org.opencontainers.image.source="https://github.com/w0ot-net/static_bins" \
-      org.opencontainers.image.description="Static AArch64 GDB binary artifact" \
-      org.opencontainers.image.licenses="GPL-3.0-or-later"
+FROM scratch AS artifact
 
 COPY --from=builder /out/gdb /gdb
-COPY source.lock /usr/share/licenses/gdb/source.lock
-COPY licenses /usr/share/licenses/gdb
-ENTRYPOINT ["/gdb"]

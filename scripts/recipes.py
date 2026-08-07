@@ -1,35 +1,22 @@
 #!/usr/bin/env python3
-"""Validate the static binary recipe catalog and emit its CI matrix."""
+"""Validate the static binary recipe catalog."""
 
 from __future__ import annotations
 
 import argparse
 import csv
 import hashlib
-import json
 import os
 import re
 import subprocess
 import sys
 from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
-from typing import Iterable
 
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
 FIELDS = ("name", "architecture", "enabled")
-ARCHITECTURES = {
-    "aarch64": {
-        "runner": "ubuntu-24.04-arm",
-        "platform": "linux/arm64",
-        "tag_suffix": "aarch64",
-    },
-    "x86_64": {
-        "runner": "ubuntu-24.04",
-        "platform": "linux/amd64",
-        "tag_suffix": "x86_64",
-    },
-}
+ARCHITECTURES = frozenset(("aarch64", "x86_64"))
 IDENTIFIER_RE = re.compile(r"[a-z0-9][a-z0-9_-]*\Z")
 VERSION_RE = re.compile(r"[A-Za-z0-9][A-Za-z0-9._+-]*\Z")
 DIGEST_IMAGE_RE = re.compile(r"[^@\s]+@sha256:[0-9a-f]{64}\Z")
@@ -45,15 +32,9 @@ class CatalogError(ValueError):
 class Recipe:
     name: str
     architecture: str
-    version: str
     recipe_dir: str
     build_script: str
     output: str
-    image_name: str
-    tag_suffixes: tuple[str, str]
-    cache_scope: str
-    runner: str
-    platform: str
     environment_lock: str
     enabled: bool
 
@@ -161,8 +142,7 @@ def _validate_recipe(root: Path, row: dict[str, str], line_number: int) -> Recip
         raise _error(line_number, f"invalid recipe name: {name}")
 
     architecture = row["architecture"]
-    architecture_config = ARCHITECTURES.get(architecture)
-    if architecture_config is None:
+    if architecture not in ARCHITECTURES:
         raise _error(line_number, f"unsupported architecture: {architecture}")
 
     if row["enabled"] not in {"true", "false"}:
@@ -286,19 +266,12 @@ def _validate_recipe(root: Path, row: dict[str, str], line_number: int) -> Recip
     if DIGEST_IMAGE_RE.fullmatch(environment_values.get("BUILDER_IMAGE", "")) is None:
         raise _error(line_number, "environment lock must pin BUILDER_IMAGE by SHA-256 digest")
 
-    tag_suffix = architecture_config["tag_suffix"]
     return Recipe(
         name=name,
         architecture=architecture,
-        version=version,
         recipe_dir=recipe_dir,
         build_script=build_script,
         output=output,
-        image_name=f"static_bins-{name}",
-        tag_suffixes=(f"{version}-{tag_suffix}", f"{tag_suffix}-latest"),
-        cache_scope=f"{architecture}-{name}",
-        runner=architecture_config["runner"],
-        platform=architecture_config["platform"],
         environment_lock=environment_lock,
         enabled=row["enabled"] == "true",
     )
@@ -333,32 +306,9 @@ def load_catalog(root: Path, catalog_path: Path) -> list[Recipe]:
     return recipes
 
 
-def matrix(recipes: Iterable[Recipe]) -> dict[str, list[dict[str, str]]]:
-    include = []
-    for recipe in sorted(
-        (recipe for recipe in recipes if recipe.enabled), key=lambda item: item.name
-    ):
-        include.append(
-            {
-                "architecture": recipe.architecture,
-                "cache_scope": recipe.cache_scope,
-                "context": recipe.recipe_dir,
-                "dockerfile": f"{recipe.recipe_dir}/Dockerfile",
-                "environment_lock": recipe.environment_lock,
-                "image_name": recipe.image_name,
-                "name": recipe.name,
-                "platform": recipe.platform,
-                "runner": recipe.runner,
-                "tag_suffixes": "\n".join(recipe.tag_suffixes),
-                "version": recipe.version,
-            }
-        )
-    return {"include": include}
-
-
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("command", choices=("validate", "matrix"))
+    parser.add_argument("command", choices=("validate",))
     parser.add_argument("--root", type=Path, default=REPOSITORY_ROOT)
     parser.add_argument("--catalog", type=Path, default=Path("recipes/catalog.tsv"))
     args = parser.parse_args(argv)
@@ -374,11 +324,8 @@ def main(argv: list[str] | None = None) -> int:
         print(f"error: {error}", file=sys.stderr)
         return 2
 
-    if args.command == "validate":
-        enabled_count = sum(recipe.enabled for recipe in recipes)
-        print(f"validated {len(recipes)} recipes ({enabled_count} enabled)")
-    else:
-        print(json.dumps(matrix(recipes), separators=(",", ":"), sort_keys=True))
+    enabled_count = sum(recipe.enabled for recipe in recipes)
+    print(f"validated {len(recipes)} recipes ({enabled_count} enabled)")
     return 0
 
 

@@ -25,7 +25,7 @@ BUILD_JOBS=4 ./build.sh gdb
 license identifier. The accepted source copy is committed under `sources/` and
 is checksum-verified before extraction; a normal build does not download it.
 Reviewed license material and the exact linked-archive provenance inventory are
-under `licenses/` and are copied into the artifact image.
+under `licenses/` and are checked against the final static link.
 
 The build rejects an ELF interpreter, dynamic dependencies, a wrong machine,
 or an incomplete link inventory. Python, Guile, debuginfod, Babeltrace, libipt,

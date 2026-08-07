@@ -1,9 +1,9 @@
 # GDB 17.2 distribution notice
 
-`artifacts/aarch64/gdb` and the matching container image are built from the exact
-archive recorded in `../source.lock` and retained at
-`../sources/gdb-17.2.tar.xz`. The official GNU URL in the lock records its
-upstream provenance; the committed copy is the normal build input.
+`artifacts/aarch64/gdb` is built from the exact archive recorded in
+`../source.lock` and retained at `../sources/gdb-17.2.tar.xz`. The official GNU
+URL in the lock records its upstream provenance; the committed copy is the
+normal build input.
 
 GDB and the libraries built from its source tree are covered by the license
 notices in that source archive. The unmodified top-level GNU license texts are

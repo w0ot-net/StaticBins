@@ -23,12 +23,12 @@ Repository contract:
   example, `artifacts/aarch64/gdb` must itself execute on AArch64 Linux.
 - Preserve existing artifacts and build paths unless the task explicitly
   replaces or removes them.
-- Every publishable recipe must have one valid `recipes/catalog.tsv` row. Keep
-  only its name, architecture, and enabled state there; derive paths, version,
-  image, tags, runner, and platform from repository conventions and locks. Keep
-  source, configure, license, and smoke-test logic in the tool-owned recipe.
-  Follow `doc/adding-a-binary.md` and run `python3 scripts/recipes.py validate`
-  when a recipe or catalog field changes.
+- Every reproducible recipe must have one valid `recipes/catalog.tsv` row. Keep
+  only its name, architecture, and enabled state there; derive conventional
+  paths from repository layout and validate source versions from recipe locks.
+  Keep source, configure, license, and smoke-test logic in the tool-owned
+  recipe. Follow `doc/adding-a-binary.md` and run
+  `python3 scripts/recipes.py validate` when a recipe or catalog field changes.
 
 Reproducible build guidance:
 
@@ -53,15 +53,15 @@ Reproducible build guidance:
 - Treat builder publication as a separate maintainer operation: validate and
   publish a new versioned builder first, then commit its immutable digest before
   recipes may consume it.
-- Give each published recipe one committed source lock and keep every required
-  archive under its `sources/` directory. During a reviewed source update,
+- Give each reproducible recipe one committed source lock and keep every
+  required archive under its `sources/` directory. During a reviewed source update,
   download from the recorded official HTTPS URL into temporary storage, verify
   the proposed checksum, inspect the size against hosting limits, then commit
   the exact archive with mode `100644`. Normal builds must use only those
   tracked bytes, verify them before extraction, and must not publish source-only
   repository releases.
 - Keep reviewed license text and a factual linked-input provenance inventory
-  with each recipe. Publication must fail when the final link contains an
+  with each recipe. The build must fail when the final link contains an
   archive that is missing package, version, license, or source evidence.
 - Keep unreviewed downloads, package caches, object files, container layers,
   and VM scratch state outside the tracked tree. Reviewed recipe inputs under
@@ -91,6 +91,9 @@ Static artifact validation:
 
 Documentation and distribution:
 
+- Distribute utilities only as committed executables under `artifacts/`. GHCR
+  is reserved for reusable builder environments; recipe Dockerfiles export
+  local build results and must not define or publish utility runtime images.
 - Keep `README.md` concise and task-oriented. Document the one-command build,
   prerequisites, output path, pinned upstream version, important feature
   tradeoffs, and any host-wide setup such as `binfmt_misc` registration.
@@ -102,9 +105,9 @@ Documentation and distribution:
   logs, cores, or unrelated test outputs.
 - Code and scripts should remain ASCII unless a file already uses another
   character set or the change clearly requires it.
-- Adding a conforming published tool must not require copying or specializing
-  the container publication workflow. Extend an architecture/runner allowlist
-  only when genuinely adding support for a new architecture.
+- Adding a conforming tool must not require copying or specializing the recipe
+  validation workflow. Extend the architecture allowlist only when genuinely
+  adding support for a new architecture.
 
 Validation efficiency:
 
