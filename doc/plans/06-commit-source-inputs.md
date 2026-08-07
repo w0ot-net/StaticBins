@@ -153,6 +153,25 @@ again and require the release set, immutable state, asset names, and tag targets
 to match the recorded two-release inventory. Stop without deleting anything if
 remote state drifted or any unexpected release exists.
 
+The public API inventory observed on 2026-08-07 is the deletion baseline:
+
+- Release ID `366489635`, tag `gdb-17.2-source`, and target commit
+  `46f8e774d65304a468180650754a83daf836f509` are immutable and own exactly
+  `gdb-17.2.tar.xz` (24,658,624 bytes),
+  `gdb-distribution-materials.tar.gz` (60,084 bytes), and `source.lock` (419
+  bytes).
+- Release ID `366514829`, tag
+  `tcpdump-4.99.4-libpcap-1.10.4-source`, and target commit
+  `f756da6620c08f6188c509a2a18e761d2486a001` are immutable and own exactly
+  `tcpdump-4.99.4.tar.gz` (1,903,612 bytes), `libpcap-1.10.4.tar.gz` (952,153
+  bytes), `tcpdump-distribution-materials.tar.gz` (6,239 bytes), and
+  `source.lock` (878 bytes).
+
+Re-query authenticated release data and remote tag refs rather than trusting
+this snapshot blindly. If it still matches, delete by the resolved numeric
+release IDs and then delete only the two exact tag refs; do not select releases
+by list position, title, or a broad pattern.
+
 ## Affected Components
 
 - `recipes/gdb/aarch64/sources/gdb-17.2.tar.xz`: add the exact locked GDB source
@@ -201,7 +220,8 @@ remote state drifted or any unexpected release exists.
 1. Confirm the completed tcpdump plan and commit `ddab286` are present, require
    a clean ownership boundary from plan 07 and unrelated work, and inventory the
    two public immutable releases and all of their assets before changing active
-   source references.
+   source references. Compare release IDs, immutable state, target commits,
+   asset names, and sizes with the recorded baseline.
 2. Download the three official archives to a narrowly scoped temporary
    directory, compare them with the existing release assets, verify the locked
    SHA-256 values, inspect their sizes, and add them under the consuming
@@ -231,10 +251,10 @@ remote state drifted or any unexpected release exists.
 8. Re-query the release API and tags and stop if the exact immutable releases,
    assets, and tag targets differ from the initial inventory or if any
    unexpected release exists. Otherwise delete exactly the two source-only
-   releases and their tags. Confirm the repository release API returns no
-   published releases, both old asset URLs no longer resolve, all active code
-   and documentation are free of those URLs and tags, and clean-checkout builds
-   still use the tracked inputs.
+   releases by their resolved numeric IDs and delete their two exact tag refs.
+   Confirm the repository release API returns no published releases, both old
+   asset URLs no longer resolve, all active code and documentation are free of
+   those URLs and tags, and clean-checkout builds still use the tracked inputs.
 9. Finalize the plan record with the migration commit, artifact hashes, remote
    source verification, container publication result, and irreversible release
    deletion outcome.
