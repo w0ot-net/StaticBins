@@ -73,15 +73,14 @@ Out of scope:
 
 ## Design
 
-Keep `README.md` task-oriented. Its build section should begin with a short
-fresh-clone sequence using the public repository URL, `cd static_bins`,
-`./build.sh list`, and one real explicit command such as
-`./build.sh lsof x86_64`. Follow it with a compact prerequisite boundary:
-Bash; a usable Docker daemon; Docker Buildx; and the host `file`, `readelf`, and
-`sha256sum` commands. Do not add separate manual preflight commands: the
-selected recipe remains the executable authority that checks Buildx, Docker,
-and its exact host commands before image pulls or compilation. State that
-recipe READMEs remain authoritative for additional tools and feature tradeoffs.
+Keep `README.md` task-oriented. Its build section should begin with the public
+repository clone command and `cd static_bins`, followed by a compact
+prerequisite boundary: Bash; a usable Docker daemon; Docker Buildx; and the host
+`file`, `readelf`, and `sha256sum` commands. Do not add separate manual
+preflight commands: the selected recipe remains the executable authority that
+checks Buildx, Docker, and its exact host commands before image pulls or
+compilation. State that recipe READMEs remain authoritative for additional
+tools and feature tradeoffs.
 
 Describe GHCR as both a speed and repeatability mechanism. An ordinary build
 anonymously pulls the exact builder digest from the selected architecture's
@@ -101,7 +100,9 @@ command for Docker, QEMU, or distro packages; those package names and setup
 steps vary by host, and the actual recipe checks command availability directly.
 Do not publish measured repository or image sizes as stable guarantees. Link
 to the existing build-pipeline and build-environment authorities for stable
-detail rather than restating or changing their contracts.
+detail rather than restating or changing their contracts. Only after these
+prerequisite, network, and host-wide notices, show `./build.sh list` and one
+real explicit artifact command such as `./build.sh lsof x86_64`.
 
 In `recipes/tcpdump/x86_64/README.md`, change only the two dispatcher examples
 to `./build.sh tcpdump x86_64` and
