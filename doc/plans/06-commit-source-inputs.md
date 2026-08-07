@@ -122,9 +122,10 @@ installs before its host checks and target smoke test: require `file`, `readelf`
 and `sha256sum`; validate the temporary GDB candidate's AArch64 `ET_DYN`
 static-PIE type, absence of an interpreter and `DT_NEEDED`, stripped state, and
 version behavior inside the target container; then install and repeat the cheap
-host checks. Thus a failed build leaves the previous committed artifact
-untouched. The final scratch images continue to contain only the executable and
-reviewed distribution materials, not build inputs.
+host checks. For both recipes, record the validated candidate's SHA-256 and
+require the installed file to match it. Thus a failed build leaves the previous
+committed artifact untouched. The final scratch images continue to contain only
+the executable and reviewed distribution materials, not build inputs.
 
 Delete `.github/workflows/mirror-sources.yml` rather than repurposing it. Source
 ingest is a reviewed repository change: a maintainer downloads the exact
@@ -186,7 +187,8 @@ by list position, title, or a broad pattern.
 - `recipes/{gdb/aarch64,tcpdump/x86_64}/build.sh`: mount recipe-local source
   directories in the direct-container path, preserve tcpdump's candidate-before-
   install behavior, and move GDB's full host validation ahead of installation
-  while explicitly enforcing its existing AArch64 `ET_DYN` static-PIE type.
+  while explicitly enforcing its existing AArch64 `ET_DYN` static-PIE type;
+  require each installed artifact's hash to equal its validated candidate.
 - `recipes/{gdb/aarch64,tcpdump/x86_64}/build-in-container.sh`: replace mirror
   and upstream downloads with checksum-verified local input consumption.
 - `recipes/{gdb/aarch64,tcpdump/x86_64}/licenses/NOTICE.md`: identify the
@@ -235,7 +237,8 @@ by list position, title, or a broad pattern.
    and the nearest recipe documentation in the same ownership change. Refactor
    GDB's host checks around the temporary candidate and require its current
    AArch64 `ET_DYN` static-PIE type, stripped state, and target smoke test before
-   installing it.
+   installing it. Record and compare candidate/installed hashes for both host
+   paths.
 5. Delete the source-mirror workflow and revise `AGENTS.md`, the onboarding
    guide, and the root README to make tracked artifacts and tracked source
    inputs the authoritative repository contract.
@@ -287,14 +290,18 @@ by list position, title, or a broad pattern.
   archive is downloaded and that checksum verification occurs before
   extraction. Confirm Docker builds receive the archives from their existing
   bounded recipe contexts and final scratch images do not contain them.
-- Run `./build.sh gdb` and `./build.sh tcpdump`. On each temporary candidate and
-  installed artifact, repeat the `file`, `readelf`, stripping, architecture,
-  version, linked-archive inventory, and focused functional smoke checks defined
-  by its recipe. Specifically assert GDB remains an AArch64 `ET_DYN` static-PIE
-  executable and tcpdump remains an x86-64 `ET_EXEC` executable. Inspect the GDB
-  command order to confirm every candidate check precedes installation, then run
-  a controlled bad-source-checksum failure and prove the committed output hash
-  does not change.
+- Run `./build.sh gdb` and `./build.sh tcpdump`. Require each guest build to
+  reconcile its linked-archive inventory before exporting a candidate. On each
+  temporary candidate, run the recipe's `file`, `readelf`, stripping,
+  architecture, version, and focused target-architecture smoke checks before
+  installation; specifically assert GDB remains an AArch64 `ET_DYN` static-PIE
+  executable and tcpdump remains an x86-64 `ET_EXEC` executable. After
+  installation, repeat the cheap host ELF checks and prove the installed hash
+  equals the validated candidate hash rather than trying to reconstruct link
+  provenance from the finished ELF. Inspect the GDB command order to confirm
+  every candidate check precedes installation, then run a controlled
+  bad-source-checksum failure and prove the committed output hash does not
+  change.
 - Before deleting external state, download every asset from both immutable
   releases and reconcile it with the three committed archives, current notices,
   locks, or repository history. After pushing, download each raw archive from
