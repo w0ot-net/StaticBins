@@ -265,3 +265,56 @@ repository provides, the artifact table, `./build.sh list`,
 - The concise root README, recipe-local GDB documentation, onboarding guide,
   AGENTS contract, tests, workflows, and active tcpdump plan all describe the
   same layout and naming model.
+
+## Execution Notes
+
+Implemented the atomic layout and catalog migration in commit `95bd590`.
+Committed artifacts now live under `artifacts/{aarch64,x86_64}`, reusable
+environments under `builders/{aarch64,x86_64}`, and the GDB recipe under
+`recipes/gdb/aarch64`. The relocated nonconforming tcpdump script remains only
+as `recipes/tcpdump/x86_64/legacy.sh` pending the active tcpdump replacement
+plan. No old architecture-prefixed artifact or build path remains tracked.
+
+`recipes/catalog.tsv` now contains only `name`, `architecture`, and `enabled`.
+The strict Python validator derives and verifies the recipe, artifact, builder,
+source version, image name, tag suffixes, cache scope, platform, and runner. The
+Bash dispatcher independently derives only the conventional build script and
+does not invoke Python. The publication workflow composes the GHCR namespace
+from the repository owner while retaining credentials, fixed build arguments,
+labels, cache, SBOM, and provenance policy in workflow code. Internal x86 naming
+is `x86_64`; the already published `x64-*` builder tags remain explicit external
+compatibility values.
+
+Validation completed successfully:
+
+- `python3 -m unittest tests.test_recipes` passed 11 focused tests. Catalog
+  validation, two identical compact matrix emissions, `./build.sh list`, Bash
+  and guest-shell syntax checks, workflow YAML parsing, and `git diff --check`
+  also passed. ShellCheck was unavailable on the execution host.
+- All six moved artifacts retained Git mode `100755` and their exact bytes.
+  SHA-256 values remained `8e729a88937e2187a9288ae9914748ae3946285227a76ce37232802df8319f4a`
+  for AArch64 GDB and, for x86-64 `gdbserver`, `lsof`, `socat`, `strace`, and
+  `tcpdump`, respectively: `54fcf7365a7e08a26dfe28bd1a0829460f639b2f50c82ed2cb1a3fc615614b3f`,
+  `110c9b13164733cea363338d6bd317acde346db9d07d2fe5b6fa65e4dd7200d0`,
+  `2a75b56b2eb1b0bdf884d030f2fe23463035d40d7ce8e4886ae99045aa87`,
+  `05518e2df031134dec0b8b066d7dd211d8262e3950467459178936b0d34ea6a4`,
+  and `10668ebc7ffba547e63c1c02fafaf68741ed0434e5a437970e6dd87b57f9ffe0`.
+- `./builders/aarch64/run.sh /bin/true` pulled and executed the unchanged locked
+  builder digest. The `gdb-17.2-source` release remained immutable, and its
+  anonymous `source.lock` asset stayed byte-identical to the moved lock at
+  SHA-256 `549ed214d074a3901b04421c79675472f960ba943204eaadb38c41bdcce573f5`.
+- Catalog-driven publication run `31145807621` passed its catalog gate and its
+  single `gdb (aarch64)` native job. Both public tags moved together from the
+  recorded pre-migration OCI index digest
+  `sha256:39276132d4b60e2ec51ec94851bb32e1830b4a9b8bf1224da88d0646d7071cc9`
+  to `sha256:a4f3331d6608d7d3e0f9e1d2030c536c0694ea07759b001437a9f5b0c60e99ab`.
+  The new image reports `arm64`, GDB 17.2, the repository source label, revision
+  `95bd5908940571b7fea48e8438bc91eb74be10eb`, and an attestation manifest.
+  Its `/gdb` payload remains byte-identical to the committed artifact at
+  `8e729a88937e2187a9288ae9914748ae3946285227a76ce37232802df8319f4a`,
+  and the image carries every moved license/inventory file plus `source.lock`.
+
+The prior focused remote-debugging result remains applicable because the GDB
+payload did not change. A local QEMU compilation was intentionally not repeated
+for this path-only migration; the native publication rebuilt or reused the
+validated recipe and independently confirmed the packaged bytes.
