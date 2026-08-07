@@ -1,0 +1,7 @@
+# strace source acceptance and provenance metadata.
+SOURCE_VERSION=6.16
+SOURCE_ARCHIVE=strace-6.16.tar.xz
+SOURCE_SHA256=3d7aee7e4f044b2f67f3d51a8a76eda18076e9fb2774de54ac351d777d4ebffa
+SOURCE_UPSTREAM_URL=https://strace.io/files/6.16/strace-6.16.tar.xz
+SOURCE_LICENSE=LGPL-2.1-or-later
+SOURCE_AUTHENTICATION=checksum-only

@@ -33,6 +33,7 @@ keyserver, or network lookup.
 | [socat 1.8.1.3 (ARMv7)](recipes/socat/armv7/source.lock) | Checksum only | Not available | [official Git repository](https://repo.or.cz/socat.git) |
 | [socat 1.8.1.3 (x86-64)](recipes/socat/x86_64/source.lock) | Checksum only | Not available | [official Git repository](https://repo.or.cz/socat.git) |
 | [strace 6.16 (AArch64)](recipes/strace/aarch64/source.lock) | Checksum only | Not adopted | [official release](https://strace.io/files/6.16/) |
+| [strace 6.16 (ARMv7)](recipes/strace/armv7/source.lock) | Checksum only | Not adopted | [official release](https://strace.io/files/6.16/) |
 | [strace 6.16 (x86-64)](recipes/strace/x86_64/source.lock) | Checksum only | Not adopted | [official release](https://strace.io/files/6.16/) |
 | [tcpdump 4.99.4 (ARMv7)](recipes/tcpdump/armv7/source.lock) | Upstream PGP | `1F166A5742ABB9E0249A8D30E089DEF1D9C15D0D` | [signature](https://www.tcpdump.org/release/tcpdump-4.99.4.tar.gz.sig); [Tcpdump Group key](https://www.tcpdump.org/release/signing-key-RSA-E089DEF1D9C15D0D.asc) |
 | [libpcap 1.10.4 (ARMv7)](recipes/tcpdump/armv7/source.lock) | Upstream PGP | `1F166A5742ABB9E0249A8D30E089DEF1D9C15D0D` | [signature](https://www.tcpdump.org/release/libpcap-1.10.4.tar.gz.sig); [Tcpdump Group key](https://www.tcpdump.org/release/signing-key-RSA-E089DEF1D9C15D0D.asc) |
@@ -51,10 +52,11 @@ checksum-locked Alpine 3.22.5 `vmlinuz-virt`, recorded in their respective
 smoke-test environment input, not a linked input or distributed artifact. Its
 checksum verifies accepted bytes but does not authenticate their origin.
 
-The ARMv7 GDBserver functional test boots the checksum-locked Alpine 3.22.5
-`vmlinuz-lts` recorded in its
-[`vm.lock`](recipes/gdbserver/armv7/vm.lock). Its published configuration and
-an evidence boot establish the required QEMU `virt`, PL011 console, and
+The ARMv7 GDBserver and strace functional tests boot the same checksum-locked
+Alpine 3.22.5 `vmlinuz-lts`, recorded in their respective
+[`GDBserver vm.lock`](recipes/gdbserver/armv7/vm.lock) and
+[`strace vm.lock`](recipes/strace/armv7/vm.lock). Its published configuration
+and an evidence boot establish the required QEMU `virt`, PL011 console, and
 generated-initramfs support. The same checksum-only kernel limitation applies.
 
 strace publishes a detached release signature, but these recipes have not
@@ -97,6 +99,7 @@ does not identify who built a binary or establish its provenance.
 | `artifacts/armv7/gdbserver` | Upstream PGP | Committed recipe and target checks passed | None |
 | `artifacts/armv7/lsof` | Checksum only | Committed recipe and target checks passed | None |
 | `artifacts/armv7/socat` | Checksum only | Committed recipe and target checks passed | None |
+| `artifacts/armv7/strace` | Checksum only | Committed recipe and target checks passed | None |
 | `artifacts/armv7/tcpdump` | Upstream PGP for tcpdump and libpcap | Committed recipe and target checks passed | None |
 | `artifacts/x86_64/tcpdump` | Upstream PGP for tcpdump and libpcap | Committed recipe and target checks passed | Exact native rebuild and historical GitHub attestation |
 | `artifacts/x86_64/gdbserver` | Upstream PGP | Committed recipe and target checks passed | None |
