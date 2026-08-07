@@ -30,8 +30,9 @@ In scope:
 - Make the GDB guest build try the repository mirror and official endpoint,
   accepting bytes only when they match the single locked checksum.
 - Commit and distribute the GDB license plus a factual notice/source inventory
-  mapping every static archive in the final link to its locked Alpine package,
-  declared license, license text, and authoritative source location.
+  mapping every static archive in the final link either to the locked GDB source
+  or to its exact Alpine package, declared license, license text, and
+  authoritative source location.
 - Remove duplicate GDB source/version arguments from callers and rebuild the
   committed artifact.
 
@@ -60,12 +61,12 @@ passing duplicate version/checksum build arguments.
 
 Add `aarch64_alpine_build_scripts/gdb/licenses/` with the upstream GDB license
 texts and a concise `NOTICE.md`. Capture the final verbose static link (or linker
-map), map every referenced archive to the exact package in the locked builder,
-and record the package version, Alpine-declared license, copied license text,
-and authoritative source location. An unmapped archive or missing license/source
-record is a build-publication blocker; this is a factual inventory and must not
-claim a legal conclusion. The final scratch image can copy this in-context
-directory to
+map). Map archives built by the GDB tree to `source.lock`; map external archives
+to the exact package in the locked builder and record its version,
+Alpine-declared license, copied license text, and authoritative source location.
+An unmapped archive or missing license/source record is a build-publication
+blocker; this is a factual inventory and must not claim a legal conclusion. The
+final scratch image can copy this in-context directory to
 `/usr/share/licenses/gdb/` while retaining `/gdb` as its entry point.
 
 Add a manually invoked `mirror-sources.yml` workflow with `contents: write`. It
@@ -111,8 +112,8 @@ source host.
 1. Create `source.lock` from the currently verified GDB 17.2 archive and refactor
    the Dockerfile/scripts to use it without changing configure/link behavior.
 2. Add the in-recipe license directory, capture the final static link, map every
-   archive to locked package/license/source evidence, and fail on an incomplete
-   inventory.
+   archive to either locked GDB source or exact package/license/source evidence,
+   and fail on an incomplete inventory.
 3. Add the source-mirror workflow and its non-replacement preflights; enable
    repository release immutability before running it.
 4. Publish the draft source release, verify it is immutable and byte-identical
@@ -136,7 +137,8 @@ source host.
   mounted lock, and the Buildx/Dockerfile path must consume its copied lock.
 - Inspect the final image and in-recipe license directory for the locked
   license/notice materials; reconcile every archive in the captured final link
-  with one package/version/license/source entry and fail on extras or omissions.
+  with either the GDB source lock or one package/version/license/source entry and
+  fail on extras or omissions.
 - Run the one-command GDB build, then repeat the AArch64/static-ELF/version and
   focused GDB-remote functional checks.
 - Run artifact publication and anonymously pull and execute both GDB tags.
@@ -150,7 +152,7 @@ source host.
 - The repository-controlled archive is attached to an immutable release and is
   byte-identical to the official GDB archive.
 - The repository and final image carry GDB license texts and a complete factual
-  archive-to-package/license/source inventory, with unmapped inputs treated as
-  blockers.
+  archive-to-source-or-package/license inventory, with unmapped inputs treated
+  as blockers.
 - The existing one-command build and published GDB image retain all static and
   functional validation guarantees.
