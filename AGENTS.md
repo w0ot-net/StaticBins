@@ -100,6 +100,9 @@ Static artifact validation:
   destination directory.
 - For 32-bit ARM, also require ELF32, little-endian data, and the intended ARM
   EABI hard-float flags; an `ARM` machine field alone is insufficient.
+- For 32-bit x86, also require ELF32, little-endian data, the `Intel 80386`
+  machine field, and explicit compilation for the documented i686-compatible
+  CMOV/SSE2 baseline; the ELF machine field alone is insufficient.
 - Run a smoke test on the target architecture, either natively or through the
   same emulation used for the build. For command-line programs, at minimum run
   the version command; add a focused functional test when that would catch

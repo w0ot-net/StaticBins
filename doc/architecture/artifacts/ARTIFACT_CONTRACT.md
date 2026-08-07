@@ -14,7 +14,10 @@ endianness, and recipe-selected executable type; rejects a requested program
 interpreter and every `DT_NEEDED` entry; checks stripping; and runs the exact
 version plus a focused functional test on the target architecture. ARMv7
 artifacts also require ELF32, little-endian data, and the intended ARM EABI
-hard-float flags.
+hard-float flags. x86 artifacts require ELF32, little-endian data, an `Intel
+80386` machine field, and explicit compilation for the documented
+i686-compatible CMOV/SSE2 baseline because the ELF machine field cannot
+distinguish that CPU baseline.
 
 Only after those checks pass may the host install the candidate. It then repeats
 the relevant ELF checks and requires the installed SHA-256 to equal the
