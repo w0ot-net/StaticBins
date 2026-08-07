@@ -33,7 +33,7 @@ Out of scope:
   disabled GDB components.
 - Committing a kernel or VM disk, sharing VM machinery with another recipe, or
   modifying existing GDBserver recipes.
-- Adding an independent CI rebuild or provenance attestation.
+- Adding an independent rebuild service or provenance attestation.
 
 ## Design
 
@@ -85,15 +85,15 @@ independent rebuild evidence as separate TRUST facts.
 
 - Verify the tracked GDB archive and detached signature offline with the exact
   pinned GNU fingerprint through `python3 scripts/recipes.py validate`.
-- Run shell syntax and C warning checks, `git diff --check`, unit tests, and
-  dispatcher listing.
+- Run shell syntax and C warning checks, `./validate.sh`, and
+  `git diff --check`.
 - Run `./build.sh gdbserver armv7`; require one verified kernel download/cache,
   exact version output, complete static link inventory, and the bounded VM RSP
   exchange.
 - Inspect GDBserver and smoke helpers with `file`/`readelf`, then verify the
   installed artifact checksum and complete manifest.
-- Require both stable lightweight CI signals to pass without compiling the
-  utility, creating a utility image, or adding an attestation.
+- Confirm local validation does not compile the utility, create a utility
+  image, or add an independent attestation claim.
 
 ## Success Criteria
 
