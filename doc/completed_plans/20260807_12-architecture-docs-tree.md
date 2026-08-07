@@ -273,3 +273,24 @@ compatibility layer for nonexistent documentation consumers.
 - No `DIRECTION.md`, per-binary architecture catalog, generated documentation
   system, production change, external-state mutation, or speculative future
   design is introduced.
+
+## Execution Notes
+
+Completed on 2026-08-07.
+
+- Implementation commit: `a6bfb6d4e205f38f51b72461cf9f7264a068a384`
+- Added the documentation router, architecture index, and all eight scoped
+  authority pages from the planned tree. Added only bounded authority links to
+  `README.md`, `TRUST.md`, `doc/adding-a-binary.md`, and `AGENTS.md`.
+- Verified all 14 added or changed Markdown files are ASCII, every local link
+  resolves, both indexes reach every topic page, and every topic returns to the
+  architecture index. `git diff --check` also passed.
+- `./build.sh list`, `python3 scripts/recipes.py validate`, and
+  `python3 -m unittest tests.test_recipes` passed; the unit suite ran 20 tests.
+- Read-only inspection confirmed the documented workflow roles, stable job
+  names, permissions, full-SHA Actions policy, and `main-history` ruleset
+  behavior. No scripts, recipes, builders, artifacts, locks, workflows, or
+  external settings changed.
+- Post-push workflow run `31200067503` passed `artifact-assurance` with both
+  rebuild jobs skipped. No `recipe-validation` run was created for the
+  documentation-only commit, as required by its path filters.
