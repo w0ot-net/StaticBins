@@ -1,0 +1,7 @@
+# archive_path	package	version	Alpine_declared_license	license_file	Alpine_APKBUILD
+/usr/lib/libtirpc-nokrb.a	libtirpc-static	1.3.5-r1	BSD-3-Clause	libtirpc-COPYING.txt	https://gitlab.alpinelinux.org/alpine/aports/-/blob/4519a8c0bafdd843397d13a9146c906ff64a6c2f/main/libtirpc/APKBUILD
+/usr/lib/libc.a	musl-dev	1.2.6-r2	MIT	musl-COPYRIGHT.txt	https://gitlab.alpinelinux.org/alpine/aports/-/blob/f5640d3a10f664c9119720c60515265d3d6f6d01/main/musl/APKBUILD
+/usr/lib/libpthread.a	musl-dev	1.2.6-r2	MIT	musl-COPYRIGHT.txt	https://gitlab.alpinelinux.org/alpine/aports/-/blob/f5640d3a10f664c9119720c60515265d3d6f6d01/main/musl/APKBUILD
+/usr/lib/libssp_nonshared.a	musl-dev	1.2.6-r2	MIT	musl-COPYRIGHT.txt	https://gitlab.alpinelinux.org/alpine/aports/-/blob/f5640d3a10f664c9119720c60515265d3d6f6d01/main/musl/APKBUILD
+/usr/lib/gcc/aarch64-alpine-linux-musl/15.2.0/libgcc.a	libgcc-static	15.2.0-r5	GPL-2.0-or-later AND LGPL-2.1-or-later	GCC-COPYING.RUNTIME.txt	https://gitlab.alpinelinux.org/alpine/aports/-/blob/423a8ad043d07f2c7546c8ec3e2b0384cda360ae/main/gcc/APKBUILD
+/usr/lib/gcc/aarch64-alpine-linux-musl/15.2.0/libgcc_eh.a	gcc	15.2.0-r5	GPL-2.0-or-later AND LGPL-2.1-or-later	GCC-COPYING.RUNTIME.txt	https://gitlab.alpinelinux.org/alpine/aports/-/blob/423a8ad043d07f2c7546c8ec3e2b0384cda360ae/main/gcc/APKBUILD
