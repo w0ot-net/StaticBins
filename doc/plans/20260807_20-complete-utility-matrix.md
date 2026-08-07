@@ -8,8 +8,9 @@ architecture. Finalize the repository contract that an architecture is called
 ready only when it provides every current utility, while retaining the existing
 builder-first onboarding path for architectures still under construction.
 
-Execute this plan only after all preceding artifact plans have produced the
-complete six-tool by four-architecture catalog.
+Execute this plan only after the fresh-clone rebuild documentation plan and all
+preceding artifact plans have produced the complete six-tool by four-
+architecture catalog.
 
 ## Problem
 
