@@ -26,11 +26,11 @@ correct; an attestation does not make source safe; and protected history does
 not review or approve a commit.
 
 Residual trust includes upstream maintainers and signing practices, Alpine and
-builder inputs, repository writers and settings administrators, the remaining
-GitHub builder-publication path, and the review quality of recipe and license
-evidence. Historical attestations additionally depended on GitHub's identity,
-Actions, and attestation services. None of the chain proves that a program is
-benign, vulnerability-free, or legally compatible.
+builder inputs, repository writers and settings administrators, local Docker
+execution and registry credentials, GHCR, and the review quality of recipe and
+license evidence. Historical attestations additionally depended on GitHub's
+identity, Actions, and attestation services. None of the chain proves that a
+program is benign, vulnerability-free, or legally compatible.
 
 [`TRUST.md`](../../../TRUST.md) remains the authority for current source
 fingerprints, artifact records, limitations, and verification commands. See

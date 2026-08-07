@@ -60,7 +60,7 @@ fi
 echo "Checking for the published reusable builder..."
 if ! docker pull --platform "${PLATFORM}" "${BUILDER_IMAGE}"; then
     echo "error: could not pull locked builder ${BUILDER_IMAGE}" >&2
-    echo "Publish and lock a replacement with ./builders/x86_64/build.sh and .github/workflows/publish-builder.yml." >&2
+    echo "Publish with ./builders/publish.sh x86_64, then lock its reported digest." >&2
     exit 1
 fi
 

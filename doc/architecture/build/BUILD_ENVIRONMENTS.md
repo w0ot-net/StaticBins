@@ -24,17 +24,23 @@ Builder publication is a maintainer operation separate from artifact builds:
 
 1. Change package inputs and validation under a new versioned tag.
 2. Validate a local candidate and any affected existing recipe output.
-3. Push the candidate definition and manually run the architecture-allowlisted
-   publication workflow.
+3. Authenticate Docker to GHCR with a GitHub token authorized to write packages
+   and run `./builders/publish.sh <architecture>`.
 4. Refuse replacement of an existing versioned tag; publish the new image with
    SBOM and provenance.
-5. Inspect and anonymously pull the reported digest.
+5. Inspect and anonymously pull the reported immutable digest.
 6. Only then commit that digest to `environment.lock` for recipes to consume.
 
-Publication uses a native hosted runner where one exists. The ARMv7 builder
-runs on the ARM64 host with the committed binfmt digest because no hosted
-ARM32 runner exists. This affects builder execution, not the architecture
-promise: every resulting recipe artifact must run on its destination host.
+The local publisher accepts only the three internal architecture identifiers,
+uses Docker Buildx for every platform, and invokes the architecture's candidate
+validator before pushing. When the workstation is not the target architecture,
+that validator registers only the committed binfmt image and proves target
+execution. This affects builder execution, not the architecture promise: every
+resulting recipe artifact must run on its destination host.
+
+Registry authentication remains in Docker's external credential configuration.
+The publisher accepts no token argument, never edits `environment.lock`, and
+fails closed when registry inspection cannot prove a versioned tag is unused.
 
 Ordinary recipes consume only the committed builder digest and install no
 packages. GHCR is therefore an environment distribution surface, not a utility

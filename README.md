@@ -75,12 +75,23 @@ OCI platform `linux/arm/v7`. Normal builds use the immutable builder digest
 committed under `builders/<architecture>/environment.lock` and never resolve
 packages or silently fall back to another image.
 
-Builder publication is a separate maintainer operation. Candidate builders can
-be validated with `./builders/aarch64/build.sh`, `./builders/armv7/build.sh`, or
-`./builders/x86_64/build.sh`; start the locked AArch64 environment with
-`./builders/aarch64/run.sh`. Candidate builder validation also requires Docker
-Buildx. Maintainers run `./validate.sh` locally; the remaining GitHub workflow
-publishes reusable builders only and never publishes utility images.
+Builder publication is a separate maintainer operation. First authenticate
+Docker to GHCR as `w0ot-net` using a GitHub token authorized to write packages,
+then run the allowlisted local publisher:
+
+```sh
+docker login ghcr.io -u w0ot-net
+./builders/publish.sh <aarch64|armv7|x86_64>
+```
+
+The command refuses an existing versioned tag, validates the candidate, pushes
+the versioned and architecture-floating tags with SBOM and provenance, and
+prints the immutable `BUILDER_IMAGE` assignment. Inspect that published digest
+before committing it separately to the architecture's `environment.lock`.
+Credentials remain in Docker's external configuration; the publisher accepts
+no token argument. Candidate validation and publication require Docker Buildx.
+Start the currently locked AArch64 environment with
+`./builders/aarch64/run.sh`.
 
 See [`doc/adding-a-binary.md`](doc/adding-a-binary.md) for the recipe contract.
 The broader documentation map and system architecture start at

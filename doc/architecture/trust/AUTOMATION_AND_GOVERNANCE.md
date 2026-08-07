@@ -1,7 +1,7 @@
 # Automation and governance
 
-This page owns local automation, workflow permission boundaries, and
-repository-history controls. Return to the [architecture index](../README.md).
+This page owns local automation, external permission boundaries, and repository
+history controls. Return to the [architecture index](../README.md).
 
 ## Automation roles
 
@@ -9,15 +9,16 @@ repository-history controls. Return to the [architecture index](../README.md).
   focused unit tests, dispatcher listing, and tracked shell syntax. Maintainers
   run it directly before committing and pushing. It has no network, Docker, or
   repository-write role.
-- `publish-builder.yml` is a manual maintainer workflow for the architecture
-  allowlist. It validates host/target identity, refuses an existing versioned
-  tag, and publishes reusable builders with SBOM and provenance. It has
-  read-only contents access plus package-write permission and is not an
-  ordinary recipe path or a utility publisher. It is the only remaining hosted
-  workflow and is replaced by a separate implementation plan.
+- `builders/publish.sh` is the architecture-allowlisted local maintainer path
+  for reusable builders. It refuses an existing versioned tag, runs the
+  architecture's candidate validator, and publishes with SBOM and provenance
+  through Docker Buildx. It accepts no credentials; a prior external Docker
+  login supplies package-write access.
 
-The remaining workflow declares permissions at workflow/job scope and pins
-every `uses:` reference to a full commit SHA, as enforced by repository policy.
+The repository contains no hosted workflows. Local validation and publication
+therefore have no GitHub job names, workflow permissions, or runner dependency.
+The historical tcpdump signer identity in `TRUST.md` remains evidence about one
+past workflow, not a live automation path.
 
 ## History policy
 
@@ -28,8 +29,8 @@ Accordingly, local validation is a maintainer acceptance step rather than a
 merge gate or post-push status.
 
 The ruleset preserves accepted lineage but does not approve its contents.
-Repository write access, settings administration, workflow definitions,
-the remaining builder workflow and registry, and GitHub itself remain explicit
+Repository write access, settings administration, local maintainer execution,
+Docker credentials, the builder registry, and GitHub itself remain explicit
 trust boundaries. Historical artifact attestations remain supplemental
 evidence, not the current acceptance mechanism. Live assurance records and
 verification commands belong in [`TRUST.md`](../../../TRUST.md), not this

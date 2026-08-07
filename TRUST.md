@@ -126,16 +126,17 @@ The active [`main-history` ruleset](https://github.com/w0ot-net/static_bins/rule
 targets only `main` and blocks deletion and non-fast-forward updates. Direct
 pushes are allowed; pull requests and successful hosted checks are not required
 before a commit reaches `main`. Maintainers run `./validate.sh` before pushing
-and run the narrow recipe or builder validation when those paths change. The
-remaining builder-publication workflow is a separate maintainer operation;
-repository Actions policy requires each of its `uses:` references to name a
-full commit SHA.
+and run the narrow recipe or builder validation when those paths change.
+Builder publication is a separate local maintainer operation that uses Docker's
+external GHCR credentials and reports an immutable digest for reviewed
+adoption.
 
 These controls protect existing history from destructive updates, but they do
 not guarantee review or successful local validation before publication.
 Repository write access and the owner who can change settings or push directly
 therefore remain explicit trust boundaries, alongside the upstream sources,
-builders, registry, and ruleset services described above.
+local Docker execution and credentials, builders, registry, and ruleset
+services described above.
 
 When verifying the historical tcpdump attestation, require repository
 `w0ot-net/static_bins`, signer workflow

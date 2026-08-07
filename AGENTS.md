@@ -61,9 +61,12 @@ Reproducible build guidance:
   for it before emulation registration, image pulls, temporary output creation,
   or compilation, and fail with an actionable error when it is missing. Do not
   select direct guest-script execution or classic `docker build` as a fallback.
-- Treat builder publication as a separate maintainer operation: validate and
-  publish a new versioned builder first, then commit its immutable digest before
-  recipes may consume it.
+- Treat builder publication as a separate maintainer operation. Authenticate
+  Docker to GHCR with a GitHub token authorized to write packages, run
+  `./builders/publish.sh <architecture>`, inspect the reported digest, and only
+  then commit that immutable digest before recipes may consume it. Keep registry
+  credentials in Docker's external configuration, never in repository files or
+  script arguments.
 - Give each reproducible recipe one committed source lock and keep every
   required archive and authentication evidence under its `sources/` directory.
   During a reviewed source update, download from the recorded official HTTPS
@@ -152,9 +155,6 @@ Git workflow:
 - `main` is protected by the `main-history` ruleset against deletion and
   non-fast-forward updates. Direct pushes are allowed. Do not create a pull
   request unless the user explicitly asks for one.
-- Pin every GitHub Actions `uses:` reference to a full 40-character commit SHA.
-  Repository Actions policy enforces this invariant while the builder
-  publication workflow remains.
 - Always commit and push after code, documentation, recipe, or binary changes.
 - Never use `git add .` or `git add -A`; stage explicit paths only.
 - Commit only files touched for the task and preserve unrelated user changes.
