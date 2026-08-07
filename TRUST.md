@@ -26,6 +26,8 @@ It accepts a PGP record only when `gpgv` reports the full fingerprint pinned in
 | [GDB 16.3 (GDBserver, x86-64)](recipes/gdbserver/x86_64/source.lock) | Upstream PGP | `F40ADB902B24264AA42E50BF92EDB04BFF325CF3` | [signature](https://ftp.gnu.org/gnu/gdb/gdb-16.3.tar.xz.sig); [GNU keyring](https://ftp.gnu.org/gnu/gnu-keyring.gpg) |
 | [lsof 4.99.5 (AArch64)](recipes/lsof/aarch64/source.lock) | Checksum only | Not available | [GitHub release](https://github.com/lsof-org/lsof/releases/tag/4.99.5) |
 | [lsof 4.99.5 (x86-64)](recipes/lsof/x86_64/source.lock) | Checksum only | Not available | [GitHub release](https://github.com/lsof-org/lsof/releases/tag/4.99.5) |
+| [socat 1.8.1.3 (AArch64)](recipes/socat/aarch64/source.lock) | Checksum only | Not available | [official Git repository](https://repo.or.cz/socat.git) |
+| [socat 1.8.1.3 (x86-64)](recipes/socat/x86_64/source.lock) | Checksum only | Not available | [official Git repository](https://repo.or.cz/socat.git) |
 | [tcpdump 4.99.4](recipes/tcpdump/x86_64/source.lock) | Upstream PGP | `1F166A5742ABB9E0249A8D30E089DEF1D9C15D0D` | [signature](https://www.tcpdump.org/release/tcpdump-4.99.4.tar.gz.sig); [Tcpdump Group key](https://www.tcpdump.org/release/signing-key-RSA-E089DEF1D9C15D0D.asc) |
 | [libpcap 1.10.4](recipes/tcpdump/x86_64/source.lock) | Upstream PGP | `1F166A5742ABB9E0249A8D30E089DEF1D9C15D0D` | [signature](https://www.tcpdump.org/release/libpcap-1.10.4.tar.gz.sig); [Tcpdump Group key](https://www.tcpdump.org/release/signing-key-RSA-E089DEF1D9C15D0D.asc) |
 
@@ -71,10 +73,11 @@ does not identify who built a binary or establish its provenance.
 | `artifacts/aarch64/gdb` | Upstream PGP | `Not verified` |
 | `artifacts/aarch64/gdbserver` | Upstream PGP | `Not verified` |
 | `artifacts/aarch64/lsof` | Checksum only | `Not verified` |
+| `artifacts/aarch64/socat` | Checksum only | `Not verified` |
 | `artifacts/x86_64/tcpdump` | Upstream PGP for tcpdump and libpcap | `Exact rebuild + GitHub attestation` |
 | `artifacts/x86_64/gdbserver` | Upstream PGP | `Not verified` |
 | `artifacts/x86_64/lsof` | Checksum only | `Not verified` |
-| `artifacts/x86_64/socat` | Legacy; no recipe evidence | `Not verified` |
+| `artifacts/x86_64/socat` | Checksum only | `Not verified` |
 | `artifacts/x86_64/strace` | Legacy; no recipe evidence | `Not verified` |
 
 `Exact rebuild + GitHub attestation` means a clean native build passed the

@@ -4,4 +4,6 @@ gdbserver	aarch64	true
 gdbserver	x86_64	true
 lsof	aarch64	true
 lsof	x86_64	true
+socat	aarch64	true
+socat	x86_64	true
 tcpdump	x86_64	true

@@ -5,8 +5,8 @@ recipes.
 
 | Architecture | Ready-to-run binaries | Rebuild support |
 | --- | --- | --- |
-| AArch64 | [GDB 17.2](artifacts/aarch64/gdb); [GDBserver 16.3](artifacts/aarch64/gdbserver); [lsof 4.99.5](artifacts/aarch64/lsof) | [GDB](recipes/gdb/aarch64/README.md); [GDBserver](recipes/gdbserver/aarch64/README.md); [lsof](recipes/lsof/aarch64/README.md) |
-| x86-64 | [tcpdump 4.99.4](artifacts/x86_64/tcpdump); [GDBserver 16.3](artifacts/x86_64/gdbserver); [lsof 4.99.5](artifacts/x86_64/lsof); [socat](artifacts/x86_64/socat); [strace](artifacts/x86_64/strace) | [tcpdump](recipes/tcpdump/x86_64/README.md); [GDBserver](recipes/gdbserver/x86_64/README.md); [lsof](recipes/lsof/x86_64/README.md); two legacy artifacts |
+| AArch64 | [GDB 17.2](artifacts/aarch64/gdb); [GDBserver 16.3](artifacts/aarch64/gdbserver); [lsof 4.99.5](artifacts/aarch64/lsof); [socat 1.8.1.3](artifacts/aarch64/socat) | [GDB](recipes/gdb/aarch64/README.md); [GDBserver](recipes/gdbserver/aarch64/README.md); [lsof](recipes/lsof/aarch64/README.md); [socat](recipes/socat/aarch64/README.md) |
+| x86-64 | [tcpdump 4.99.4](artifacts/x86_64/tcpdump); [GDBserver 16.3](artifacts/x86_64/gdbserver); [lsof 4.99.5](artifacts/x86_64/lsof); [socat 1.8.1.3](artifacts/x86_64/socat); [strace](artifacts/x86_64/strace) | [tcpdump](recipes/tcpdump/x86_64/README.md); [GDBserver](recipes/gdbserver/x86_64/README.md); [lsof](recipes/lsof/x86_64/README.md); [socat](recipes/socat/x86_64/README.md); one legacy artifact |
 
 Clone the repository or follow an artifact link to obtain the standalone
 executable. GHCR is not used to distribute utility binaries.
@@ -33,6 +33,7 @@ Buildx plugin:
 ./build.sh gdb aarch64
 ./build.sh gdbserver aarch64
 ./build.sh lsof x86_64
+./build.sh socat aarch64
 ./build.sh tcpdump x86_64
 ```
 
@@ -48,8 +49,9 @@ not depend on an upstream source URL.
 See the recipe README for
 [GDB](recipes/gdb/aarch64/README.md) or
 [tcpdump](recipes/tcpdump/x86_64/README.md), or the architecture-specific
-[GDBserver](recipes/gdbserver/) and [lsof](recipes/lsof/) recipes for
-prerequisites, source and feature policy, direct commands, and output details.
+[GDBserver](recipes/gdbserver/), [lsof](recipes/lsof/), and
+[socat](recipes/socat/) recipes for prerequisites, source and feature policy,
+direct commands, and output details.
 
 ## Builder images
 
