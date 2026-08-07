@@ -1,5 +1,7 @@
 # Plan: Commit Recipe Source Inputs and Retire Source Releases
 
+*Distilled: 2026-08-07*
+
 ## Summary
 
 Make every enabled recipe consume its exact upstream source archives directly
