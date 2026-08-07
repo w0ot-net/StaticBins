@@ -8,15 +8,23 @@ repeat and audit.
 | AArch64 | GDB 17.2 | Complete, one-command recipe |
 | x86-64 | `gdbserver`, `lsof`, `socat`, `strace`, `tcpdump` | Legacy artifacts; `tcpdump` recipe included |
 
-## Build AArch64 GDB
+## Build
 
-The host-side wrapper requires Bash and Docker. From the repository root, run:
+List the enabled recipes, then build one with Bash and Docker:
+
+```sh
+./build.sh list
+./build.sh gdb
+```
+
+The root command delegates to the recipe's host script without requiring
+Python. The direct GDB entry point remains supported:
 
 ```sh
 ./aarch64_alpine_build_scripts/gdb/build.sh
 ```
 
-The script builds with the exact public builder digest recorded in
+The GDB recipe builds with the exact public builder digest recorded in
 `aarch64_alpine_build_scripts/environment.lock` and writes the verified binary
 to `aarch64_bins/gdb`. On non-ARM64 Linux hosts, it uses QEMU user-mode
 emulation; if ARM64 `binfmt_misc` support is absent, it registers the pinned
@@ -63,8 +71,10 @@ command:
 ./x64_alpine_build_scripts/build-builder.sh
 ```
 
+Artifact publication is generated from the validated `recipes.tsv` catalog.
 Builder publication is a separate manual workflow with an explicit
 architecture choice; recipes use a new builder only after its reported digest
 is committed to that architecture's `environment.lock`.
 
-Build conventions and artifact requirements are documented in `AGENTS.md`.
+See `doc/adding-a-binary.md` for the recipe contract. Build conventions and
+artifact requirements are documented in `AGENTS.md`.

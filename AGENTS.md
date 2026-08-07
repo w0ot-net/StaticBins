@@ -20,6 +20,11 @@ Repository contract:
   example, `aarch64_bins/gdb` must itself execute on AArch64 Linux.
 - Preserve existing artifacts and build paths unless the task explicitly
   replaces or removes them.
+- Every publishable recipe must have one valid `recipes.tsv` row. Keep generic
+  dispatch and publication metadata there; keep source, configure, license, and
+  smoke-test logic in the tool-owned recipe directory. Follow
+  `doc/adding-a-binary.md` and run `python3 scripts/recipes.py validate` when a
+  recipe or catalog field changes.
 
 Reproducible build guidance:
 
@@ -85,6 +90,9 @@ Documentation and distribution:
   logs, cores, or unrelated test outputs.
 - Code and scripts should remain ASCII unless a file already uses another
   character set or the change clearly requires it.
+- Adding a conforming published tool must not require copying or specializing
+  the container publication workflow. Extend an architecture/runner allowlist
+  only when genuinely adding support for a new architecture.
 
 Validation efficiency:
 

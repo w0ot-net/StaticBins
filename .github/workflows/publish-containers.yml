@@ -5,19 +5,40 @@ on:
     branches: [main]
     paths:
       - ".github/workflows/publish-containers.yml"
-      - "aarch64_alpine_build_scripts/**"
+      - "recipes.tsv"
+      - "scripts/recipes.py"
+      - "*_alpine_build_scripts/**"
   workflow_dispatch:
 
 permissions:
   contents: read
   packages: write
 
-env:
-  GDB_IMAGE: ghcr.io/w0ot-net/static_bins-gdb
-
 jobs:
+  catalog:
+    runs-on: ubuntu-24.04
+    outputs:
+      matrix: ${{ steps.recipes.outputs.matrix }}
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Validate recipes and emit matrix
+        id: recipes
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 scripts/recipes.py validate
+          echo "matrix=$(python3 scripts/recipes.py matrix)" >> "${GITHUB_OUTPUT}"
+
   publish:
-    runs-on: ubuntu-24.04-arm
+    needs: catalog
+    name: ${{ matrix.name }} (${{ matrix.architecture }})
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.catalog.outputs.matrix) }}
 
     steps:
       - name: Check out repository
@@ -28,14 +49,12 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          source aarch64_alpine_build_scripts/environment.lock
-          source aarch64_alpine_build_scripts/gdb/source.lock
+          source "${{ matrix.environment_lock }}"
           case "${BUILDER_IMAGE}" in
             *@sha256:*) ;;
             *) echo "error: BUILDER_IMAGE must be pinned by digest" >&2; exit 1 ;;
           esac
           echo "builder_image=${BUILDER_IMAGE}" >> "${GITHUB_OUTPUT}"
-          echo "source_version=${SOURCE_VERSION}" >> "${GITHUB_OUTPUT}"
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@bb05f3f5519dd87d3ba754cc423b652a5edd6d2c # v4.2.0
@@ -47,20 +66,22 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and publish GDB artifact
+      - name: Build and publish artifact
         uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7.3.0
         with:
-          context: ./aarch64_alpine_build_scripts/gdb
-          file: ./aarch64_alpine_build_scripts/gdb/Dockerfile
-          platforms: linux/arm64
+          context: ${{ matrix.context }}
+          file: ${{ matrix.dockerfile }}
+          platforms: ${{ matrix.platform }}
           build-args: |
             BUILDER_IMAGE=${{ steps.environment.outputs.builder_image }}
             BUILD_JOBS=4
           push: true
-          tags: |
-            ${{ env.GDB_IMAGE }}:${{ steps.environment.outputs.source_version }}-aarch64
-            ${{ env.GDB_IMAGE }}:aarch64-latest
-          cache-from: type=gha,scope=aarch64-gdb
-          cache-to: type=gha,mode=max,scope=aarch64-gdb
+          tags: ${{ matrix.tags }}
+          labels: |
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.version=${{ matrix.version }}
+            org.opencontainers.image.revision=${{ github.sha }}
+          cache-from: type=gha,scope=${{ matrix.cache_scope }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.cache_scope }}
           provenance: mode=max
           sbom: true
