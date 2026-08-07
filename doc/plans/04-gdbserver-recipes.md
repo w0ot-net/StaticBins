@@ -1,5 +1,7 @@
 # Plan: Add GDBserver Recipes for Both Architectures
 
+*Distilled: 2026-08-07*
+
 ## Summary
 
 Replace the legacy x86-64 gdbserver and add an AArch64 counterpart using two
@@ -9,8 +11,9 @@ checksum-locked, PGP-authenticated GNU release. Each one-command build validates
 a temporary static executable and a real remote-serial-protocol exchange before
 replacing its architecture's artifact.
 
-This plan depends on `01-multi-architecture-recipe-selection.md` and
-`02-expand-reusable-builders.md`.
+This plan depends on `01-multi-architecture-recipe-selection.md`,
+`02-narrow-tcpdump-assurance-selection.md`, and
+`03-expand-reusable-builders.md`.
 
 ## Problem
 
@@ -83,7 +86,9 @@ rather than exposed directly.
 
 Both source locks use `SOURCE_AUTHENTICATION=pgp`; `TRUST.md` gains the source
 evidence and two artifact rows, but both artifacts remain `Not verified` until
-a separate native exact-rebuild qualification succeeds.
+a separate native exact-rebuild qualification succeeds. The recipe and trust
+documentation must also retain the factual limitation that GNU's valid release
+signature uses legacy DSA with SHA-1, matching the existing GDB source record.
 
 ## Affected Components
 

@@ -1,5 +1,7 @@
 # Plan: Add lsof Recipes for Both Architectures
 
+*Distilled: 2026-08-07*
+
 ## Summary
 
 Replace the legacy x86-64 lsof and add AArch64 lsof with conventional recipes
@@ -8,8 +10,9 @@ expanded static libtirpc-capable builders, and require a focused `/proc` test
 that finds a file descriptor held by a known process before either artifact is
 installed.
 
-This plan depends on `01-multi-architecture-recipe-selection.md` and
-`02-expand-reusable-builders.md`.
+This plan depends on `01-multi-architecture-recipe-selection.md`,
+`02-narrow-tcpdump-assurance-selection.md`, and
+`03-expand-reusable-builders.md`.
 
 ## Problem
 
