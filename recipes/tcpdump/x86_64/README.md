@@ -29,6 +29,11 @@ build does not download them. Reviewed license material and the exact
 linked-archive provenance inventory are under `licenses/` and are checked
 against the final static link.
 
+With `gpgv` installed, `python3 scripts/recipes.py validate` verifies both
+committed detached signatures offline against the Tcpdump Group fingerprint
+`1F166A5742ABB9E0249A8D30E089DEF1D9C15D0D`. The signatures use RSA/SHA-512;
+[`TRUST.md`](../../../TRUST.md) describes the source assurance model.
+
 The build rejects an ELF interpreter, dynamic dependencies, a wrong machine,
 retained debug or full symbol-table sections, and an incomplete linked-archive
 inventory. Its smoke test checks the reported tcpdump/libpcap versions, compiles

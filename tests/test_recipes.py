@@ -2,13 +2,16 @@ from __future__ import annotations
 
 import importlib.util
 import hashlib
+import io
 import os
 import shutil
 import subprocess
 import sys
 import tempfile
 import unittest
+from contextlib import redirect_stdout
 from pathlib import Path
+from unittest import mock
 
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
@@ -38,6 +41,7 @@ class CatalogFixture:
         architecture: str = "aarch64",
         version: str = "1.0",
         enabled: str = "true",
+        authentication: str = "checksum-only",
         script_body: str = "#!/usr/bin/env bash\nexit 37\n",
     ) -> dict[str, str]:
         recipe_dir = self.root / "recipes" / name / architecture
@@ -57,16 +61,47 @@ class CatalogFixture:
             encoding="utf-8",
         )
         (recipe_dir / "Dockerfile").write_text("FROM scratch\n", encoding="utf-8")
-        source_bytes = f"{name}-{version} source fixture\n".encode()
-        source_archive = f"{name}-{version}.tar.xz"
-        (source_dir / source_archive).write_bytes(source_bytes)
+        if authentication == "pgp":
+            source_archive = "tcpdump-4.99.4.tar.gz"
+            source_path = (
+                REPOSITORY_ROOT
+                / "recipes/tcpdump/x86_64/sources/tcpdump-4.99.4.tar.gz"
+            )
+            shutil.copyfile(source_path, source_dir / source_archive)
+            source_bytes = source_path.read_bytes()
+        else:
+            source_bytes = f"{name}-{version} source fixture\n".encode()
+            source_archive = f"{name}-{version}.tar.xz"
+            (source_dir / source_archive).write_bytes(source_bytes)
         source_lock = (
             f"SOURCE_VERSION={version}\n"
             f"SOURCE_ARCHIVE={source_archive}\n"
             f"SOURCE_SHA256={hashlib.sha256(source_bytes).hexdigest()}\n"
             f"SOURCE_UPSTREAM_URL=https://upstream.invalid/{name}.tar.xz\n"
             "SOURCE_LICENSE=GPL-3.0-or-later\n"
+            f"SOURCE_AUTHENTICATION={authentication}\n"
         )
+        if authentication == "pgp":
+            signature_name = "tcpdump-4.99.4.tar.gz.sig"
+            key_name = (
+                "tcpdump-group-1F166A5742ABB9E0249A8D30E089DEF1D9C15D0D.gpg"
+            )
+            shutil.copyfile(
+                REPOSITORY_ROOT
+                / "recipes/tcpdump/x86_64/sources"
+                / signature_name,
+                source_dir / signature_name,
+            )
+            shutil.copyfile(
+                REPOSITORY_ROOT / "recipes/tcpdump/x86_64/sources" / key_name,
+                source_dir / key_name,
+            )
+            source_lock += (
+                f"SOURCE_SIGNATURE={signature_name}\n"
+                f"SOURCE_SIGNING_KEY={key_name}\n"
+                "SOURCE_SIGNER_FINGERPRINT="
+                "1F166A5742ABB9E0249A8D30E089DEF1D9C15D0D\n"
+            )
         if name == "tcpdump":
             libpcap_bytes = b"libpcap-1.10.4 source fixture\n"
             (source_dir / "libpcap-1.10.4.tar.gz").write_bytes(libpcap_bytes)
@@ -76,6 +111,7 @@ class CatalogFixture:
                 f"LIBPCAP_SHA256={hashlib.sha256(libpcap_bytes).hexdigest()}\n"
                 "LIBPCAP_UPSTREAM_URL=https://upstream.invalid/libpcap.tar.gz\n"
                 "LIBPCAP_LICENSE=BSD-3-Clause\n"
+                "LIBPCAP_AUTHENTICATION=checksum-only\n"
             )
         (recipe_dir / "source.lock").write_text(source_lock, encoding="utf-8")
         (recipe_dir / "build.sh").write_text(script_body, encoding="utf-8")
@@ -173,6 +209,195 @@ class RecipeCatalogTests(unittest.TestCase):
         )
         with self.assertRaisesRegex(recipes.CatalogError, "invalid SOURCE_VERSION"):
             recipes.load_catalog(fixture.root, catalog)
+
+    def test_checksum_only_mode_is_explicit_and_visible(self) -> None:
+        temporary_directory, fixture = self.make_fixture()
+        self.addCleanup(temporary_directory.cleanup)
+        fixture.add_recipe()
+        catalog = fixture.write_catalog()
+        fixture.track()
+
+        loaded = recipes.load_catalog(fixture.root, catalog)
+        self.assertEqual("checksum-only", loaded[0].source_authentications[0].mode)
+        output = io.StringIO()
+        with redirect_stdout(output):
+            result = recipes.main(
+                ["validate", "--root", str(fixture.root), "--catalog", str(catalog)]
+            )
+        self.assertEqual(0, result)
+        self.assertIn(
+            "checksum-only (upstream signature unavailable or not adopted)",
+            output.getvalue(),
+        )
+
+        lock_path = fixture.root / "recipes/gdb/aarch64/source.lock"
+        lock_path.write_text(
+            lock_path.read_text(encoding="utf-8")
+            + "SOURCE_SIGNATURE=leftover.sig\n",
+            encoding="utf-8",
+        )
+        with self.assertRaisesRegex(recipes.CatalogError, "checksum-only forbids"):
+            recipes.load_catalog(fixture.root, catalog)
+
+    def test_authentication_mode_and_fingerprint_are_bounded(self) -> None:
+        for mutation, old, new, expected_message in (
+            (
+                "missing mode",
+                "SOURCE_AUTHENTICATION=checksum-only\n",
+                "",
+                "source.lock is missing: SOURCE_AUTHENTICATION",
+            ),
+            (
+                "unknown mode",
+                "SOURCE_AUTHENTICATION=checksum-only",
+                "SOURCE_AUTHENTICATION=automatic",
+                "SOURCE_AUTHENTICATION must be pgp or checksum-only",
+            ),
+        ):
+            with self.subTest(mutation=mutation):
+                temporary_directory, fixture = self.make_fixture()
+                self.addCleanup(temporary_directory.cleanup)
+                fixture.add_recipe()
+                catalog = fixture.write_catalog()
+                fixture.track()
+                lock_path = fixture.root / "recipes/gdb/aarch64/source.lock"
+                lock_path.write_text(
+                    lock_path.read_text(encoding="utf-8").replace(old, new),
+                    encoding="utf-8",
+                )
+                with self.assertRaisesRegex(recipes.CatalogError, expected_message):
+                    recipes.load_catalog(fixture.root, catalog)
+
+        temporary_directory, fixture = self.make_fixture()
+        self.addCleanup(temporary_directory.cleanup)
+        fixture.add_recipe(authentication="pgp")
+        catalog = fixture.write_catalog()
+        fixture.track()
+        lock_path = fixture.root / "recipes/gdb/aarch64/source.lock"
+        lock_path.write_text(
+            lock_path.read_text(encoding="utf-8").replace(
+                "SOURCE_SIGNER_FINGERPRINT="
+                "1F166A5742ABB9E0249A8D30E089DEF1D9C15D0D",
+                "SOURCE_SIGNER_FINGERPRINT="
+                "1f166a5742abb9e0249a8d30e089def1d9c15d0d",
+            ),
+            encoding="utf-8",
+        )
+        with self.assertRaisesRegex(recipes.CatalogError, "40 uppercase hexadecimal"):
+            recipes.load_catalog(fixture.root, catalog)
+
+    def test_valid_pgp_source_is_authenticated(self) -> None:
+        temporary_directory, fixture = self.make_fixture()
+        self.addCleanup(temporary_directory.cleanup)
+        fixture.add_recipe(authentication="pgp")
+        catalog = fixture.write_catalog()
+        fixture.track()
+
+        loaded = recipes.load_catalog(fixture.root, catalog)
+        authentication = loaded[0].source_authentications[0]
+        self.assertEqual("pgp", authentication.mode)
+        self.assertEqual(
+            "1F166A5742ABB9E0249A8D30E089DEF1D9C15D0D",
+            authentication.fingerprint,
+        )
+
+        command_directory = fixture.root / "test-commands"
+        command_directory.mkdir()
+        git_command = shutil.which("git")
+        assert git_command is not None
+        (command_directory / "git").symlink_to(git_command)
+        with mock.patch.dict(os.environ, {"PATH": str(command_directory)}):
+            with self.assertRaisesRegex(recipes.CatalogError, "cannot execute gpgv"):
+                recipes.load_catalog(fixture.root, catalog)
+
+    def test_pgp_evidence_state_is_enforced(self) -> None:
+        cases = (
+            ("corrupt signature", "invalid source PGP signature"),
+            ("substituted key", "invalid source PGP signature"),
+            ("wrong fingerprint", "source PGP signer mismatch"),
+            ("missing signature", "missing regular source signature"),
+            ("unsafe signature", "SOURCE_SIGNATURE must be a safe filename"),
+            ("signature symlink", "missing regular source signature"),
+            ("untracked signature", "untracked source signature"),
+            ("wrong signature mode", "source signature has Git mode 100755"),
+        )
+        signature_name = "tcpdump-4.99.4.tar.gz.sig"
+        key_name = "tcpdump-group-1F166A5742ABB9E0249A8D30E089DEF1D9C15D0D.gpg"
+        for mutation, expected_message in cases:
+            with self.subTest(mutation=mutation):
+                temporary_directory, fixture = self.make_fixture()
+                self.addCleanup(temporary_directory.cleanup)
+                fixture.add_recipe(authentication="pgp")
+                catalog = fixture.write_catalog()
+                fixture.track()
+                source_dir = fixture.root / "recipes/gdb/aarch64/sources"
+                signature_path = source_dir / signature_name
+                relative_signature = (
+                    f"recipes/gdb/aarch64/sources/{signature_name}"
+                )
+                lock_path = fixture.root / "recipes/gdb/aarch64/source.lock"
+
+                if mutation == "corrupt signature":
+                    signature_path.write_bytes(b"corrupt signature fixture\n")
+                elif mutation == "substituted key":
+                    shutil.copyfile(
+                        REPOSITORY_ROOT
+                        / "recipes/gdb/aarch64/sources"
+                        / "gnu-gdb-F40ADB902B24264AA42E50BF92EDB04BFF325CF3.gpg",
+                        source_dir / key_name,
+                    )
+                elif mutation == "wrong fingerprint":
+                    lock_path.write_text(
+                        lock_path.read_text(encoding="utf-8").replace(
+                            "SOURCE_SIGNER_FINGERPRINT="
+                            "1F166A5742ABB9E0249A8D30E089DEF1D9C15D0D",
+                            "SOURCE_SIGNER_FINGERPRINT=" + "0" * 40,
+                        ),
+                        encoding="utf-8",
+                    )
+                elif mutation == "missing signature":
+                    signature_path.unlink()
+                elif mutation == "unsafe signature":
+                    lock_path.write_text(
+                        lock_path.read_text(encoding="utf-8").replace(
+                            f"SOURCE_SIGNATURE={signature_name}",
+                            "SOURCE_SIGNATURE=../source.sig",
+                        ),
+                        encoding="utf-8",
+                    )
+                elif mutation == "signature symlink":
+                    signature_path.unlink()
+                    signature_path.symlink_to("tcpdump-4.99.4.tar.gz")
+                elif mutation == "untracked signature":
+                    subprocess.run(
+                        [
+                            "git",
+                            "-C",
+                            str(fixture.root),
+                            "rm",
+                            "--cached",
+                            "--",
+                            relative_signature,
+                        ],
+                        check=True,
+                        stdout=subprocess.DEVNULL,
+                    )
+                else:
+                    subprocess.run(
+                        [
+                            "git",
+                            "-C",
+                            str(fixture.root),
+                            "update-index",
+                            "--chmod=+x",
+                            "--",
+                            relative_signature,
+                        ],
+                        check=True,
+                    )
+
+                with self.assertRaisesRegex(recipes.CatalogError, expected_message):
+                    recipes.load_catalog(fixture.root, catalog)
 
     def test_tcpdump_two_source_lock_is_bounded_and_validated(self) -> None:
         temporary_directory, fixture = self.make_fixture()

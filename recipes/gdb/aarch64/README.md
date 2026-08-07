@@ -27,6 +27,12 @@ is checksum-verified before extraction; a normal build does not download it.
 Reviewed license material and the exact linked-archive provenance inventory are
 under `licenses/` and are checked against the final static link.
 
+With `gpgv` installed, `python3 scripts/recipes.py validate` verifies the
+committed detached signature offline against full signer fingerprint
+`F40ADB902B24264AA42E50BF92EDB04BFF325CF3`. The upstream signature uses legacy
+DSA/SHA-1; [`TRUST.md`](../../../TRUST.md) explains what that evidence does and
+does not establish.
+
 The build rejects an ELF interpreter, dynamic dependencies, a wrong machine,
 or an incomplete link inventory. Python, Guile, debuginfod, Babeltrace, libipt,
 and source-highlight are intentionally disabled to keep the artifact

@@ -19,6 +19,7 @@ recipes/<tool>/<architecture>/
   source.lock
   sources/
     <checksum-locked upstream archives>
+    <detached signatures and minimal keyrings when authentication is pgp>
   licenses/
     NOTICE.md
     archive-inventory.tsv
@@ -35,10 +36,19 @@ the committed artifact, and enforce the target architecture and static-ELF
 contract. It must fail before build setup when Docker Buildx is unavailable and
 must use its Dockerfile through one unconditional Buildx path; do not select a
 direct-container or classic Docker fallback. `source.lock` owns the source
-version, archive, checksum, official provenance URL, and license identifier.
-The corresponding regular, non-symlink archive must be committed with mode
-`100644` at `sources/<archive>` and its actual bytes must match the lock before
-extraction.
+version, archive, checksum, official provenance URL, license identifier, and
+explicit authentication mode. The corresponding regular, non-symlink archive
+must be committed with mode `100644` at `sources/<archive>` and its actual bytes
+must match the lock before extraction.
+
+Set `<PREFIX>_AUTHENTICATION` to `pgp` or `checksum-only` for every bounded
+source record. A `pgp` record also requires safe filenames in
+`<PREFIX>_SIGNATURE` and `<PREFIX>_SIGNING_KEY`, plus the exact 40-character
+uppercase fingerprint in `<PREFIX>_SIGNER_FINGERPRINT`. Commit both evidence
+files as regular mode-`100644` files under `sources/`; use a minimal keyring
+containing the required signer. A `checksum-only` record must not retain PGP
+fields. It is accepted but visibly weaker, never a fallback after a signature
+failure. See [`TRUST.md`](../TRUST.md) for the assurance model.
 
 If a tool requires another source archive, keep that dependency in the same
 tool-owned lock and `sources/` directory. Extend catalog validation only for
@@ -79,6 +89,9 @@ python3 scripts/recipes.py validate
 python3 -m unittest tests.test_recipes
 ./build.sh list
 ```
+
+The validator requires `gpgv` and checks all declared PGP records offline using
+only their committed evidence.
 
 Then build and test the selected recipe through the stable public command:
 

@@ -37,8 +37,12 @@ Reproducible build guidance:
 - If a full VM is genuinely required, commit a declarative VM definition and
   provisioning/build scripts, not a VM disk image. Pin and verify any downloaded
   base image, and arrange for the final artifact to be copied back to the repo.
-- Pin the upstream source version and verify its checksum or signature before
-  extraction. Use HTTPS upstream sources and fail closed on verification errors.
+- Pin the upstream source version and verify its checksum before extraction.
+  Declare each source's authentication mode explicitly. For `pgp`, verify the
+  tracked detached signature with a tracked minimal keyring and exact full
+  fingerprint; for `checksum-only`, report the weaker assurance without
+  treating it as a fallback after failed authentication. Use HTTPS upstream
+  provenance and fail closed on verification errors.
 - Pin the build-environment version and immutable image digest when practical.
   Record relevant source, environment, dependency, and output versions. Do not
   claim byte-for-byte reproducibility unless it has actually been demonstrated;
@@ -54,11 +58,12 @@ Reproducible build guidance:
   publish a new versioned builder first, then commit its immutable digest before
   recipes may consume it.
 - Give each reproducible recipe one committed source lock and keep every
-  required archive under its `sources/` directory. During a reviewed source update,
-  download from the recorded official HTTPS URL into temporary storage, verify
-  the proposed checksum, inspect the size against hosting limits, then commit
-  the exact archive with mode `100644`. Normal builds must use only those
-  tracked bytes, verify them before extraction, and must not publish source-only
+  required archive and authentication evidence under its `sources/` directory.
+  During a reviewed source update, download from the recorded official HTTPS
+  URL into temporary storage, verify the proposed checksum and declared
+  authentication, inspect the size against hosting limits, then commit the exact
+  files with mode `100644`. Normal builds must use only those tracked archive
+  bytes, verify them before extraction, and must not publish source-only
   repository releases.
 - Keep reviewed license text and a factual linked-input provenance inventory
   with each recipe. The build must fail when the final link contains an
