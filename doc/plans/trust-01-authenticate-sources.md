@@ -48,6 +48,8 @@ In scope:
 - Make `python3 scripts/recipes.py validate` enforce signatures and exact signer
   fingerprints for `pgp` records while accepting and clearly reporting
   `checksum-only` records.
+- Run that existing cheap validation on every pull request under one stable
+  `recipe-validation` check name for the later main ruleset.
 - Document what each authentication mode proves and show the current source
   status in one user-facing trust document.
 - Make future recipe onboarding require an explicit mode rather than silently
@@ -114,6 +116,13 @@ establishes origin rather than safety. Mark GDB's row or adjacent note as legacy
 DSA/SHA-1 evidence without weakening or bypassing the exact signature check. The
 root README links this document but does not duplicate its table.
 
+The prerequisite cleanup creates `.github/workflows/validate-recipes.yml` with
+path-filtered `main` pushes and manual dispatch. Retain those triggers, add an
+unfiltered `pull_request` trigger, and give its existing validation job the
+stable display name `recipe-validation`. It must report even for documentation-
+only pull requests so the later ruleset cannot wait forever on a skipped check;
+the job remains Docker-free and inexpensive.
+
 ## Affected Components
 
 - `recipes/gdb/aarch64/source.lock`: declare PGP authentication and the exact
@@ -135,7 +144,9 @@ root README links this document but does not duplicate its table.
 - `recipes/{gdb/aarch64,tcpdump/x86_64}/README.md`: identify the committed
   signatures/fingerprints and the source-verification prerequisite.
 - `.github/workflows/validate-recipes.yml`: ensure the existing validation job
-  runs in an environment with `gpgv`; do not add a second source workflow.
+  runs in an environment with `gpgv`, add the unfiltered pull-request trigger,
+  and expose the stable `recipe-validation` check; do not add a second source
+  workflow.
 
 ## Implementation Sequence
 
@@ -151,7 +162,9 @@ root README links this document but does not duplicate its table.
    or build behavior.
 4. Add `TRUST.md` and the nearest contract/documentation updates, explicitly
    describing `checksum-only` as accepted but weaker.
-5. Run offline validation with network access disabled, then commit and push
+5. Add the pull-request trigger and stable job name to the existing fast
+   validation workflow without changing its Docker-free command set.
+6. Run offline validation with network access disabled, then commit and push
    only this plan's metadata, evidence, validator, tests, workflow prerequisite,
    and documentation changes.
 
@@ -169,6 +182,9 @@ root README links this document but does not duplicate its table.
 - Confirm the trust table acknowledges GDB's DSA/SHA-1 signature while the
   Tcpdump Group signatures use RSA/SHA-512; do not turn that disclosure into a
   fallback after verification failure.
+- Exercise a documentation-only pull request and require `recipe-validation` to
+  report and pass without Docker; retain the existing path-filtered `main` push
+  behavior.
 - In isolated fixtures, prove a corrupt archive, corrupt signature, substituted
   key, wrong fingerprint, missing evidence file, symlink, untracked file, and
   non-`100644` mode each fail.
@@ -191,5 +207,7 @@ root README links this document but does not duplicate its table.
 - GDB's accepted but legacy upstream signature is visible rather than silently
   receiving the same cryptographic-strength implication as the Tcpdump Group
   signatures.
+- Every pull request receives the stable, cheap `recipe-validation` check needed
+  by the later protected-main ruleset.
 - Current source archives, builders, build behavior, and artifacts are
   unchanged.
