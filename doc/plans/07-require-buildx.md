@@ -98,9 +98,10 @@ teaching the recipe catalog parser to interpret shell implementation details.
 
 The implementation push necessarily matches the `recipes/**` and `builders/**`
 path filters in `.github/workflows/publish-containers.yml`. Keep that workflow
-unchanged and do not dispatch an extra run, but require the automatically
-triggered catalog and artifact-publication jobs to succeed before completing
-the plan.
+unchanged and do not dispatch a parallel run while the automatic run is active.
+Require its catalog and artifact-publication jobs to succeed before completing
+the plan; a clearly transient external failure may rerun the failed jobs for
+the same commit, while an implementation failure requires a corrective commit.
 
 ## Affected Components
 
@@ -142,8 +143,10 @@ the plan.
 7. Stage only the plan-owned scripts, documentation, and any validated changed
    artifacts; commit and push them without including unrelated worktree state.
 8. Observe the automatically triggered container-publication run for the
-   implementation commit and require both enabled matrix entries to succeed;
-   do not manually dispatch a duplicate run.
+   implementation commit and require both enabled matrix entries to succeed.
+   Correct implementation failures in code; for a clearly transient external
+   failure, rerun the failed jobs for that same commit instead of dispatching a
+   separate workflow run.
 
 ## Validation
 
@@ -173,7 +176,7 @@ the plan.
   `.github/workflows/publish-containers.yml` to confirm they still set up
   Buildx and have no alternate backend. After the implementation push, verify
   that the automatically triggered `publish-containers.yml` run succeeds for
-  both enabled recipe entries without a manual retry.
+  both enabled recipe entries for the exact implementation commit.
 
 ## Success Criteria
 
@@ -190,4 +193,5 @@ the plan.
   validations through the single Buildx path, and active documentation names
   Buildx as a prerequisite.
 - The implementation commit's automatic artifact-publication run succeeds for
-  both enabled recipes without workflow changes or a duplicate dispatch.
+  both enabled recipes without workflow changes or a separate workflow
+  dispatch.
