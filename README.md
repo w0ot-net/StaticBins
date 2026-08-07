@@ -30,13 +30,14 @@ Buildx plugin:
 
 ```sh
 ./build.sh list
-./build.sh gdb
-./build.sh tcpdump
+./build.sh gdb aarch64
+./build.sh tcpdump x86_64
 ```
 
 The root command reads the minimal allowlist in `recipes/catalog.tsv` and
-delegates to the matching recipe. Committed executables live in
-`artifacts/<architecture>/`, tool-specific builds in
+delegates to the matching tool/architecture recipe. The architecture may be
+omitted only when a tool has exactly one catalog row. Committed executables
+live in `artifacts/<architecture>/`, tool-specific builds in
 `recipes/<tool>/<architecture>/`, and locked reusable environments in
 `builders/<architecture>/`. Each supported recipe also retains its exact,
 checksum-locked upstream archives under `sources/`, so an ordinary build does

@@ -24,7 +24,8 @@ Repository contract:
 - Preserve existing artifacts and build paths unless the task explicitly
   replaces or removes them.
 - Every reproducible recipe must have one valid `recipes/catalog.tsv` row. Keep
-  only its name, architecture, and enabled state there; derive conventional
+  only its name, architecture, and enabled state there; treat the
+  `(name, architecture)` pair as its identity and derive conventional
   paths from repository layout and validate source versions from recipe locks.
   Keep source, configure, license, and smoke-test logic in the tool-owned
   recipe. Follow `doc/adding-a-binary.md` and run
