@@ -77,12 +77,17 @@ full symbol table, then run the smoke test in a target-platform container.
 Only after all checks does it atomically install mode `0755` to
 `artifacts/<architecture>/gdbserver` and report size and SHA-256.
 
-The smoke test checks the exact 16.3 version, starts gdbserver on loopback with
-a tiny target program, and uses a bounded minimal Remote Serial Protocol probe
-to require a valid connection, stop reply, and clean shutdown. It must use a
-random/ephemeral local port, a timeout, and no host/public bind. Document that
-gdbserver has no authentication and should be placed behind a trusted transport
-rather than exposed directly.
+The smoke test checks the exact 16.3 version, starts gdbserver with a tiny
+target program, and uses a bounded minimal Remote Serial Protocol probe to
+require a valid connection, stop reply, and clean shutdown. The x86-64 recipe
+uses a random loopback port with no host/public bind. QEMU user-mode executes
+the AArch64 binary but does not service GDBserver's asynchronous event loop over
+either TCP or its official stdin/stdout transport, so that recipe uses the
+smallest practical full-system test: a checksum-locked Alpine release kernel,
+a generated diskless initramfs, QEMU `virt`, and a static recipe-owned PID 1
+harness. No VM disk image is committed. Document that gdbserver has no
+authentication and should be placed behind a trusted transport rather than
+exposed directly.
 
 Both source locks use `SOURCE_AUTHENTICATION=pgp`; `TRUST.md` gains the source
 evidence and two artifact rows, but both artifacts remain `Not verified` until
@@ -94,7 +99,8 @@ signature uses legacy DSA with SHA-1, matching the existing GDB source record.
 
 - `recipes/gdbserver/aarch64/*` and `recipes/gdbserver/x86_64/*`: add source
   locks/evidence, Docker builds, host entry points, RSP smoke tests, recipe
-  READMEs, reviewed licenses, and linked-archive inventories.
+  READMEs, reviewed licenses, linked-archive inventories, and the declarative
+  diskless AArch64 smoke VM definition required for ptrace validation.
 - `recipes/catalog.tsv`: add the two enabled architecture-qualified rows.
 - `artifacts/aarch64/gdbserver` and `artifacts/x86_64/gdbserver`: add/replace
   only the validated target executables.
@@ -103,6 +109,9 @@ signature uses legacy DSA with SHA-1, matching the existing GDB source record.
   instructions without expanding the landing page into a build manual.
 - `TRUST.md`: replace the legacy row, add the AArch64 row, record GNU PGP source
   evidence, and retain `Not verified` artifact status.
+- `doc/architecture/build/{BUILD_PIPELINE,SOURCE_INPUTS}.md`: record the narrow
+  full-system validation exception and its downloaded, checksum-locked base
+  input without changing Buildx's role as the only build backend.
 
 ## Implementation Sequence
 
@@ -114,7 +123,9 @@ signature uses legacy DSA with SHA-1, matching the existing GDB source record.
    second directory.
 3. Run each direct recipe once, warning before an emulated build expected to
    exceed ten minutes, and preserve its build cache/tree until all late
-   validation passes.
+   validation passes. If user-mode emulation cannot run the functional RSP
+   exchange, retain the successful compile and validate it in the pinned
+   diskless full-system VM without recompiling.
 4. After both candidates pass, add the pair of catalog rows, atomically replace
    the x86-64 artifact, add the AArch64 artifact, and update the sorted manifest
    and bounded documentation.
@@ -129,7 +140,7 @@ signature uses legacy DSA with SHA-1, matching the existing GDB source record.
 - Run `./build.sh gdbserver x86_64` and `./build.sh gdbserver aarch64` once
   each. Confirm target machine, `ET_EXEC`, stripped state, no interpreter, no
   `DT_NEEDED`, exact version 16.3, complete link inventory, and the RSP
-  functional exchange.
+  functional exchange over the architecture's documented transport.
 - Run `sha256sum -c artifacts/SHA256SUMS` and verify the x86-64 legacy hash
   changes only as the intended recipe replacement; inspect both binary sizes
   before committing.
@@ -147,3 +158,47 @@ signature uses legacy DSA with SHA-1, matching the existing GDB source record.
   archive, license, checksum, and trust records.
 - The old x86-64 no-recipe evidence is gone, while both new artifact statuses
   remain factually `Not verified` pending independent qualification.
+
+## Execution Notes
+
+Completed on 2026-08-07.
+
+- Implementation commit `aeaf07aed88cf3eec3938436682cf54a4a188889`
+  added both conventional GDBserver 16.3 recipes, their tracked GNU source and
+  PGP evidence, complete link inventories and license material, both validated
+  artifacts, catalog and manifest records, live documentation, and the narrow
+  architecture-contract update for full-system functional validation.
+- Offline repository validation authenticated both retained GDB 16.3 archives
+  to exact signer fingerprint
+  `F40ADB902B24264AA42E50BF92EDB04BFF325CF3`. GNU's signature was valid but
+  used the documented legacy DSA/SHA-1 combination. The final links reconciled
+  all GDB-source, musl, libstdc++, and GCC support archives against their exact
+  recorded source or Alpine package evidence.
+- The native x86-64 build passed its static ELF, exact-version, random-loopback
+  RSP stop-reply, kill-packet, and clean-shutdown checks. It replaced legacy
+  SHA-256 `54fcf7365a7e08a26dfe28bd1a0829460f639b2f50c82ed2cb1a3fc615614b3f`
+  with a 1,060,528-byte artifact at
+  `cdbf7ce6dc65e8b554ef1ff9752696c3eec87ad93531499dc4fa1eb1c0a09857`.
+- The single AArch64 compilation completed under QEMU user-mode in about 15.5
+  minutes and passed source, link-inventory, static ELF, stripping, and version
+  checks. Both TCP and official stdin/stdout RSP transports then exposed the
+  same user-mode asynchronous-event limitation. The successful BuildKit layer
+  was preserved; no compilation retry occurred.
+- The corrected late-stage test downloads and verifies a 9,605,632-byte Alpine
+  3.22.5 `vmlinuz-virt`, generates a diskless initramfs containing only the
+  candidate and static smoke helpers, and boots QEMU `virt`. That full-system
+  run attached to a real AArch64 process, received a valid RSP stop reply,
+  processed the kill packet, and shut down cleanly. Cached follow-up runs took
+  seconds. The installed 1,117,424-byte artifact is
+  `b132624e07e8b204a2b3a133e79f1088a62afa2045756c63a9ec61b860849709`.
+- Shell and C warning checks, all 20 recipe unit tests, dispatcher ambiguity and
+  listing behavior, offline recipe validation for four enabled rows, the
+  complete artifact manifest, static ELF inspection, and the task diff checks
+  passed. Byte-preserved upstream license snapshots retain their original
+  whitespace and character set and were excluded from the otherwise clean
+  whitespace/ASCII scan.
+- Post-push runs `31203623727` (`recipe-validation`) and `31203622568`
+  (`artifact-assurance`) passed. The assurance selector skipped both tcpdump
+  rebuild jobs because its catalog and manifest records were unchanged. No
+  GDBserver attestation claim or GHCR utility image was added; both new recipe
+  artifacts remain `Not verified`.
