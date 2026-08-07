@@ -37,7 +37,8 @@ In scope:
   with Buildx SBOM and provenance output, and report the resulting immutable
   digest.
 - Keep registry credentials external to the repository and require the
-  maintainer to authenticate with Docker before publication.
+  maintainer to authenticate with Docker using a GitHub token authorized to
+  write packages before publication.
 - Delete `.github/workflows/publish-builder.yml` and migrate builder docs,
   trust boundaries, contributor guardrails, and every live workflow-specific
   recovery message, including the now-vacuous Actions-reference pin rule.
@@ -70,6 +71,11 @@ publication; authorization, transport, parsing, and other inspection failures
 fail closed. An existing versioned tag stops before candidate compilation or
 any registry write.
 
+Document `docker login ghcr.io` as a separate maintainer precondition using a
+GitHub token with package-write permission. The publisher must neither accept a
+token argument nor read or write a repository credential file; Docker's
+external credential configuration remains the sole authentication owner.
+
 For a new tag, invoke `builders/<architecture>/build.sh` unchanged so its
 package, command, archive, static-link, runtime, ELF, ABI, OCI, and label checks
 validate a local candidate. Then run one Buildx push from the same directory
@@ -97,8 +103,8 @@ workflow only after the local command and docs are in place.
 - `.github/workflows/publish-builder.yml`: delete the hosted publication path.
 - `AGENTS.md`: define local builder publication and external credential
   handling as the maintainer contract.
-- `README.md`: document Docker login, the one local publication command, and
-  separate digest adoption.
+- `README.md`: document package-write Docker login, the one local publication
+  command, and separate digest adoption without exposing a token.
 - `TRUST.md`: remove the remaining live Actions publication dependency while
   leaving the historical tcpdump attestation evidence intact.
 - `doc/architecture/build/BUILD_ENVIRONMENTS.md`: replace runner-specific
@@ -135,8 +141,9 @@ workflow only after the local command and docs are in place.
   tag; require the command to identify the exact reference and refuse before
   candidate compilation or registry writes. Do not publish a test tag.
 - Validate the Buildx flags, metadata parsing, platform mappings, fixed GHCR
-  repository, and external-login instructions by focused inspection; the ARMv7
-  r2 plan will exercise the first new-tag push end to end.
+  repository, package-write external-login instructions, and absence of token
+  arguments by focused inspection; the ARMv7 r2 plan will exercise the first
+  new-tag push end to end.
 - Run syntax checks for every changed shell script, `git diff --check`, and a
   live-file search proving no references to `publish-builder.yml`, hosted
   runners, live GitHub Actions, Actions-reference pin rules, or workflow job

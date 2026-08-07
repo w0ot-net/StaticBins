@@ -21,8 +21,8 @@ In scope:
 - Add `recipes/gdbserver/armv7/` with tracked GNU GDB 16.3 source and PGP
   evidence, the existing GDBserver-only feature profile, licenses, link
   inventory, and ARMv7 smoke helpers.
-- Pin and checksum an official HTTPS ARMv7 Alpine `vmlinuz-virt` in a tool-owned
-  `vm.lock`; cache the kernel outside the repository and boot a generated
+- Pin and checksum an official versioned Alpine ARMv7 `vmlinuz-lts` in a
+  tool-owned `vm.lock`; cache the kernel outside the repository and boot a generated
   diskless initramfs with `qemu-system-arm`.
 - Commit the validated ARMv7 GDBserver and its catalog, checksum, README, and
   TRUST records.
@@ -38,13 +38,15 @@ Out of scope:
 ## Design
 
 Port the AArch64 recipe ownership directly. Preserve the GNU-signed source,
-GDBserver-only configure switches, `-all-static` final link, exact archive
+GDBserver-only configure switches, `-static -no-pie` final link, exact archive
 inventory, and small PID 1/RSP/target helpers. Translate the compiler triplet
 and archive paths to values verified in the locked ARMv7 builder.
 
-Use the official ARMv7 Alpine virt kernel selected during implementation with
-a literal HTTPS URL, release, filename, SHA-256, and explicit authentication
-mode. Boot it with `qemu-system-arm -machine virt,highmem=off -cpu cortex-a15`,
+Use an official Alpine ARMv7 `vmlinuz-lts` selected during implementation only
+after its published configuration and an evidence boot prove support for the
+QEMU `virt` platform, PL011 console, and the generated initramfs. Record its
+literal HTTPS URL, release, filename, SHA-256, and explicit authentication mode.
+Boot it with `qemu-system-arm -machine virt,highmem=off -cpu cortex-a15`,
 the generated initramfs, PL011 console, no network or disk, and a bounded
 timeout. The smoke test must attach GDBserver to a real ARMv7 target, observe a
 valid stop reply, process the kill packet, and shut down cleanly. A failure may
@@ -71,8 +73,9 @@ independent rebuild evidence as separate TRUST facts.
 
 ## Implementation Sequence
 
-1. Require the adopted ARMv7 r2 builder and resolve one official ARMv7 virt
-   kernel that boots QEMU `virt`; pin its exact bytes before recipe execution.
+1. Require the adopted ARMv7 r2 builder and resolve one official versioned
+   Alpine ARMv7 `vmlinuz-lts` that boots QEMU `virt`; pin its exact bytes before
+   recipe execution.
 2. Port the recipe and helpers, establish exact ARMv7 archive ownership, and
    run syntax and C warning checks before compilation.
 3. Tell the user the expected emulated compile duration when it may exceed ten
