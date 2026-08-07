@@ -33,10 +33,13 @@ The architecture must already have a locked, published builder. The recipe's
 host `build.sh` and committed output must be executable. The host command must
 be non-interactive, validate a temporary candidate completely before replacing
 the committed artifact, and enforce the target architecture and static-ELF
-contract. `source.lock` owns the source version, archive, checksum, official
-provenance URL, and license identifier. The corresponding regular, non-symlink
-archive must be committed with mode `100644` at `sources/<archive>` and its
-actual bytes must match the lock before extraction.
+contract. It must fail before build setup when Docker Buildx is unavailable and
+must use its Dockerfile through one unconditional Buildx path; do not select a
+direct-container or classic Docker fallback. `source.lock` owns the source
+version, archive, checksum, official provenance URL, and license identifier.
+The corresponding regular, non-symlink archive must be committed with mode
+`100644` at `sources/<archive>` and its actual bytes must match the lock before
+extraction.
 
 If a tool requires another source archive, keep that dependency in the same
 tool-owned lock and `sources/` directory. Extend catalog validation only for

@@ -8,7 +8,6 @@ readonly OUTPUT_DIR="${REPO_ROOT}/artifacts/aarch64"
 readonly OUTPUT_FILE="${OUTPUT_DIR}/gdb"
 readonly ENVIRONMENT_LOCK="${REPO_ROOT}/builders/aarch64/environment.lock"
 readonly SOURCE_LOCK="${SCRIPT_DIR}/source.lock"
-readonly SOURCE_DIR="${SCRIPT_DIR}/sources"
 readonly PLATFORM="linux/arm64"
 readonly BUILD_JOBS="${BUILD_JOBS:-8}"
 
@@ -42,6 +41,11 @@ for command_name in docker file readelf sha256sum; do
     fi
 done
 
+if ! docker buildx version >/dev/null 2>&1; then
+    echo "error: Docker Buildx is required; install the plugin and ensure 'docker buildx version' succeeds" >&2
+    exit 1
+fi
+
 if ! docker info >/dev/null 2>&1; then
     echo "error: the Docker daemon is not available to this user" >&2
     exit 1
@@ -73,26 +77,12 @@ build_args=(
     --build-arg "BUILD_JOBS=${BUILD_JOBS}"
 )
 
-if docker buildx version >/dev/null 2>&1; then
-    echo "Building GDB ${SOURCE_VERSION} for ARM64 with Docker Buildx..."
-    docker buildx build \
-        --platform "${PLATFORM}" \
-        "${build_args[@]}" \
-        --output "type=local,dest=${temporary_dir}" \
-        "${SCRIPT_DIR}"
-else
-    echo "Building GDB ${SOURCE_VERSION} in an ARM64 Docker container..."
-    docker run --rm \
-        --platform "${PLATFORM}" \
-        --env "BUILD_JOBS=${BUILD_JOBS}" \
-        --mount "type=bind,src=${SCRIPT_DIR}/build-in-container.sh,dst=/usr/local/bin/build-static-gdb,readonly" \
-        --mount "type=bind,src=${SOURCE_LOCK},dst=/usr/local/share/static_bins/gdb/source.lock,readonly" \
-        --mount "type=bind,src=${SOURCE_DIR},dst=/usr/local/share/static_bins/gdb/sources,readonly" \
-        --mount "type=bind,src=${SCRIPT_DIR}/licenses,dst=/usr/local/share/licenses/gdb,readonly" \
-        --mount "type=bind,src=${temporary_dir},dst=/out" \
-        "${BUILDER_IMAGE}" \
-        /usr/local/bin/build-static-gdb
-fi
+echo "Building GDB ${SOURCE_VERSION} for ARM64 with Docker Buildx..."
+docker buildx build \
+    --platform "${PLATFORM}" \
+    "${build_args[@]}" \
+    --output "type=local,dest=${temporary_dir}" \
+    "${SCRIPT_DIR}"
 
 candidate="${temporary_dir}/gdb"
 validate_elf() {

@@ -8,7 +8,6 @@ readonly OUTPUT_DIR="${REPO_ROOT}/artifacts/x86_64"
 readonly OUTPUT_FILE="${OUTPUT_DIR}/tcpdump"
 readonly ENVIRONMENT_LOCK="${REPO_ROOT}/builders/x86_64/environment.lock"
 readonly SOURCE_LOCK="${SCRIPT_DIR}/source.lock"
-readonly SOURCE_DIR="${SCRIPT_DIR}/sources"
 readonly PLATFORM="linux/amd64"
 readonly BUILD_JOBS="${BUILD_JOBS:-8}"
 
@@ -39,6 +38,10 @@ for command_name in docker file readelf sha256sum; do
         exit 1
     fi
 done
+if ! docker buildx version >/dev/null 2>&1; then
+    echo "error: Docker Buildx is required; install the plugin and ensure 'docker buildx version' succeeds" >&2
+    exit 1
+fi
 if ! docker info >/dev/null 2>&1; then
     echo "error: the Docker daemon is not available to this user" >&2
     exit 1
@@ -69,27 +72,12 @@ build_args=(
     --build-arg "BUILD_JOBS=${BUILD_JOBS}"
 )
 
-if docker buildx version >/dev/null 2>&1; then
-    echo "Building tcpdump ${SOURCE_VERSION} with libpcap ${LIBPCAP_VERSION} using Docker Buildx..."
-    docker buildx build \
-        --platform "${PLATFORM}" \
-        "${build_args[@]}" \
-        --output "type=local,dest=${temporary_dir}" \
-        "${SCRIPT_DIR}"
-else
-    echo "Building tcpdump ${SOURCE_VERSION} with libpcap ${LIBPCAP_VERSION} in the locked x86-64 builder..."
-    docker run --rm \
-        --platform "${PLATFORM}" \
-        --env "BUILD_JOBS=${BUILD_JOBS}" \
-        --mount "type=bind,src=${SCRIPT_DIR}/build-in-container.sh,dst=/usr/local/bin/build-static-tcpdump,readonly" \
-        --mount "type=bind,src=${SCRIPT_DIR}/smoke-test.sh,dst=/usr/local/bin/smoke-test-tcpdump,readonly" \
-        --mount "type=bind,src=${SOURCE_LOCK},dst=/usr/local/share/static_bins/tcpdump/source.lock,readonly" \
-        --mount "type=bind,src=${SOURCE_DIR},dst=/usr/local/share/static_bins/tcpdump/sources,readonly" \
-        --mount "type=bind,src=${SCRIPT_DIR}/licenses,dst=/usr/local/share/licenses/tcpdump,readonly" \
-        --mount "type=bind,src=${temporary_dir},dst=/out" \
-        "${BUILDER_IMAGE}" \
-        /usr/local/bin/build-static-tcpdump
-fi
+echo "Building tcpdump ${SOURCE_VERSION} with libpcap ${LIBPCAP_VERSION} using Docker Buildx..."
+docker buildx build \
+    --platform "${PLATFORM}" \
+    "${build_args[@]}" \
+    --output "type=local,dest=${temporary_dir}" \
+    "${SCRIPT_DIR}"
 
 candidate="${temporary_dir}/tcpdump"
 validate_elf() {

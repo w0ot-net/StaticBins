@@ -10,7 +10,8 @@ recipes.
 
 ## Build
 
-List the enabled recipes, then build one with Bash and Docker:
+List the enabled recipes, then build one with Bash, Docker, and the Docker
+Buildx plugin:
 
 ```sh
 ./build.sh list
@@ -50,7 +51,8 @@ resolve packages or silently fall back to another image.
 Builder publication is a separate maintainer operation. Candidate builders can
 be validated with `./builders/aarch64/build.sh` or
 `./builders/x86_64/build.sh`; start the locked AArch64 environment with
-`./builders/aarch64/run.sh`.
+`./builders/aarch64/run.sh`. Candidate builder validation also requires Docker
+Buildx.
 
 See [`doc/adding-a-binary.md`](doc/adding-a-binary.md) for the recipe contract
 and [`AGENTS.md`](AGENTS.md) for repository-wide build and validation rules.

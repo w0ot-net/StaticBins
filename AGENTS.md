@@ -46,6 +46,10 @@ Reproducible build guidance:
 - A normal artifact build must consume the committed builder digest from the
   architecture's environment lock. Do not silently fall back to a mutable tag,
   base image, or fresh package resolution when that digest is unavailable.
+- Docker Buildx is the only supported host-side container build backend. Check
+  for it before emulation registration, image pulls, temporary output creation,
+  or compilation, and fail with an actionable error when it is missing. Do not
+  select direct guest-script execution or classic `docker build` as a fallback.
 - Treat builder publication as a separate maintainer operation: validate and
   publish a new versioned builder first, then commit its immutable digest before
   recipes may consume it.

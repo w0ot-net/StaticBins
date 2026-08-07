@@ -9,11 +9,12 @@ direct recipe command:
 ./recipes/tcpdump/x86_64/build.sh
 ```
 
-Both commands require Bash, Docker, and access to the public images named by the
-committed environment lock. The build consumes the exact builder digest in
-`builders/x86_64/environment.lock` and both tracked archives under `sources/`,
-validates a temporary candidate, and writes `artifacts/x86_64/tcpdump` only
-after every check passes. On non-x86-64 Linux hosts it may register the pinned
+Both commands require Bash, Docker with the Buildx plugin, and access to the
+public images named by the committed environment lock. The build consumes the
+exact builder digest in `builders/x86_64/environment.lock` and both tracked
+archives under `sources/`, validates a temporary candidate, and writes
+`artifacts/x86_64/tcpdump` only after every check passes. On non-x86-64 Linux
+hosts it may register the pinned
 QEMU `binfmt_misc` helper with `--privileged` when amd64 container support is
 absent. Set `BUILD_JOBS` to tune compilation parallelism:
 

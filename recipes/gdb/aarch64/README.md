@@ -8,11 +8,12 @@ repository root, use the stable dispatcher or the direct recipe command:
 ./recipes/gdb/aarch64/build.sh
 ```
 
-Both commands require Bash, Docker, and access to the public images named by the
-committed environment lock. The build consumes the exact builder digest in
-`builders/aarch64/environment.lock` and the tracked archive under `sources/`,
-validates a temporary candidate, and writes `artifacts/aarch64/gdb` only after
-every check passes. On non-AArch64 Linux hosts it uses QEMU user-mode emulation
+Both commands require Bash, Docker with the Buildx plugin, and access to the
+public images named by the committed environment lock. The build consumes the
+exact builder digest in `builders/aarch64/environment.lock` and the tracked
+archive under `sources/`, validates a temporary candidate, and writes
+`artifacts/aarch64/gdb` only after every check passes. On non-AArch64 Linux
+hosts it uses QEMU user-mode emulation
 and may register the pinned `binfmt_misc` helper with `--privileged` when support
 is absent. Set `BUILD_JOBS` to tune compilation parallelism:
 

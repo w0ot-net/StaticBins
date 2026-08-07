@@ -22,6 +22,11 @@ if ! command -v docker >/dev/null 2>&1; then
     exit 1
 fi
 
+if ! docker buildx version >/dev/null 2>&1; then
+    echo "error: Docker Buildx is required; install the plugin and ensure 'docker buildx version' succeeds" >&2
+    exit 1
+fi
+
 if ! docker info >/dev/null 2>&1; then
     echo "error: the Docker daemon is not available to this user" >&2
     exit 1
@@ -32,22 +37,12 @@ if ! docker run --rm --platform "${PLATFORM}" "${ALPINE_IMAGE}" /bin/true >/dev/
     docker run --privileged --rm "${BINFMT_IMAGE}" --install arm64
 fi
 
-if docker buildx version >/dev/null 2>&1; then
-    docker buildx build \
-        --platform "${PLATFORM}" \
-        --build-arg "ALPINE_IMAGE=${ALPINE_IMAGE}" \
-        --load \
-        --tag "${LOCAL_IMAGE}" \
-        "${SCRIPT_DIR}"
-elif [[ "$(uname -m)" == "aarch64" || "$(uname -m)" == "arm64" ]]; then
-    docker build \
-        --build-arg "ALPINE_IMAGE=${ALPINE_IMAGE}" \
-        --tag "${LOCAL_IMAGE}" \
-        "${SCRIPT_DIR}"
-else
-    echo "error: Docker Buildx is required to build an ARM64 image on this host" >&2
-    exit 1
-fi
+docker buildx build \
+    --platform "${PLATFORM}" \
+    --build-arg "ALPINE_IMAGE=${ALPINE_IMAGE}" \
+    --load \
+    --tag "${LOCAL_IMAGE}" \
+    "${SCRIPT_DIR}"
 
 docker run --rm \
     --platform "${PLATFORM}" \
@@ -56,7 +51,7 @@ docker run --rm \
     /bin/sh -eu -c '
         test "$(uname -m)" = aarch64
         while IFS= read -r package_spec; do
-            case "${package_spec}" in ""|'#'*) continue ;; esac
+            case "${package_spec}" in ""|\#*) continue ;; esac
             package_name=${package_spec%%=*}
             expected_version=${package_spec#*=}
             installed_package=$(apk info -e -v "${package_name}")
