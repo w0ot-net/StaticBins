@@ -1,5 +1,7 @@
 # Plan: Verify and Attest Repository Artifacts
 
+*Distilled: 2026-08-07*
+
 ## Summary
 
 Give users a short, honest way to check repository binaries: verify a committed

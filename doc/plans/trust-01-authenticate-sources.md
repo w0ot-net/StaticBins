@@ -1,5 +1,7 @@
 # Plan: Authenticate Source Archives
 
+*Distilled: 2026-08-07*
+
 ## Summary
 
 Add optional, explicit upstream authentication to the existing recipe source

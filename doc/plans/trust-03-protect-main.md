@@ -1,5 +1,7 @@
 # Plan: Protect the Artifact Trust Path
 
+*Distilled: 2026-08-07*
+
 ## Summary
 
 Protect `main` with a small GitHub ruleset so source, recipes, artifacts, and
