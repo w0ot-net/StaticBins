@@ -64,7 +64,10 @@ Configure out of tree with `--disable-shared`, `--enable-static`,
 while the executable continues to compile its required sources),
 `--with-libtirpc`, `--without-selinux`, and the native musl build/host triplets.
 Pass optimization and `-static -no-pie` through supported `CFLAGS`/`LDFLAGS`
-variables rather than rewriting generated Makefiles. Require configure results
+variables rather than rewriting generated Makefiles. Because lsof's generated
+libtool consumes compiler `-static` without forwarding it to the executable
+link, use libtool's supported `-all-static` spelling in the final make-time
+`LDFLAGS`; retain `-static` during configure probes. Require configure results
 and `lsof -v` to show the intended RPC/Linux features and no unexpected
 security restriction.
 
@@ -136,3 +139,42 @@ Only then replace `artifacts/<architecture>/lsof`.
   documented Linux/libtirpc feature profile and find the controlled open file.
 - Source limitation, final-link provenance, licenses, checksums, and `Not
   verified` artifact status are complete and factual for both architectures.
+
+## Execution Notes
+
+Completed on 2026-08-07.
+
+- Implementation commit `f12ba6e` added both lsof 4.99.5 recipes, tracked
+  1,139,280-byte source archives, license and link evidence, catalog and trust
+  records, and the two validated artifacts. Repository validation reports both
+  sources explicitly as `checksum-only`; no placeholder signer evidence or
+  network fallback was introduced.
+- The bounded native link probe established that lsof's generated libtool
+  consumes compiler `-static` unless the final link uses libtool's supported
+  `-all-static` spelling. Cached native retries also established the exact
+  `libtirpc-nokrb -lpthread` flags and the complete archive set: libtirpc,
+  musl libc/pthread/ssp support, and GCC `libgcc`/`libgcc_eh`. No generated
+  Makefile was rewritten and the accepted source was unchanged.
+- The x86-64 build passed its Linux/RPC feature checks and found the exact
+  descriptor held by its controlled procfs target. It replaced legacy SHA-256
+  `110c9b13164733cea363338d6bd317acde346db9d07d2fe5b6fa65e4dd7200d0`
+  with a 429,696-byte artifact at
+  `dd53ea1eb124f4c28335aad6c0b5c6c85905d75c7ed91837d6b42b7a2581e37f`.
+- The only AArch64 compile completed under user-mode emulation in about two
+  minutes. Its target-architecture smoke test reported the controlled PID and
+  exact open-file path. The 462,400-byte artifact is
+  `f3ee349f5edc5d4a61813cb6f941183b8da6039069bd465ecb831bf66bab73a6`.
+- Both outputs are stripped static `ET_EXEC` files for their promised machines,
+  expose version 4.99.5 and the expected IPv6, pty endpoint, RPC, socket option,
+  socket state, task, and Unix-socket endpoint features, and retain the
+  unrestricted `Anyone can list all files` build profile without special mode
+  bits.
+- Offline validation accepted six enabled recipes and printed exactly the two
+  expected lsof checksum-only notices. All 20 recipe unit tests, shell syntax,
+  dispatcher listing and ambiguity behavior, the complete artifact checksum
+  manifest, and task diff checks passed.
+- Post-push runs `31204404525` (`recipe-validation`) and `31204404546`
+  (`artifact-assurance`) passed. Both tcpdump rebuild jobs were skipped because
+  its catalog and manifest records were unchanged. No attestation claim,
+  utility image, or shared smoke-test abstraction was added; both artifacts
+  remain `Not verified`.
