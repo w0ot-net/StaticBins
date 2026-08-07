@@ -1,5 +1,13 @@
 # Plan: Qualify ARMv7 Artifacts on Native Hardware
 
+**ABANDONED 2026-08-07**: The maintainer's threat model does not require
+protection against a compromised maintainer workstation, so native self-hosted
+rebuild and attestation infrastructure is unnecessary and would not scale to
+future architectures. Replaced by
+[`20260807_00-lightweight-artifact-assurance.md`](../plans/20260807_00-lightweight-artifact-assurance.md),
+which keeps strict local Buildx/QEMU recipe validation and lightweight GitHub
+integrity checks without utility compilation.
+
 ## Summary
 
 After all six ARMv7 artifacts exist, qualify their committed bytes with one

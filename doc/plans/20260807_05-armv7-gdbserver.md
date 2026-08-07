@@ -33,7 +33,7 @@ Out of scope:
   disabled GDB components.
 - Committing a kernel or VM disk, sharing VM machinery with another recipe, or
   modifying existing GDBserver recipes.
-- Native attestation before the later qualification plan.
+- Adding an independent CI rebuild or provenance attestation.
 
 ## Design
 
@@ -55,7 +55,8 @@ Apply the ARMv7 artifact checks to GDBserver and both static helpers: ELF32,
 little-endian ARM, hard-float EABI, `ET_EXEC`, no interpreter, no `DT_NEEDED`,
 stripped release output, exact version, and native execution inside the VM.
 The cached kernel is validation infrastructure only and is not linked or
-distributed. Mark the artifact `Not verified` until native qualification.
+distributed. Record the maintainer-built recipe validation and the absence of
+independent rebuild evidence as separate TRUST facts.
 
 ## Affected Components
 
@@ -65,8 +66,8 @@ distributed. Mark the artifact `Not verified` until native qualification.
 - `recipes/catalog.tsv`: enable the ARMv7 identity.
 - `artifacts/SHA256SUMS`: add its sorted exact digest.
 - `README.md`: list ARMv7 GDBserver and rebuild support.
-- `TRUST.md`: record GNU PGP authentication, VM kernel limitation, and the
-  `Not verified` artifact status.
+- `TRUST.md`: record GNU PGP authentication, the VM kernel limitation, the
+  local recipe build, and the absence of independent rebuild evidence.
 
 ## Implementation Sequence
 
@@ -91,8 +92,8 @@ distributed. Mark the artifact `Not verified` until native qualification.
   exchange.
 - Inspect GDBserver and smoke helpers with `file`/`readelf`, then verify the
   installed artifact checksum and complete manifest.
-- Require both stable CI signals to pass without creating a utility image or
-  ARMv7 attestation.
+- Require both stable lightweight CI signals to pass without compiling the
+  utility, creating a utility image, or adding an attestation.
 
 ## Success Criteria
 
