@@ -78,62 +78,128 @@ docker run --rm \
     --mount "type=bind,src=${PACKAGE_LOCK},dst=/tmp/packages.lock,readonly" \
     "${LOCAL_IMAGE}" \
     /bin/sh -eu -c '
-        test "$(uname -m)" = x86_64
+        validation_errors=0
+        if [ "$(uname -m)" != x86_64 ]; then
+            echo "error: candidate runtime is not x86-64" >&2
+            validation_errors=$((validation_errors + 1))
+        fi
+
         while IFS= read -r package_spec; do
             case "${package_spec}" in ""|\#*) continue ;; esac
             package_name=${package_spec%%=*}
             expected_version=${package_spec#*=}
-            installed_package=$(apk info -e -v "${package_name}")
+            if ! installed_package=$(apk info -e -v "${package_name}"); then
+                echo "error: candidate builder is missing package ${package_name}" >&2
+                validation_errors=$((validation_errors + 1))
+                continue
+            fi
             installed_version=${installed_package#${package_name}-}
             if [ "${installed_version}" != "${expected_version}" ]; then
                 echo "error: ${package_name}: expected ${expected_version}, found ${installed_version}" >&2
-                exit 1
+                validation_errors=$((validation_errors + 1))
             fi
         done < /tmp/packages.lock
 
-        for command_name in bison cc c++ file flex make readelf sha256sum strip tar wget; do
+        for command_name in \
+            autoreconf automake bison cc c++ file flex libressl libtoolize make \
+            pkg-config readelf rpcgen sha256sum strip tar wget xz; do
             if ! command -v "${command_name}" >/dev/null 2>&1; then
                 echo "error: candidate builder is missing ${command_name}" >&2
-                exit 1
+                validation_errors=$((validation_errors + 1))
             fi
         done
 
-        if [ ! -f /usr/lib/libc.a ]; then
-            echo "error: candidate builder is missing /usr/lib/libc.a" >&2
+        libgcc_archive=$(cc -print-file-name=libgcc.a)
+        for archive_path in \
+            /usr/lib/libc.a \
+            /usr/lib/libcrypto.a \
+            /usr/lib/libexpat.a \
+            /usr/lib/libssl.a \
+            /usr/lib/libtirpc.a \
+            /usr/lib/libtirpc-nokrb.a \
+            "${libgcc_archive}"; do
+            if [ ! -f "${archive_path}" ]; then
+                echo "error: candidate builder is missing ${archive_path}" >&2
+                validation_errors=$((validation_errors + 1))
+            fi
+        done
+
+        if [ "${validation_errors}" -ne 0 ]; then
             exit 1
         fi
 
-        printf "%s\n" "int main(void) { return 0; }" > /tmp/static-probe.c
-        cc -static -no-pie /tmp/static-probe.c -o /tmp/static-probe
-        file /tmp/static-probe
-        if ! readelf -h /tmp/static-probe | grep -Eq "Type:[[:space:]]+EXEC"; then
-            echo "error: static probe is not an ELF executable" >&2
-            exit 1
-        fi
-        if ! readelf -h /tmp/static-probe | grep -Eq "Machine:[[:space:]]+Advanced Micro Devices X86-64"; then
-            echo "error: static probe is not an x86-64 executable" >&2
-            exit 1
-        fi
-        if readelf -l /tmp/static-probe | grep -q "Requesting program interpreter"; then
-            echo "error: static probe has a dynamic program interpreter" >&2
-            exit 1
-        fi
-        if readelf -d /tmp/static-probe 2>/dev/null | grep -q "(NEEDED)"; then
-            echo "error: static probe has dynamic library dependencies" >&2
+        validate_static_probe() {
+            probe=$1
+            probe_errors=0
+            if ! file "${probe}" | grep -q "statically linked"; then
+                echo "error: ${probe} is not reported as statically linked" >&2
+                probe_errors=$((probe_errors + 1))
+            fi
+            if ! readelf -h "${probe}" | grep -Eq "Type:[[:space:]]+EXEC"; then
+                echo "error: ${probe} is not an ELF executable" >&2
+                probe_errors=$((probe_errors + 1))
+            fi
+            if ! readelf -h "${probe}" | grep -Eq "Machine:[[:space:]]+Advanced Micro Devices X86-64"; then
+                echo "error: ${probe} is not an x86-64 executable" >&2
+                probe_errors=$((probe_errors + 1))
+            fi
+            if readelf -l "${probe}" | grep -q "Requesting program interpreter"; then
+                echo "error: ${probe} has a dynamic program interpreter" >&2
+                probe_errors=$((probe_errors + 1))
+            fi
+            if readelf -d "${probe}" 2>/dev/null | grep -q "(NEEDED)"; then
+                echo "error: ${probe} has dynamic library dependencies" >&2
+                probe_errors=$((probe_errors + 1))
+            fi
+            return "${probe_errors}"
+        }
+
+        printf "%s\n" "int main(void) { return 0; }" > /tmp/base-probe.c
+        cc -static -no-pie /tmp/base-probe.c -o /tmp/base-probe
+
+        printf "%s\n" "#include <rpc/xdr.h>" \
+            "int main(void) { return xdr_int == 0; }" \
+            > /tmp/tirpc-probe.c
+        cc -static -no-pie $(pkg-config --cflags libtirpc-nokrb) \
+            /tmp/tirpc-probe.c $(pkg-config --libs --static libtirpc-nokrb) \
+            -o /tmp/tirpc-probe
+
+        printf "%s\n" "#include <openssl/ssl.h>" \
+            "int main(void) { SSL_CTX *ctx = SSL_CTX_new(TLS_method()); SSL_CTX_free(ctx); return ctx == 0; }" \
+            > /tmp/libressl-probe.c
+        cc -static -no-pie /tmp/libressl-probe.c -lssl -lcrypto \
+            -o /tmp/libressl-probe
+
+        printf "%s\n" "#include <expat.h>" \
+            "int main(void) { XML_Parser p = XML_ParserCreate(0); XML_ParserFree(p); return p == 0; }" \
+            > /tmp/expat-probe.c
+        cc -static -no-pie /tmp/expat-probe.c -lexpat -o /tmp/expat-probe
+
+        for probe in /tmp/base-probe /tmp/tirpc-probe /tmp/libressl-probe /tmp/expat-probe; do
+            if ! validate_static_probe "${probe}"; then
+                validation_errors=$((validation_errors + 1))
+            fi
+        done
+        if [ "${validation_errors}" -ne 0 ]; then
             exit 1
         fi
     '
 
 image_architecture="$(docker image inspect "${LOCAL_IMAGE}" --format '{{.Architecture}}')"
 image_source="$(docker image inspect "${LOCAL_IMAGE}" --format '{{index .Config.Labels "org.opencontainers.image.source"}}')"
+image_errors=0
 
 if [[ "${image_architecture}" != "amd64" ]]; then
     echo "error: candidate architecture is ${image_architecture}, expected amd64" >&2
-    exit 1
+    image_errors=$((image_errors + 1))
 fi
 
 if [[ "${image_source}" != "https://github.com/w0ot-net/static_bins" ]]; then
     echo "error: candidate has an unexpected OCI source label" >&2
+    image_errors=$((image_errors + 1))
+fi
+
+if [[ ${image_errors} -ne 0 ]]; then
     exit 1
 fi
 

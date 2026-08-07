@@ -1,5 +1,5 @@
 # Immutable x86-64 build-environment inputs.
 ALPINE_IMAGE=alpine:3.24.1@sha256:79ff19e9084a00eece421b2523fb93e22d730e2c0e525905de047e848e56d95f
 BINFMT_IMAGE=tonistiigi/binfmt@sha256:400a4873b838d1b89194d982c45e5fb3cda4593fbfd7e08a02e76b03b21166f0
-BUILDER_TAG=x64-alpine-3.24.1-r1
+BUILDER_TAG=x64-alpine-3.24.1-r2
 BUILDER_IMAGE=ghcr.io/w0ot-net/static_bins-builder@sha256:ed0de561168a27489545d883e790707ae9a34c9412ce6e944c973bc3d848b030
