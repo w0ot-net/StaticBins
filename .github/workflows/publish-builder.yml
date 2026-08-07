@@ -10,6 +10,7 @@ on:
         default: aarch64
         options:
           - aarch64
+          - armv7
           - x86_64
 
 permissions:
@@ -43,6 +44,18 @@ jobs:
               platform=linux/arm64
               floating_tag=aarch64-latest
               cache_scope=aarch64-builder
+              emulation=
+              target_uname=
+              ;;
+            armv7)
+              directory=builders/armv7
+              expected_machine=aarch64
+              builder_tag_prefix=armv7
+              platform=linux/arm/v7
+              floating_tag=armv7-latest
+              cache_scope=armv7-builder
+              emulation=arm
+              target_uname=armv7l
               ;;
             x86_64)
               directory=builders/x86_64
@@ -51,6 +64,8 @@ jobs:
               platform=linux/amd64
               floating_tag=x64-latest
               cache_scope=x86_64-builder
+              emulation=
+              target_uname=
               ;;
             *)
               echo "error: unsupported architecture ${ARCHITECTURE}" >&2
@@ -72,6 +87,13 @@ jobs:
             "${builder_tag_prefix}"-*) ;;
             *) echo "error: BUILDER_TAG does not match ${builder_tag_prefix}" >&2; exit 1 ;;
           esac
+          binfmt_image=
+          if [[ -n "${emulation}" ]]; then
+            case "${BINFMT_IMAGE}" in
+              *@sha256:*) binfmt_image=${BINFMT_IMAGE} ;;
+              *) echo "error: BINFMT_IMAGE must be pinned by digest" >&2; exit 1 ;;
+            esac
+          fi
 
           echo "directory=${directory}" >> "${GITHUB_OUTPUT}"
           echo "platform=${platform}" >> "${GITHUB_OUTPUT}"
@@ -79,6 +101,27 @@ jobs:
           echo "cache_scope=${cache_scope}" >> "${GITHUB_OUTPUT}"
           echo "alpine_image=${ALPINE_IMAGE}" >> "${GITHUB_OUTPUT}"
           echo "builder_tag=${BUILDER_TAG}" >> "${GITHUB_OUTPUT}"
+          echo "binfmt_image=${binfmt_image}" >> "${GITHUB_OUTPUT}"
+          echo "emulation=${emulation}" >> "${GITHUB_OUTPUT}"
+          echo "target_uname=${target_uname}" >> "${GITHUB_OUTPUT}"
+
+      - name: Register target emulation
+        if: steps.architecture.outputs.emulation != ''
+        shell: bash
+        env:
+          ALPINE_IMAGE: ${{ steps.architecture.outputs.alpine_image }}
+          BINFMT_IMAGE: ${{ steps.architecture.outputs.binfmt_image }}
+          EMULATION: ${{ steps.architecture.outputs.emulation }}
+          PLATFORM: ${{ steps.architecture.outputs.platform }}
+          TARGET_UNAME: ${{ steps.architecture.outputs.target_uname }}
+        run: |
+          set -euo pipefail
+          docker run --privileged --rm "${BINFMT_IMAGE}" --install "${EMULATION}"
+          observed_uname=$(docker run --rm --platform "${PLATFORM}" "${ALPINE_IMAGE}" uname -m)
+          if [[ "${observed_uname}" != "${TARGET_UNAME}" ]]; then
+            echo "error: target runtime reported ${observed_uname}, expected ${TARGET_UNAME}" >&2
+            exit 1
+          fi
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@bb05f3f5519dd87d3ba754cc423b652a5edd6d2c # v4.2.0
