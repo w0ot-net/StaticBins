@@ -1,0 +1,69 @@
+name: Native rebuild classification
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  classify:
+    name: classify-${{ matrix.tool }}
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - tool: gdb
+            runner: ubuntu-24.04-arm
+            artifact: artifacts/aarch64/gdb
+            expected_sha256: 5e96e51367020e6be6e2cb0a7f0014573da838a8f7d1d099fd2e5a4a55c820ab
+          - tool: tcpdump
+            runner: ubuntu-24.04
+            artifact: artifacts/x86_64/tcpdump
+            expected_sha256: cdd8f895dceb63d428f137ed910cc083dde2bc76d1006e3468b6f8d654c053b1
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@bb05f3f5519dd87d3ba754cc423b652a5edd6d2c # v4.2.0
+
+      - name: Rebuild once and classify
+        shell: bash
+        env:
+          TOOL: ${{ matrix.tool }}
+          ARTIFACT: ${{ matrix.artifact }}
+          EXPECTED_SHA256: ${{ matrix.expected_sha256 }}
+        run: |
+          set -euo pipefail
+          original="${RUNNER_TEMP}/${TOOL}-original"
+          cp -p "${ARTIFACT}" "${original}"
+          original_mode=$(stat -c '%a' "${ARTIFACT}")
+
+          BUILD_JOBS=4 ./build.sh "${TOOL}"
+          rebuilt_sha256=$(sha256sum "${ARTIFACT}" | awk '{print $1}')
+          if [[ "${rebuilt_sha256}" == "${EXPECTED_SHA256}" ]]; then
+            classification=exact
+          else
+            classification=mismatch
+            install -m "${original_mode}" "${original}" "${ARTIFACT}"
+          fi
+
+          restored_sha256=$(sha256sum "${ARTIFACT}" | awk '{print $1}')
+          restored_mode=$(stat -c '%a' "${ARTIFACT}")
+          test "${restored_sha256}" = "${EXPECTED_SHA256}"
+          test "${restored_mode}" = "${original_mode}"
+          {
+            echo "### ${TOOL} native rebuild"
+            echo
+            echo "- classification: ${classification}"
+            echo "- committed SHA-256: ${EXPECTED_SHA256}"
+            echo "- rebuilt SHA-256: ${rebuilt_sha256}"
+            echo "- restored SHA-256: ${restored_sha256}"
+            echo "- restored mode: ${restored_mode}"
+          } >> "${GITHUB_STEP_SUMMARY}"
+          printf 'classification=%s committed=%s rebuilt=%s restored=%s mode=%s\n' \
+            "${classification}" "${EXPECTED_SHA256}" "${rebuilt_sha256}" \
+            "${restored_sha256}" "${restored_mode}"
