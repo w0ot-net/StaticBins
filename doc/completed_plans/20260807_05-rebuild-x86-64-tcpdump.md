@@ -239,3 +239,74 @@ the relocated legacy script as part of the atomic recipe replacement.
   tags with the required repository metadata, SBOM, and provenance.
 - No other legacy binary is rebuilt, modified, documented as reproducible, or
   added to the publication catalog by this migration.
+
+## Execution Notes
+
+Implemented the source/distribution lock in commit `f756da6` and the complete
+recipe, catalog entry, documentation, and replacement artifact in commit
+`ddab286`. The obsolete `recipes/tcpdump/x86_64/legacy.sh` is gone. The stable
+commands are now `./build.sh tcpdump` and
+`./recipes/tcpdump/x86_64/build.sh`; both select the immutable x86-64 builder
+digest and the same two-source lock.
+
+The source-mirror workflow published the immutable
+`tcpdump-4.99.4-libpcap-1.10.4-source` release in successful run
+`31146713955`. Its four assets are exactly `tcpdump-4.99.4.tar.gz`,
+`libpcap-1.10.4.tar.gz`, `source.lock`, and
+`tcpdump-distribution-materials.tar.gz`. Anonymous downloads matched the
+official archives and committed distribution files byte-for-byte. Their source
+hashes are, respectively,
+`0232231bb2f29d6bf2426e70a08a7e0c63a0d59a9b44863b7f5e2357a6e49fea`
+and
+`ed19a0383fad72e3ad435fd239d7cd80d64916b87269550159d20e47160ebe5f`.
+Repeat run `31146751866` failed at the replacement guard as intended.
+
+Validation completed successfully:
+
+- The initial real build proved independent checksum-verified fallback from
+  both absent mirror assets to both official URLs. The final root-dispatched
+  build fetched both immutable mirror assets directly and reproduced the same
+  binary. Controlled bad-checksum builds for libpcap and tcpdump each rejected
+  both approved URLs before extraction and left the prior output hash intact.
+- The linked-archive reconciliation observed only `libnetdissect.a`,
+  `libpcap.a`, musl `libc.a`/`libssp_nonshared.a`, and GCC
+  `libgcc.a`/`libgcc_eh.a`. Every archive has an exact source or locked Alpine
+  package/version/license row and reviewed distribution material.
+- The installed artifact is a 1,470,616-byte stripped static x86-64 ELF
+  `ET_EXEC` file with no requested interpreter, `DT_NEEDED`, debug sections, or
+  full symbol table. It reports tcpdump 4.99.4 and libpcap 1.10.4, compiles the
+  expected BPF filter, decodes the deterministic DNS fixture, and completed a
+  bounded loopback ICMP capture with only `NET_RAW` and `NET_ADMIN` added.
+  Its SHA-256 is
+  `cdd8f895dceb63d428f137ed910cc083dde2bc76d1006e3468b6f8d654c053b1`.
+- Twelve focused catalog tests, catalog validation/matrix generation, root
+  listing/dispatch coverage, Bash and guest-shell syntax checks, all workflow
+  YAML parsing, policy scans, and `git diff --check` passed. ShellCheck and a
+  local Buildx plugin were unavailable. The direct locked-builder branch and a
+  classic local Dockerfile build both passed; native CI Buildx covered the
+  Buildx publication path and packaged the exact committed payload plus every
+  notice and the source lock.
+
+Catalog publication run `31147075828` passed its catalog gate and both native
+recipe jobs. Anonymous pulls of
+`ghcr.io/w0ot-net/static_bins-tcpdump:4.99.4-x86_64` and
+`ghcr.io/w0ot-net/static_bins-tcpdump:x86_64-latest` resolved to the same OCI
+index digest,
+`sha256:0cedfa94029dc1710d9a1073edb231d21f14aace582cb6e2435bd804e6d74609`.
+The image is `linux/amd64`, carries the expected source/license/version/revision
+labels, contains the exact committed binary and reviewed distribution files,
+and passes the version and offline functional smoke tests. Its OCI index points
+to amd64 manifest
+`sha256:44442661a060ca325a7343444e84a07ce9aa2a091ab7c453efa05e68285c0513`
+and attestation manifest
+`sha256:fbd4c0df89e9d1b78fecb2cfdc0bbdb14b07395799ff6492a885387dd4d88cc6`,
+whose anonymous blobs contain SPDX and SLSA provenance v1 predicates.
+
+The four unrelated x86-64 artifacts retained their pre-execution hashes, and
+the AArch64 GDB artifact remained
+`8e729a88937e2187a9288ae9914748ae3946285227a76ce37232802df8319f4a`.
+The generic workflow republished GDB with commit-specific labels and therefore
+moved both GDB OCI aliases together to index
+`sha256:5a560313b2f7859bbafc80f9103a9ff56de1ce445cf6f7611dfa5ac445284e94`;
+anonymous extraction confirmed its `/gdb` payload did not change. No other
+legacy recipe or artifact was migrated.
