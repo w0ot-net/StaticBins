@@ -131,9 +131,10 @@ recorded.
 4. Bump versioned tags, publish each candidate through the existing native
    workflow, inspect the reported architectures/SBOM/provenance/labels, and
    verify anonymous pulls by digest.
-5. Commit the immutable digests and bounded documentation updates. Let the
-   protected pull request perform the required exact tcpdump comparison once;
-   reuse the candidate evidence instead of repeating GDB locally.
+5. Commit and push the immutable digests and bounded documentation updates.
+   Require the selected post-push workflow on `main` to perform the exact
+   tcpdump comparison and attestation once; reuse the candidate evidence instead
+   of repeating GDB locally.
 
 ## Validation
 
@@ -150,7 +151,7 @@ recorded.
   their OCI architecture, source label, SBOM, and provenance.
 - Run `python3 scripts/recipes.py validate`, `python3 -m unittest
   tests.test_recipes`, and `./build.sh list` after lock adoption.
-- Require the pull request's exact tcpdump job to reproduce
+- Require the post-push `main` exact tcpdump job to reproduce
   `cdd8f895dceb63d428f137ed910cc083dde2bc76d1006e3468b6f8d654c053b1`.
 
 ## Success Criteria

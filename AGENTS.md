@@ -140,16 +140,15 @@ Validation efficiency:
 
 Git workflow:
 
-- `main` is protected by the `artifact-trust-main` ruleset. Send code,
-  documentation, recipe, workflow, and binary changes through a pull request;
-  do not disable or bypass the ruleset for convenience.
-- Preserve the required check names `recipe-validation` and
-  `artifact-assurance`. Both must report on every pull request, while the latter
-  may skip expensive builds when no artifact trust boundary changed.
+- `main` is protected by the `main-history` ruleset against deletion and
+  non-fast-forward updates. Direct pushes are allowed. Do not create a pull
+  request unless the user explicitly asks for one.
+- Preserve the stable workflow job names `recipe-validation` and
+  `artifact-assurance`. They are CI signals rather than required branch gates;
+  the latter may skip expensive builds when no artifact trust boundary changed.
 - Pin every GitHub Actions `uses:` reference to a full 40-character commit SHA.
   Repository Actions policy enforces this invariant.
-- Always commit, push, and merge through the protected path after code,
-  documentation, recipe, or binary changes.
+- Always commit and push after code, documentation, recipe, or binary changes.
 - Never use `git add .` or `git add -A`; stage explicit paths only.
 - Commit only files touched for the task and preserve unrelated user changes.
 - Before committing a large binary, confirm it is the intended validated output

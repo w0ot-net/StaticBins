@@ -85,24 +85,26 @@ An attestation ties exact bytes to a repository workflow execution and commit;
 it does not prove that the source is safe, reviewed, malware-free, or free of
 vulnerabilities.
 
-## Protected trust path
+## Repository governance
 
-The active [`artifact-trust-main` ruleset](https://github.com/w0ot-net/static_bins/rules/20544422)
-targets only `main`. Ordinary updates must arrive through a pull request whose
-head is current with `main` and whose `recipe-validation` and
-`artifact-assurance` checks pass. The ruleset also blocks deletion and
-non-fast-forward updates of `main`. Repository Actions policy requires every
+The active [`main-history` ruleset](https://github.com/w0ot-net/static_bins/rules/20544422)
+targets only `main` and blocks deletion and non-fast-forward updates. Direct
+pushes are allowed; pull requests and successful CI checks are not required
+before a commit reaches `main`. The `recipe-validation` and
+`artifact-assurance` jobs remain useful post-push signals when their workflow
+triggers select a change. Repository Actions policy requires every
 [`uses:` reference](.github/workflows) to name a full commit SHA.
 
-These controls make normal changes and workflow substitutions pass through an
-auditable pull request and the repository's stable gates. They do not prevent
-the repository owner from changing repository settings, and they still depend
-on GitHub's identity, Actions, attestation, and ruleset services as well as the
-upstream sources and builders described above.
+These controls protect existing history from destructive updates and make
+workflow dependencies explicit, but they do not guarantee review or a
+successful check before publication. Repository write access and the owner who
+can change settings or push directly therefore remain explicit trust
+boundaries, alongside GitHub's identity, Actions, attestation, and ruleset
+services and the upstream sources and builders described above.
 
 When verifying an attestation, require repository `w0ot-net/static_bins`, signer
 workflow [`.github/workflows/verify-artifacts.yml`](.github/workflows/verify-artifacts.yml),
 and source ref `refs/heads/main`. The successful GitHub CLI output identifies
 the source commit; users can additionally confirm that commit remains reachable
-from the protected `main` history. Neither branch protection nor that identity
+from the protected `main` history. Neither history protection nor that identity
 check establishes that the program is benign.

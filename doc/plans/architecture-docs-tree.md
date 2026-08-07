@@ -25,8 +25,8 @@ The root dispatcher and catalog select architecture-qualified recipes;
 builder locks, executable modes, and the artifact manifest; recipe host scripts
 run one Buildx path and install validated candidates; separate workflows
 validate recipes, publish reusable builders, rebuild qualified artifacts,
-publish attestations, and expose the stable checks enforced by the repository
-ruleset.
+publish attestations, and report stable CI results; the repository ruleset
+protects `main` history without requiring pull requests or successful checks.
 
 That behavior is discoverable only by reading code, `AGENTS.md`, `TRUST.md`,
 `doc/adding-a-binary.md`, recipe READMEs, workflows, and completed plans.
@@ -160,10 +160,11 @@ within these boundaries:
   `TRUST.md`.
 - `trust/AUTOMATION_AND_GOVERNANCE.md`: own the three workflow roles, minimal
   permission boundaries, stable `recipe-validation` and
-  `artifact-assurance` gates, full-SHA action references, protected-`main`
-  ruleset, explicit artifact selection, same-job rebuild/compare/attest
-  behavior, and the residual repository-owner/GitHub trust boundary. Record
-  behavior and stable names, not workflow run IDs or the ruleset's numeric ID.
+  `artifact-assurance` job names, full-SHA action references, direct-push
+  policy, `main` history ruleset, explicit artifact selection, same-job
+  rebuild/compare/attest behavior, and the residual repository-owner/GitHub
+  trust boundary. Record behavior and stable names, not workflow run IDs or the
+  ruleset's numeric ID.
 - `distribution/DISTRIBUTION_MODEL.md`: own Git-tracked executables under
   `artifacts/` as the utility distribution surface, GHCR as builder-only,
   the policy against utility images and releases, source-retention rationale,
@@ -186,7 +187,7 @@ compatibility layer for nonexistent documentation consumers.
 - `doc/architecture/artifacts/*`: document the installed artifact and
   validation contract.
 - `doc/architecture/trust/*`: document the composed trust chain, automation,
-  protected path, and residual trust.
+  repository governance, and residual trust.
 - `doc/architecture/distribution/*`: document the Git/GHCR distribution
   boundary and license obligations.
 - `README.md`: add one concise documentation entry point without expanding
@@ -218,8 +219,8 @@ compatibility layer for nonexistent documentation consumers.
 5. Add the bounded cross-links in `README.md`, `TRUST.md`,
    `doc/adding-a-binary.md`, and `AGENTS.md`; remove no existing operational
    rule or user command.
-6. Validate the complete tree and merge the documentation-only change through
-   the protected pull-request path with both required gates reporting.
+6. Validate the complete tree, commit it, and push it directly to `main`. Check
+   the post-push workflow result selected for the documentation-only change.
 
 ## Validation
 
@@ -241,8 +242,9 @@ compatibility layer for nonexistent documentation consumers.
   documentation-only changes.
 - Compare the trust and automation pages with `TRUST.md`,
   `.github/workflows/*.yml`, the effective repository ruleset, and Actions
-  policy using read-only inspection. Require exact stable check names and
-  permission boundaries without copying numeric IDs or run-specific state.
+  policy using read-only inspection. Require exact stable job names, trigger
+  boundaries, and permission boundaries without copying numeric IDs or
+  run-specific state.
 - Search the new architecture tree for binary/version/hash/fingerprint/status
   inventories, `DIRECTION.md`, utility-image distribution claims, mutable
   builder fallbacks, or descriptions of active plans as current behavior.
@@ -250,8 +252,9 @@ compatibility layer for nonexistent documentation consumers.
   assurance rows and verification commands, the adding guide remains
   procedural, recipe READMEs remain tool-specific, and no completed plan was
   changed.
-- Require the documentation-only pull request's `recipe-validation` and
-  `artifact-assurance` checks to report and pass without an artifact rebuild.
+- After the direct documentation-only push to `main`, require
+  `artifact-assurance` to pass without an artifact rebuild and confirm the
+  path-filtered `recipe-validation` workflow correctly does not run.
 
 ## Success Criteria
 
