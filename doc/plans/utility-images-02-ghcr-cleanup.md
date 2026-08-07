@@ -1,5 +1,7 @@
 # Plan: Delete Retired Utility Packages
 
+*Distilled: 2026-08-07*
+
 ## Summary
 
 After utility-image publication is removed from `main`, delete the exact public
