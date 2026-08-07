@@ -4,6 +4,10 @@
 validation. None of these checks proves that upstream code is safe or free of
 vulnerabilities.
 
+For the stable system-level trust boundaries behind these live records, see
+the [trust-chain architecture](doc/architecture/trust/TRUST_CHAIN.md) and
+[automation and governance](doc/architecture/trust/AUTOMATION_AND_GOVERNANCE.md).
+
 Run the repository's existing validator with `gpgv` installed:
 
 ```sh

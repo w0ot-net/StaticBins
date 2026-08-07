@@ -1,0 +1,38 @@
+# Source inputs
+
+This page owns the tracked-source and authentication boundary. Return to the
+[architecture index](../README.md).
+
+Every recipe has one committed `source.lock` and a `sources/` directory. Each
+required upstream archive is a regular tracked mode-`100644` file whose
+SHA-256, official HTTPS provenance URL, license identifier, and explicit
+authentication mode are recorded in the lock. Multi-source recipes keep every
+record and byte under the same tool-and-architecture owner.
+
+The accepted authentication modes are:
+
+- `pgp`: the recipe also tracks the detached signature, a minimal signer
+  keyring, and the exact full fingerprint. Repository validation uses `gpgv`
+  offline and fails closed on any mismatch.
+- `checksum-only`: the absence of adopted signer evidence is explicit. It is a
+  weaker assurance level, not a fallback after failed PGP verification.
+
+`scripts/recipes.py` authenticates tracked inputs and verifies their recorded
+checksums. During an artifact build, the guest copies only those tracked bytes
+and rechecks each checksum immediately before extraction. Official URLs record
+origin and support reviewed source updates; ordinary builds do not download
+from them.
+
+Source updates use temporary storage: fetch from the recorded official URL,
+verify checksum and declared authentication, inspect hosting size, review the
+contents, and explicitly commit the accepted bytes and evidence. The repository
+does not publish source-only release mirrors.
+
+Each recipe's `licenses/` directory retains reviewed project and linked-input
+materials. Its final-link archive inventory maps every external static archive
+to an exact package, version, declared license, copied license file, and
+immutable package source. The build fails on extra, missing, differently owned,
+or differently licensed linked inputs.
+
+Current fingerprints and assurance limitations remain in [`TRUST.md`](../../../TRUST.md).
+The procedural checklist is in [`adding-a-binary.md`](../../adding-a-binary.md).

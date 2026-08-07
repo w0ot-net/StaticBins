@@ -5,6 +5,12 @@ in `recipes/catalog.tsv`. Tool-specific source, configuration, build, license,
 and smoke-test logic stays inside the recipe; the root dispatcher and recipe
 validation workflow remain generic.
 
+This procedure implements the repository's stable
+[repository model](architecture/repository/REPOSITORY_MODEL.md),
+[build pipeline](architecture/build/BUILD_PIPELINE.md),
+[artifact contract](architecture/artifacts/ARTIFACT_CONTRACT.md), and
+[trust chain](architecture/trust/TRUST_CHAIN.md).
+
 ## Required layout
 
 For a tool named `<tool>` on `<architecture>`, add:

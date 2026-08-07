@@ -108,6 +108,9 @@ Static artifact validation:
 
 Documentation and distribution:
 
+- Use `doc/README.md` as the documentation authority map. When a change alters
+  a stable system contract, update the nearest owning page under
+  `doc/architecture/` as well as any task-oriented or live-status document.
 - Distribute utilities only as committed executables under `artifacts/`. GHCR
   is reserved for reusable builder environments; recipe Dockerfiles export
   local build results and must not define or publish utility runtime images.

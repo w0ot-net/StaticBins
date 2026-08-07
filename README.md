@@ -69,5 +69,7 @@ be validated with `./builders/aarch64/build.sh`, `./builders/armv7/build.sh`, or
 Buildx. Repository CI validates recipes but does not publish utility images.
 
 See [`doc/adding-a-binary.md`](doc/adding-a-binary.md) for the recipe contract.
+The broader documentation map and system architecture start at
+[`doc/README.md`](doc/README.md).
 Repository-wide build and validation rules are in
 [`AGENTS.md`](AGENTS.md).
