@@ -12,8 +12,9 @@ Repository contract:
   `recipes/<tool>/<architecture>/`, and reusable build environments in
   `builders/<architecture>/`. Internal architecture identifiers are `aarch64`
   and `x86_64`; translate them to OCI names only at container boundaries.
-- Keep a tool's container definition, guest-side build script, patches, source
-  lock, licenses, and host-side entry point together in its recipe directory.
+- Keep a tool's container definition, guest-side build script, patches, tracked
+  source archives, source lock, licenses, and host-side entry point together in
+  its recipe directory.
 - Prefer one obvious host-side command per artifact. It should create or replace
   the expected file in `artifacts/<architecture>/` and fail with a useful
   message if prerequisites or validation are missing.
@@ -48,15 +49,19 @@ Reproducible build guidance:
 - Treat builder publication as a separate maintainer operation: validate and
   publish a new versioned builder first, then commit its immutable digest before
   recipes may consume it.
-- Give each published recipe one committed source lock. Mirror every required
-  source archive to a non-replaceable repository release asset, retain the
-  official upstream as a checksum-equivalent fallback, and accept bytes only
-  after verifying the locked checksum.
+- Give each published recipe one committed source lock and keep every required
+  archive under its `sources/` directory. During a reviewed source update,
+  download from the recorded official HTTPS URL into temporary storage, verify
+  the proposed checksum, inspect the size against hosting limits, then commit
+  the exact archive with mode `100644`. Normal builds must use only those
+  tracked bytes, verify them before extraction, and must not publish source-only
+  repository releases.
 - Keep reviewed license text and a factual linked-input provenance inventory
   with each recipe. Publication must fail when the final link contains an
   archive that is missing package, version, license, or source evidence.
-- Keep downloaded source, package caches, object files, container layers, and VM
-  scratch state outside the tracked tree. Use a narrowly scoped temporary or
+- Keep unreviewed downloads, package caches, object files, container layers,
+  and VM scratch state outside the tracked tree. Reviewed recipe inputs under
+  `sources/` are the deliberate exception. Use a narrowly scoped temporary or
   cache directory and clean it safely.
 - Prefer source-level configure switches over Makefile rewriting or ad hoc
   binary patching. Document intentionally omitted features, especially Python,

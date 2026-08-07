@@ -5,6 +5,7 @@ set -eu
 : "${BUILD_JOBS:=8}"
 
 source_lock="/usr/local/share/static_bins/gdb/source.lock"
+source_input_dir="/usr/local/share/static_bins/gdb/sources"
 license_dir="/usr/local/share/licenses/gdb"
 archive_inventory="${license_dir}/archive-inventory.tsv"
 
@@ -20,8 +21,6 @@ fi
 : "${SOURCE_ARCHIVE:?missing SOURCE_ARCHIVE in source.lock}"
 : "${SOURCE_SHA256:?missing SOURCE_SHA256 in source.lock}"
 : "${SOURCE_UPSTREAM_URL:?missing SOURCE_UPSTREAM_URL in source.lock}"
-: "${SOURCE_RELEASE_TAG:?missing SOURCE_RELEASE_TAG in source.lock}"
-: "${SOURCE_MIRROR_URL:?missing SOURCE_MIRROR_URL in source.lock}"
 : "${SOURCE_LICENSE:?missing SOURCE_LICENSE in source.lock}"
 
 case "${SOURCE_ARCHIVE}" in
@@ -34,7 +33,7 @@ esac
 source_dir="/build/gdb-${SOURCE_VERSION}"
 build_dir="/build/gdb-build"
 
-for command_name in cc c++ make wget tar sha256sum file readelf strip; do
+for command_name in cc c++ cp make tar sha256sum file readelf strip; do
     if ! command -v "${command_name}" >/dev/null 2>&1; then
         echo "error: locked builder is missing ${command_name}" >&2
         exit 1
@@ -64,34 +63,14 @@ fi
 mkdir -p /build /out
 cd /build
 
-source_candidate="/build/${SOURCE_ARCHIVE}.part"
+source_input="${source_input_dir}/${SOURCE_ARCHIVE}"
 source_archive="/build/${SOURCE_ARCHIVE}"
-source_found=false
-
-for source_url in "${SOURCE_MIRROR_URL}" "${SOURCE_UPSTREAM_URL}"; do
-    rm -f "${source_candidate}"
-    echo "Fetching ${SOURCE_ARCHIVE} from ${source_url}"
-    if ! wget -q --timeout=30 --tries=3 -O "${source_candidate}" "${source_url}"; then
-        echo "warning: source fetch failed: ${source_url}" >&2
-        continue
-    fi
-
-    if ! echo "${SOURCE_SHA256}  ${source_candidate}" | sha256sum -c -; then
-        echo "warning: source checksum rejected: ${source_url}" >&2
-        continue
-    fi
-
-    mv "${source_candidate}" "${source_archive}"
-    source_found=true
-    break
-done
-
-rm -f "${source_candidate}"
-
-if [ "${source_found}" != true ]; then
-    echo "error: no approved source URL supplied ${SOURCE_ARCHIVE} with the locked checksum" >&2
+if [ ! -f "${source_input}" ]; then
+    echo "error: missing tracked GDB source archive: ${source_input}" >&2
     exit 1
 fi
+cp "${source_input}" "${source_archive}"
+echo "${SOURCE_SHA256}  ${source_archive}" | sha256sum -c -
 
 tar -xf "${source_archive}"
 mkdir -p "${build_dir}"
@@ -241,6 +220,11 @@ if ! readelf -h /out/gdb | grep -Eq 'Machine:[[:space:]]+AArch64'; then
     exit 1
 fi
 
+if ! readelf -h /out/gdb | grep -Eq 'Type:[[:space:]]+DYN'; then
+    echo "error: GDB is not an ELF ET_DYN static-PIE executable" >&2
+    exit 1
+fi
+
 if readelf -l /out/gdb | grep -q 'Requesting program interpreter'; then
     echo "error: GDB has a dynamic program interpreter" >&2
     exit 1
@@ -249,6 +233,11 @@ fi
 if readelf -d /out/gdb 2>/dev/null | grep -q '(NEEDED)'; then
     echo "error: GDB has dynamic library dependencies" >&2
     readelf -d /out/gdb | grep '(NEEDED)' >&2
+    exit 1
+fi
+
+if readelf -S /out/gdb | grep -Eq '[.]debug|[.]symtab'; then
+    echo "error: GDB retains debug or full symbol-table sections" >&2
     exit 1
 fi
 

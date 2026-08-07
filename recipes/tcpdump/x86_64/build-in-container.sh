@@ -5,6 +5,7 @@ set -eu
 : "${BUILD_JOBS:=8}"
 
 source_lock="/usr/local/share/static_bins/tcpdump/source.lock"
+source_input_dir="/usr/local/share/static_bins/tcpdump/sources"
 license_dir="/usr/local/share/licenses/tcpdump"
 archive_inventory="${license_dir}/archive-inventory.tsv"
 
@@ -18,9 +19,8 @@ fi
 
 for source_field in \
     SOURCE_VERSION SOURCE_ARCHIVE SOURCE_SHA256 SOURCE_UPSTREAM_URL \
-    SOURCE_RELEASE_TAG SOURCE_MIRROR_URL SOURCE_LICENSE LIBPCAP_VERSION \
-    LIBPCAP_ARCHIVE LIBPCAP_SHA256 LIBPCAP_UPSTREAM_URL LIBPCAP_MIRROR_URL \
-    LIBPCAP_LICENSE; do
+    SOURCE_LICENSE LIBPCAP_VERSION LIBPCAP_ARCHIVE LIBPCAP_SHA256 \
+    LIBPCAP_UPSTREAM_URL LIBPCAP_LICENSE; do
     eval "source_value=\${${source_field}:-}"
     if [ -z "${source_value}" ]; then
         echo "error: missing ${source_field} in source.lock" >&2
@@ -37,7 +37,7 @@ for source_archive_name in "${SOURCE_ARCHIVE}" "${LIBPCAP_ARCHIVE}"; do
     esac
 done
 
-for command_name in apk awk cc file grep make readelf readlink sed sha256sum sort strip tar wget; do
+for command_name in apk awk cc cp file grep make readelf readlink sed sha256sum sort strip tar; do
     if ! command -v "${command_name}" >/dev/null 2>&1; then
         echo "error: locked builder is missing ${command_name}" >&2
         exit 1
@@ -69,42 +69,22 @@ tcpdump_build="${build_root}/tcpdump-build"
 
 mkdir -p "${build_root}" "${prefix}" /out
 
-fetch_source() {
+copy_source() {
     archive_name="$1"
     archive_sha256="$2"
-    mirror_url="$3"
-    upstream_url="$4"
-    candidate="${build_root}/${archive_name}.part"
+    source_input="${source_input_dir}/${archive_name}"
     destination="${build_root}/${archive_name}"
-    source_found=false
 
-    for source_url in "${mirror_url}" "${upstream_url}"; do
-        rm -f -- "${candidate}"
-        echo "Fetching ${archive_name} from ${source_url}"
-        if ! wget -q --timeout=30 --tries=3 -O "${candidate}" "${source_url}"; then
-            echo "warning: source fetch failed: ${source_url}" >&2
-            continue
-        fi
-        if ! echo "${archive_sha256}  ${candidate}" | sha256sum -c -; then
-            echo "warning: source checksum rejected: ${source_url}" >&2
-            continue
-        fi
-        mv -- "${candidate}" "${destination}"
-        source_found=true
-        break
-    done
-    rm -f -- "${candidate}"
-
-    if [ "${source_found}" != true ]; then
-        echo "error: no approved URL supplied ${archive_name} with the locked checksum" >&2
+    if [ ! -f "${source_input}" ]; then
+        echo "error: missing tracked source archive: ${source_input}" >&2
         exit 1
     fi
+    cp "${source_input}" "${destination}"
+    echo "${archive_sha256}  ${destination}" | sha256sum -c -
 }
 
-fetch_source "${LIBPCAP_ARCHIVE}" "${LIBPCAP_SHA256}" \
-    "${LIBPCAP_MIRROR_URL}" "${LIBPCAP_UPSTREAM_URL}"
-fetch_source "${SOURCE_ARCHIVE}" "${SOURCE_SHA256}" \
-    "${SOURCE_MIRROR_URL}" "${SOURCE_UPSTREAM_URL}"
+copy_source "${LIBPCAP_ARCHIVE}" "${LIBPCAP_SHA256}"
+copy_source "${SOURCE_ARCHIVE}" "${SOURCE_SHA256}"
 
 tar -xf "${build_root}/${LIBPCAP_ARCHIVE}" -C "${build_root}"
 tar -xf "${build_root}/${SOURCE_ARCHIVE}" -C "${build_root}"

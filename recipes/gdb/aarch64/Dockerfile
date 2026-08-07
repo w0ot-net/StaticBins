@@ -7,6 +7,7 @@ FROM ${BUILDER_IMAGE} AS builder
 ARG BUILD_JOBS=8
 
 COPY source.lock /usr/local/share/static_bins/gdb/source.lock
+COPY sources /usr/local/share/static_bins/gdb/sources
 COPY licenses /usr/local/share/licenses/gdb
 COPY build-in-container.sh /usr/local/bin/build-static-gdb
 

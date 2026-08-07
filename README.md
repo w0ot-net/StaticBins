@@ -22,7 +22,9 @@ The root command reads the minimal allowlist in `recipes/catalog.tsv` and
 delegates to the matching recipe. Committed executables live in
 `artifacts/<architecture>/`, tool-specific builds in
 `recipes/<tool>/<architecture>/`, and locked reusable environments in
-`builders/<architecture>/`.
+`builders/<architecture>/`. Each supported recipe also retains its exact,
+checksum-locked upstream archives under `sources/`, so an ordinary build does
+not depend on an upstream source URL.
 
 See the recipe README for
 [GDB](recipes/gdb/aarch64/README.md) or

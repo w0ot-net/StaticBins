@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib.util
+import hashlib
 import os
 import shutil
 import subprocess
@@ -41,9 +42,11 @@ class CatalogFixture:
     ) -> dict[str, str]:
         recipe_dir = self.root / "recipes" / name / architecture
         license_dir = recipe_dir / "licenses"
+        source_dir = recipe_dir / "sources"
         builder_dir = self.root / "builders" / architecture
         output = self.root / "artifacts" / architecture / name
         license_dir.mkdir(parents=True, exist_ok=True)
+        source_dir.mkdir(parents=True, exist_ok=True)
         builder_dir.mkdir(parents=True, exist_ok=True)
         output.parent.mkdir(parents=True, exist_ok=True)
 
@@ -54,24 +57,24 @@ class CatalogFixture:
             encoding="utf-8",
         )
         (recipe_dir / "Dockerfile").write_text("FROM scratch\n", encoding="utf-8")
+        source_bytes = f"{name}-{version} source fixture\n".encode()
+        source_archive = f"{name}-{version}.tar.xz"
+        (source_dir / source_archive).write_bytes(source_bytes)
         source_lock = (
             f"SOURCE_VERSION={version}\n"
-            f"SOURCE_ARCHIVE={name}-{version}.tar.xz\n"
-            f"SOURCE_SHA256={'2' * 64}\n"
+            f"SOURCE_ARCHIVE={source_archive}\n"
+            f"SOURCE_SHA256={hashlib.sha256(source_bytes).hexdigest()}\n"
             f"SOURCE_UPSTREAM_URL=https://upstream.invalid/{name}.tar.xz\n"
-            f"SOURCE_RELEASE_TAG={name}-{version}-source\n"
-            f"SOURCE_MIRROR_URL=https://mirror.invalid/releases/download/"
-            f"{name}-{version}-source/{name}-{version}.tar.xz\n"
             "SOURCE_LICENSE=GPL-3.0-or-later\n"
         )
         if name == "tcpdump":
+            libpcap_bytes = b"libpcap-1.10.4 source fixture\n"
+            (source_dir / "libpcap-1.10.4.tar.gz").write_bytes(libpcap_bytes)
             source_lock += (
                 "LIBPCAP_VERSION=1.10.4\n"
                 "LIBPCAP_ARCHIVE=libpcap-1.10.4.tar.gz\n"
-                f"LIBPCAP_SHA256={'3' * 64}\n"
+                f"LIBPCAP_SHA256={hashlib.sha256(libpcap_bytes).hexdigest()}\n"
                 "LIBPCAP_UPSTREAM_URL=https://upstream.invalid/libpcap.tar.gz\n"
-                "LIBPCAP_MIRROR_URL=https://mirror.invalid/releases/download/"
-                f"{name}-{version}-source/libpcap-1.10.4.tar.gz\n"
                 "LIBPCAP_LICENSE=BSD-3-Clause\n"
             )
         (recipe_dir / "source.lock").write_text(source_lock, encoding="utf-8")
@@ -188,7 +191,8 @@ class RecipeCatalogTests(unittest.TestCase):
             ),
             (
                 "malformed dependency checksum",
-                f"LIBPCAP_SHA256={'3' * 64}",
+                "LIBPCAP_SHA256="
+                + hashlib.sha256(b"libpcap-1.10.4 source fixture\n").hexdigest(),
                 "LIBPCAP_SHA256=not-a-checksum",
                 "LIBPCAP_SHA256 must be",
             ),
@@ -205,10 +209,12 @@ class RecipeCatalogTests(unittest.TestCase):
                 "source archives must be distinct",
             ),
             (
-                "wrong dependency mirror release",
-                "tcpdump-4.99.4-source/libpcap-1.10.4.tar.gz",
-                "other-release/libpcap-1.10.4.tar.gz",
-                "LIBPCAP_MIRROR_URL does not match",
+                "obsolete release field",
+                "LIBPCAP_LICENSE=BSD-3-Clause\n",
+                "LIBPCAP_LICENSE=BSD-3-Clause\n"
+                + "SOURCE_"
+                + "MIRROR_URL=https://mirror.invalid/source\n",
+                "unexpected fields: " + "SOURCE_" + "MIRROR_URL",
             ),
             (
                 "unexpected third source field",
@@ -224,6 +230,54 @@ class RecipeCatalogTests(unittest.TestCase):
             with self.subTest(label=label):
                 lock_path = fixture.root / "recipes/tcpdump/x86_64/source.lock"
                 lock_path.write_text(original_lock.replace(old, new), encoding="utf-8")
+                with self.assertRaisesRegex(recipes.CatalogError, expected_message):
+                    recipes.load_catalog(fixture.root, catalog)
+
+    def test_source_archive_state_is_enforced(self) -> None:
+        cases = (
+            ("missing", "missing regular source archive"),
+            ("symlink", "missing regular source archive"),
+            ("untracked", "untracked source archive"),
+            ("wrong mode", "source archive has Git mode 100755"),
+            ("corrupt", "source archive checksum does not match"),
+        )
+        for mutation, expected_message in cases:
+            with self.subTest(mutation=mutation):
+                temporary_directory, fixture = self.make_fixture()
+                self.addCleanup(temporary_directory.cleanup)
+                fixture.add_recipe()
+                catalog = fixture.write_catalog()
+                fixture.track()
+                relative_archive = "recipes/gdb/aarch64/sources/gdb-1.0.tar.xz"
+                archive_path = fixture.root / relative_archive
+
+                if mutation == "missing":
+                    archive_path.unlink()
+                elif mutation == "symlink":
+                    archive_path.unlink()
+                    archive_path.symlink_to("../source.lock")
+                elif mutation == "untracked":
+                    subprocess.run(
+                        ["git", "-C", str(fixture.root), "rm", "--cached", "--", relative_archive],
+                        check=True,
+                        stdout=subprocess.DEVNULL,
+                    )
+                elif mutation == "wrong mode":
+                    subprocess.run(
+                        [
+                            "git",
+                            "-C",
+                            str(fixture.root),
+                            "update-index",
+                            "--chmod=+x",
+                            "--",
+                            relative_archive,
+                        ],
+                        check=True,
+                    )
+                else:
+                    archive_path.write_bytes(b"corrupt source fixture\n")
+
                 with self.assertRaisesRegex(recipes.CatalogError, expected_message):
                     recipes.load_catalog(fixture.root, catalog)
 

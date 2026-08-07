@@ -8,6 +8,7 @@ readonly OUTPUT_DIR="${REPO_ROOT}/artifacts/aarch64"
 readonly OUTPUT_FILE="${OUTPUT_DIR}/gdb"
 readonly ENVIRONMENT_LOCK="${REPO_ROOT}/builders/aarch64/environment.lock"
 readonly SOURCE_LOCK="${SCRIPT_DIR}/source.lock"
+readonly SOURCE_DIR="${SCRIPT_DIR}/sources"
 readonly PLATFORM="linux/arm64"
 readonly BUILD_JOBS="${BUILD_JOBS:-8}"
 
@@ -32,12 +33,14 @@ cleanup() {
         rm -rf -- "${temporary_dir}"
     fi
 }
-trap cleanup EXIT
+trap cleanup EXIT HUP INT TERM
 
-if ! command -v docker >/dev/null 2>&1; then
-    echo "error: Docker is required" >&2
-    exit 1
-fi
+for command_name in docker file readelf sha256sum; do
+    if ! command -v "${command_name}" >/dev/null 2>&1; then
+        echo "error: ${command_name} is required" >&2
+        exit 1
+    fi
+done
 
 if ! docker info >/dev/null 2>&1; then
     echo "error: the Docker daemon is not available to this user" >&2
@@ -84,36 +87,56 @@ else
         --env "BUILD_JOBS=${BUILD_JOBS}" \
         --mount "type=bind,src=${SCRIPT_DIR}/build-in-container.sh,dst=/usr/local/bin/build-static-gdb,readonly" \
         --mount "type=bind,src=${SOURCE_LOCK},dst=/usr/local/share/static_bins/gdb/source.lock,readonly" \
+        --mount "type=bind,src=${SOURCE_DIR},dst=/usr/local/share/static_bins/gdb/sources,readonly" \
         --mount "type=bind,src=${SCRIPT_DIR}/licenses,dst=/usr/local/share/licenses/gdb,readonly" \
         --mount "type=bind,src=${temporary_dir},dst=/out" \
         "${BUILDER_IMAGE}" \
         /usr/local/bin/build-static-gdb
 fi
 
-install -m 0755 "${temporary_dir}/gdb" "${OUTPUT_FILE}"
-
-echo
-echo "Built ${OUTPUT_FILE}"
-file "${OUTPUT_FILE}"
-sha256sum "${OUTPUT_FILE}"
-
-if command -v readelf >/dev/null 2>&1; then
-    if ! readelf -h "${OUTPUT_FILE}" | grep -Eq 'Machine:[[:space:]]+AArch64'; then
+candidate="${temporary_dir}/gdb"
+validate_elf() {
+    local binary="$1"
+    file "${binary}"
+    if ! readelf -h "${binary}" | grep -Eq 'Type:[[:space:]]+DYN'; then
+        echo "error: output is not an ELF ET_DYN static-PIE executable" >&2
+        exit 1
+    fi
+    if ! readelf -h "${binary}" | grep -Eq 'Machine:[[:space:]]+AArch64'; then
         echo "error: output is not an AArch64 executable" >&2
         exit 1
     fi
-    if readelf -l "${OUTPUT_FILE}" | grep -q 'Requesting program interpreter'; then
+    if readelf -l "${binary}" | grep -q 'Requesting program interpreter'; then
         echo "error: output has a dynamic program interpreter" >&2
         exit 1
     fi
-    if readelf -d "${OUTPUT_FILE}" 2>/dev/null | grep -q '(NEEDED)'; then
+    if readelf -d "${binary}" 2>/dev/null | grep -q '(NEEDED)'; then
         echo "error: output has dynamic library dependencies" >&2
         exit 1
     fi
-fi
+    if readelf -S "${binary}" | grep -Eq '[.]debug|[.]symtab'; then
+        echo "error: output retains debug or full symbol-table sections" >&2
+        exit 1
+    fi
+}
 
+validate_elf "${candidate}"
 docker run --rm \
     --platform "${PLATFORM}" \
-    --mount "type=bind,src=${OUTPUT_FILE},dst=/gdb,readonly" \
+    --mount "type=bind,src=${candidate},dst=/gdb,readonly" \
     "${ALPINE_IMAGE}" \
     /gdb --batch --version
+read -r candidate_sha256 _ < <(sha256sum "${candidate}")
+
+install -m 0755 "${candidate}" "${OUTPUT_FILE}"
+validate_elf "${OUTPUT_FILE}"
+read -r installed_sha256 _ < <(sha256sum "${OUTPUT_FILE}")
+if [[ "${installed_sha256}" != "${candidate_sha256}" ]]; then
+    echo "error: installed GDB does not match the validated candidate" >&2
+    exit 1
+fi
+
+echo
+echo "Built ${OUTPUT_FILE}"
+wc -c "${OUTPUT_FILE}"
+sha256sum "${OUTPUT_FILE}"

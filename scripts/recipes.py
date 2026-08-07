@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+import hashlib
 import json
 import os
 import re
@@ -119,6 +120,34 @@ def _require_inside(root: Path, path: Path, field: str, line_number: int) -> Non
         raise _error(line_number, f"{field} escapes the repository: {path}")
 
 
+def _require_source_archive(
+    root: Path,
+    recipe_path: Path,
+    archive_name: str,
+    expected_sha256: str,
+    field: str,
+    line_number: int,
+) -> None:
+    archive_path = recipe_path / "sources" / archive_name
+    _require_inside(root, archive_path, field, line_number)
+    if archive_path.is_symlink() or not archive_path.is_file():
+        raise _error(line_number, f"missing regular {field}: {archive_path}")
+
+    relative_path = archive_path.relative_to(root).as_posix()
+    mode = _git_index_mode(root, relative_path)
+    if mode is None:
+        raise _error(line_number, f"untracked {field}: {relative_path}")
+    if mode != "100644":
+        raise _error(line_number, f"{field} has Git mode {mode}: {relative_path}")
+
+    digest = hashlib.sha256()
+    with archive_path.open("rb") as archive_file:
+        for chunk in iter(lambda: archive_file.read(1024 * 1024), b""):
+            digest.update(chunk)
+    if digest.hexdigest() != expected_sha256:
+        raise _error(line_number, f"{field} checksum does not match source.lock: {relative_path}")
+
+
 def _validate_recipe(root: Path, row: dict[str, str], line_number: int) -> Recipe:
     for field in FIELDS:
         value = row[field]
@@ -169,8 +198,6 @@ def _validate_recipe(root: Path, row: dict[str, str], line_number: int) -> Recip
         "SOURCE_ARCHIVE",
         "SOURCE_SHA256",
         "SOURCE_UPSTREAM_URL",
-        "SOURCE_RELEASE_TAG",
-        "SOURCE_MIRROR_URL",
         "SOURCE_LICENSE",
     }
     missing_source_fields = sorted(required_source_fields - source_values.keys())
@@ -188,15 +215,16 @@ def _validate_recipe(root: Path, row: dict[str, str], line_number: int) -> Recip
     source_archive = source_values["SOURCE_ARCHIVE"]
     if PurePosixPath(source_archive).name != source_archive or source_archive in {".", ".."}:
         raise _error(line_number, "SOURCE_ARCHIVE must be a safe filename")
-    release_tag = source_values["SOURCE_RELEASE_TAG"]
-    if VERSION_RE.fullmatch(release_tag) is None:
-        raise _error(line_number, "SOURCE_RELEASE_TAG must be a safe release tag")
-    for url_field in ("SOURCE_UPSTREAM_URL", "SOURCE_MIRROR_URL"):
-        if not source_values[url_field].startswith("https://"):
-            raise _error(line_number, f"{url_field} must use HTTPS")
-    mirror_suffix = f"/{release_tag}/{source_archive}"
-    if not source_values["SOURCE_MIRROR_URL"].endswith(mirror_suffix):
-        raise _error(line_number, "SOURCE_MIRROR_URL does not match the release tag and archive")
+    if not source_values["SOURCE_UPSTREAM_URL"].startswith("https://"):
+        raise _error(line_number, "SOURCE_UPSTREAM_URL must use HTTPS")
+    _require_source_archive(
+        root,
+        recipe_path,
+        source_archive,
+        source_values["SOURCE_SHA256"],
+        "source archive",
+        line_number,
+    )
 
     if name == "tcpdump":
         required_libpcap_fields = {
@@ -204,7 +232,6 @@ def _validate_recipe(root: Path, row: dict[str, str], line_number: int) -> Recip
             "LIBPCAP_ARCHIVE",
             "LIBPCAP_SHA256",
             "LIBPCAP_UPSTREAM_URL",
-            "LIBPCAP_MIRROR_URL",
             "LIBPCAP_LICENSE",
         }
         expected_fields = required_source_fields | required_libpcap_fields
@@ -237,14 +264,22 @@ def _validate_recipe(root: Path, row: dict[str, str], line_number: int) -> Recip
             raise _error(line_number, "LIBPCAP_ARCHIVE must be a safe filename")
         if libpcap_archive == source_archive:
             raise _error(line_number, "tcpdump source archives must be distinct")
-        for url_field in ("LIBPCAP_UPSTREAM_URL", "LIBPCAP_MIRROR_URL"):
-            if not source_values[url_field].startswith("https://"):
-                raise _error(line_number, f"{url_field} must use HTTPS")
-        libpcap_mirror_suffix = f"/{release_tag}/{libpcap_archive}"
-        if not source_values["LIBPCAP_MIRROR_URL"].endswith(libpcap_mirror_suffix):
+        if not source_values["LIBPCAP_UPSTREAM_URL"].startswith("https://"):
+            raise _error(line_number, "LIBPCAP_UPSTREAM_URL must use HTTPS")
+        _require_source_archive(
+            root,
+            recipe_path,
+            libpcap_archive,
+            source_values["LIBPCAP_SHA256"],
+            "libpcap source archive",
+            line_number,
+        )
+    else:
+        unexpected_fields = sorted(source_values.keys() - required_source_fields)
+        if unexpected_fields:
             raise _error(
                 line_number,
-                "LIBPCAP_MIRROR_URL does not match the release tag and archive",
+                f"source.lock has unexpected fields: {', '.join(unexpected_fields)}",
             )
 
     environment_values = _read_lock(root / environment_lock, line_number)

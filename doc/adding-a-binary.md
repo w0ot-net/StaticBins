@@ -17,6 +17,8 @@ recipes/<tool>/<architecture>/
   build.sh
   build-in-container.sh
   source.lock
+  sources/
+    <checksum-locked upstream archives>
   licenses/
     NOTICE.md
     archive-inventory.tsv
@@ -32,13 +34,18 @@ host `build.sh` and committed output must be executable. The host command must
 be non-interactive, validate a temporary candidate completely before replacing
 the committed artifact, and enforce the target architecture and static-ELF
 contract. `source.lock` owns the source version, archive, checksum, official
-URL, immutable mirror release and URL, and license identifier.
+provenance URL, and license identifier. The corresponding regular, non-symlink
+archive must be committed with mode `100644` at `sources/<archive>` and its
+actual bytes must match the lock before extraction.
 
 If a tool requires another source archive, keep that dependency in the same
-tool-owned lock and immutable source release. Extend catalog and mirror
-validation only for that bounded lock shape, verify every archive independently,
-and keep dependency-specific fetching and configuration inside the recipe; the
-catalog is not a general dependency resolver.
+tool-owned lock and `sources/` directory. Extend catalog validation only for
+that bounded lock shape, verify every archive independently, and keep
+dependency-specific configuration inside the recipe; the catalog is not a
+general dependency resolver. Source updates are reviewed repository changes:
+download from the recorded official HTTPS URL into temporary storage, verify
+the checksum and size, and explicitly stage the archive. Do not create
+source-only releases for recipe inputs.
 
 ## Catalog row
 

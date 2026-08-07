@@ -9,23 +9,24 @@ direct recipe command:
 ./recipes/tcpdump/x86_64/build.sh
 ```
 
-Both commands require Bash, Docker, and access to the public images and source
-URLs named by the committed locks. The build consumes the exact builder digest
-in `builders/x86_64/environment.lock`, validates a temporary candidate, and
-writes `artifacts/x86_64/tcpdump` only after every check passes. On non-x86-64
-Linux hosts it may register the pinned QEMU `binfmt_misc` helper with
-`--privileged` when amd64 container support is absent. Set `BUILD_JOBS` to tune
-compilation parallelism:
+Both commands require Bash, Docker, and access to the public images named by the
+committed environment lock. The build consumes the exact builder digest in
+`builders/x86_64/environment.lock` and both tracked archives under `sources/`,
+validates a temporary candidate, and writes `artifacts/x86_64/tcpdump` only
+after every check passes. On non-x86-64 Linux hosts it may register the pinned
+QEMU `binfmt_misc` helper with `--privileged` when amd64 container support is
+absent. Set `BUILD_JOBS` to tune compilation parallelism:
 
 ```sh
 BUILD_JOBS=4 ./build.sh tcpdump
 ```
 
-`source.lock` owns both source versions, archive names, checksums, the shared
-immutable repository release, official fallback URLs, and license identifiers.
-Each URL is accepted only after its corresponding locked checksum passes.
-Reviewed license material and the exact linked-archive provenance inventory are
-under `licenses/` and are copied into the artifact image.
+`source.lock` owns both source versions, archive names, checksums, official
+provenance URLs, and license identifiers. The accepted source copies are
+committed under `sources/` and checksum-verified before extraction; a normal
+build does not download them. Reviewed license material and the exact
+linked-archive provenance inventory are under `licenses/` and are copied into
+the artifact image.
 
 The build rejects an ELF interpreter, dynamic dependencies, a wrong machine,
 retained debug or full symbol-table sections, and an incomplete linked-archive

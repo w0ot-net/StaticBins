@@ -8,22 +8,23 @@ repository root, use the stable dispatcher or the direct recipe command:
 ./recipes/gdb/aarch64/build.sh
 ```
 
-Both commands require Bash, Docker, and access to the public images and source
-URLs named by the committed locks. The build consumes the exact builder digest
-in `builders/aarch64/environment.lock`, validates the candidate, and writes
-`artifacts/aarch64/gdb`. On non-AArch64 Linux hosts it uses QEMU user-mode
-emulation and may register the pinned `binfmt_misc` helper with `--privileged`
-when support is absent. Set `BUILD_JOBS` to tune compilation parallelism:
+Both commands require Bash, Docker, and access to the public images named by the
+committed environment lock. The build consumes the exact builder digest in
+`builders/aarch64/environment.lock` and the tracked archive under `sources/`,
+validates a temporary candidate, and writes `artifacts/aarch64/gdb` only after
+every check passes. On non-AArch64 Linux hosts it uses QEMU user-mode emulation
+and may register the pinned `binfmt_misc` helper with `--privileged` when support
+is absent. Set `BUILD_JOBS` to tune compilation parallelism:
 
 ```sh
 BUILD_JOBS=4 ./build.sh gdb
 ```
 
-`source.lock` owns the version, archive, checksum, immutable repository mirror,
-official fallback URL, and license identifier. Either URL is accepted only
-after the same locked checksum passes. Reviewed license material and the exact
-linked-archive provenance inventory are under `licenses/` and are copied into
-the artifact image.
+`source.lock` owns the version, archive, checksum, official provenance URL, and
+license identifier. The accepted source copy is committed under `sources/` and
+is checksum-verified before extraction; a normal build does not download it.
+Reviewed license material and the exact linked-archive provenance inventory are
+under `licenses/` and are copied into the artifact image.
 
 The build rejects an ELF interpreter, dynamic dependencies, a wrong machine,
 or an incomplete link inventory. Python, Guile, debuginfod, Babeltrace, libipt,
