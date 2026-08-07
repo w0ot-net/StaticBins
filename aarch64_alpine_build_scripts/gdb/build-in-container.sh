@@ -11,28 +11,27 @@ source_url="https://ftp.gnu.org/gnu/gdb/${source_archive}"
 source_dir="/build/gdb-${GDB_VERSION}"
 build_dir="/build/gdb-build"
 
-apk add --no-cache \
-    build-base \
-    ca-certificates \
-    expat-dev \
-    expat-static \
-    file \
-    gmp-dev \
-    gmp-static \
-    linux-headers \
-    mpfr-dev \
-    ncurses-dev \
-    ncurses-static \
-    tar \
-    texinfo \
-    wget \
-    xz \
-    xz-dev \
-    xz-static \
-    zlib-dev \
-    zlib-static \
-    zstd-dev \
-    zstd-static
+for command_name in cc c++ make wget tar sha256sum file readelf strip; do
+    if ! command -v "${command_name}" >/dev/null 2>&1; then
+        echo "error: locked builder is missing ${command_name}" >&2
+        exit 1
+    fi
+done
+
+for archive_path in \
+    /usr/lib/libc.a \
+    /usr/lib/libexpat.a \
+    /usr/lib/libgmp.a \
+    /usr/lib/libmpfr.a \
+    /usr/lib/libncursesw.a \
+    /usr/lib/liblzma.a \
+    /usr/lib/libz.a \
+    /usr/lib/libzstd.a; do
+    if [ ! -f "${archive_path}" ]; then
+        echo "error: locked builder is missing ${archive_path}" >&2
+        exit 1
+    fi
+done
 
 mkdir -p /build /out
 cd /build

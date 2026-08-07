@@ -34,6 +34,12 @@ Reproducible build guidance:
   Record relevant source, environment, dependency, and output versions. Do not
   claim byte-for-byte reproducibility unless it has actually been demonstrated;
   the primary requirement is that a fresh checkout can repeat the build.
+- A normal artifact build must consume the committed builder digest from the
+  architecture's environment lock. Do not silently fall back to a mutable tag,
+  base image, or fresh package resolution when that digest is unavailable.
+- Treat builder publication as a separate maintainer operation: validate and
+  publish a new versioned builder first, then commit its immutable digest before
+  recipes may consume it.
 - Keep downloaded source, package caches, object files, container layers, and VM
   scratch state outside the tracked tree. Use a narrowly scoped temporary or
   cache directory and clean it safely.
