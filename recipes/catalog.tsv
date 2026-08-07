@@ -1,3 +1,5 @@
 name	architecture	enabled
 gdb	aarch64	true
+gdbserver	aarch64	true
+gdbserver	x86_64	true
 tcpdump	x86_64	true

@@ -23,6 +23,13 @@ and rechecks each checksum immediately before extraction. Official URLs record
 origin and support reviewed source updates; ordinary builds do not download
 from them.
 
+A downloaded full-system smoke-test kernel or base image is a separate
+validation-environment input, not an upstream tool source. A recipe that
+genuinely requires one records its immutable URL, checksum, and authentication
+level in a dedicated lock, verifies it before boot, and caches it only outside
+the tracked tree. It must not treat that input as linked source or copy it into
+the distributed artifact.
+
 Source updates use temporary storage: fetch from the recorded official URL,
 verify checksum and declared authentication, inspect hosting size, review the
 contents, and explicitly commit the accepted bytes and evidence. The repository

@@ -28,6 +28,14 @@ Failure before installation leaves the committed artifact untouched. Temporary
 state is cleaned narrowly; expensive BuildKit caches and intentional diagnostic
 outputs may be retained outside the tracked tree for a bounded retry.
 
+Target execution normally uses the recipe's target-platform container. When a
+focused test depends on kernel behavior that QEMU user-mode cannot provide, a
+recipe may boot a declarative full-system VM solely for validation. That path
+pins and verifies its kernel or base input, generates scratch state outside the
+repository, commits the provisioning and test harness rather than a disk image,
+and still installs only the validated utility. It does not replace Buildx as
+the artifact build backend.
+
 This path is distinct from `python3 scripts/recipes.py validate`. The validator
 checks repository structure, tracked evidence, authentication, locks, modes,
 and artifact-manifest consistency without compiling. A build independently
