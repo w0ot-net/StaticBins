@@ -150,3 +150,40 @@ and no `DT_NEEDED` before installing the candidate.
 - The unsigned-tag limitation, exact official Git commit, LibreSSL link, all
   inputs/licenses, checksums, and `Not verified` statuses are accurately
   recorded.
+
+## Execution Notes
+
+Completed on 2026-08-07.
+
+- Implementation commit `afe29b3` added both socat 1.8.1.3 recipes, identical
+  2,785,280-byte source archives, complete license/link evidence, catalog and
+  trust records, and two validated artifacts. The tracked archive is the exact
+  deterministic `git archive` of lightweight tag `tag-1.8.1.3` at commit
+  `12c08bf66d709fba17035ce95d85bd218428d9ba`; repository validation reports
+  both copies explicitly as `checksum-only`.
+- A single native evidence build established the final command and complete
+  link inventory: socat's `libxio.a`, LibreSSL `libssl.a`/`libcrypto.a`, musl
+  libc/rt/util/ssp support archives, and GCC `libgcc`/`libgcc_eh`. The cached
+  late-validation retries corrected only that inventory and the version-line
+  assertion. `SOURCE_DATE_EPOCH=1782453234`, the accepted commit timestamp,
+  makes the compiled banner independent of wall-clock build time.
+- The x86-64 artifact replaced the 5,906,936-byte legacy file at SHA-256
+  `2a75b56b2ebc6eb1b0bdf884d030f2fe23463035d40d7ce8e4886ae99045aa87`.
+  The validated 1,896,280-byte replacement is
+  `3bfc18c03781e08a3c486317c6ef9b017c02118add90ddda8e91f7f326ba959b`.
+- The only AArch64 build completed under user-mode emulation in about six
+  minutes. Its validated 1,904,480-byte artifact is
+  `ef43f32e17f78a26ea78509b6003b7b5048aa2188c48bc85667b374b137c6ccf`.
+- Both outputs are stripped static native `ET_EXEC` files, report version
+  1.8.1.3 and the full promised relay feature set including SCTP and LibreSSL
+  TLS, and omit readline, libwrap, and FIPS. Target-architecture tests relayed
+  unique payloads over bounded loopback TCP, UNIX sockets, and ephemeral TLS
+  endpoints with no public network namespace.
+- Offline validation accepted eight enabled recipes and printed the two
+  expected socat checksum-only notices. All 20 recipe unit tests, shell syntax,
+  dispatcher listing, the complete artifact checksum manifest, and task diff
+  checks passed.
+- Post-push runs `31205698983` (`recipe-validation`) and `31205698839`
+  (`artifact-assurance`) passed. Both tcpdump rebuild jobs were skipped because
+  its trust boundary was unchanged. No utility image or attestation claim was
+  added; both artifacts remain `Not verified`.
