@@ -8,7 +8,9 @@ provenance and acceptance checksums. Remove the main-repository source-mirror
 workflow and release-specific schema, then retire the two existing immutable
 source-only releases after the replacement source paths are pushed and
 verified. Continue distributing user-facing executables through `artifacts/`;
-this plan does not introduce binary GitHub Releases or change GHCR publication.
+this plan does not introduce binary GitHub Releases or change the GHCR
+publication workflow, names, or tags. The recipe image digests will move when
+the revised locks and notices are published, even if executable bytes do not.
 
 ## Problem
 
@@ -63,11 +65,15 @@ In scope:
 
 Out of scope:
 
-- Removing or changing builder and artifact publication through GHCR.
+- Removing or changing GHCR publication workflows, package names, or tag
+  conventions.
 - Creating binary GitHub Releases, artifact checksum sidecars, or a new
   artifact index or directory layout.
 - Adding object storage, Git LFS, OCI source artifacts, or a separate source
   mirror repository.
+- Adding a source-signature trust store or a new signature-verification scheme;
+  the already reviewed SHA-256 locks remain the acceptance authority for these
+  exact archives.
 - Mirroring Alpine repositories, making builder bootstrap offline, or vendoring
   every Alpine package source named by a linked-archive inventory.
 - Changing GDB, tcpdump, libpcap, Alpine, or dependency versions, configure
@@ -122,10 +128,10 @@ reviewed distribution materials, not build inputs.
 
 Delete `.github/workflows/mirror-sources.yml` rather than repurposing it. Source
 ingest is a reviewed repository change: a maintainer downloads the exact
-official archive into temporary storage, verifies its upstream signature when
-available and its proposed lock checksum, checks its size against repository
-hosting limits, then explicitly stages the archive with the lock and recipe
-change. Normal recipe validation continuously rechecks the committed bytes.
+official archive over HTTPS into temporary storage, verifies its proposed lock
+checksum, checks its size against repository hosting limits, then explicitly
+stages the archive with the lock and recipe change. Normal recipe validation
+continuously rechecks the committed bytes.
 
 Update active notices and documentation to distinguish the roles clearly:
 `artifacts/` is the user-facing executable distribution, recipe-local
@@ -177,7 +183,9 @@ remote state drifted or any unexpected release exists.
 - `.github/workflows/mirror-sources.yml`: remove the main-repository
   source-release publisher.
 - `AGENTS.md`: replace the release-mirror rule with the committed-source rule,
-  including checksum, provenance, size review, and no-source-release policy.
+  including checksum, provenance, size review, and no-source-release policy;
+  distinguish reviewed archives under `sources/` from transient downloads,
+  caches, object files, and build trees that must remain outside Git.
 - `doc/adding-a-binary.md`: make recipe-local verified archives part of the
   onboarding contract and remove immutable mirror instructions.
 - `README.md`: state that committed files under `artifacts/` are the user-facing
@@ -270,7 +278,10 @@ remote state drifted or any unexpected release exists.
   the exact migration commit and verify its checksum anonymously.
 - Inspect the catalog-driven GHCR workflow run caused by the pushed recipe
   changes; anonymously pull and smoke-test the unchanged versioned and floating
-  image names for both enabled recipes.
+  image names for both enabled recipes. Require their revision labels to name
+  the migration commit and their executable hashes to match the committed
+  artifacts; record the new recipe image digests rather than expecting the old
+  digests to remain stable.
 - Delete only `gdb-17.2-source` and
   `tcpdump-4.99.4-libpcap-1.10.4-source`, clean up their tags, then query the
   public GitHub releases and tags APIs to confirm both are absent and no other
@@ -301,5 +312,7 @@ remote state drifted or any unexpected release exists.
 - The public `static_bins` Releases page is empty after both named immutable
   source releases and tags are deliberately retired, with their accepted source
   bytes preserved and independently retrievable from the migration commit.
-- GHCR builder and artifact publication, all unrelated artifacts, and historical
-  completed-plan records remain unchanged.
+- GHCR builder publication and the artifact-image workflow, names, and tags
+  remain unchanged. The two recipe tags are successfully republished at digests
+  containing the migration's revised distribution metadata; all unrelated
+  artifacts and historical completed-plan records remain unchanged.
