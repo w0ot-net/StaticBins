@@ -6,6 +6,7 @@ lsof	aarch64	true
 lsof	armv7	true
 lsof	x86_64	true
 socat	aarch64	true
+socat	armv7	true
 socat	x86_64	true
 strace	aarch64	true
 strace	x86_64	true
