@@ -1,5 +1,7 @@
 # Plan: Expand the Reusable Static Builders
 
+*Distilled: 2026-08-07*
+
 ## Summary
 
 Publish one new version of each architecture's reusable Alpine builder with
