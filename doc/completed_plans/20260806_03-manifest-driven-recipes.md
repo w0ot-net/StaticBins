@@ -152,3 +152,48 @@ skip validation/publication.
   publication starts.
 - The public GDB package retains repository linkage, versioned/floating tags,
   SBOM, provenance, static-ELF checks, and functional smoke coverage.
+
+## Execution Notes
+
+Implemented the manifest-driven recipe contract in commit `6e30fc8`.
+`recipes.tsv` contains one enabled GDB row; `build.sh` provides Bash-only list
+and dispatch behavior; and `scripts/recipes.py` validates the bounded schema and
+emits deterministic compact JSON for GitHub Actions. Architecture configuration
+is allowlisted in the validator, while source, builder, license, configure, and
+functional behavior remain owned by the recipe.
+
+The publication workflow now has a fast catalog gate followed by a matrix job.
+Catalog values can select only validated contexts, Dockerfiles, platforms,
+native runners, images, tags, and cache scopes. Builder arguments, credentials,
+actions, cache policy, SBOM, provenance, and repository OCI labels remain in
+workflow logic. No GDB-specific image, context, runner, tag, or cache value
+remains in the workflow.
+
+Validation completed successfully:
+
+- `python3 -m unittest tests.test_recipes` passed 11 focused tests covering
+  deterministic output, unknown headers, duplicate names/full image tags,
+  traversal/wrong outputs, missing required files, Git-index executable modes,
+  runner allowlisting, malformed booleans/tag lists, disabled rows, dispatcher
+  rejection, environment preservation, and exit-status propagation.
+- `python3 scripts/recipes.py validate`, repeated identical `matrix` output,
+  `./build.sh list`, Bash syntax, workflow YAML parsing, generic-workflow
+  searches, and `git diff --check` passed. ShellCheck was not installed on the
+  execution host.
+- Catalog-driven publication run `31143090093` passed its catalog job and
+  generated exactly one `gdb (aarch64)` matrix job. BuildKit reused the validated
+  recipe layer, so the native job finished in 27 seconds rather than recompiling
+  GDB.
+- Both anonymous public tags resolve to OCI index digest
+  `sha256:39276132d4b60e2ec51ec94851bb32e1830b4a9b8bf1224da88d0646d7071cc9`,
+  retain an attestation manifest, carry source/version/revision OCI labels, and
+  run GDB 17.2. The extracted payload is byte-identical to the committed binary
+  at SHA-256
+  `8e729a88937e2187a9288ae9914748ae3946285227a76ce37232802df8319f4a`.
+
+The explicit local `./build.sh gdb` recompilation was not repeated under slow
+QEMU: the unchanged direct recipe had already passed Plan 2's full native build,
+static checks, and focused remote-debugging test; the root dispatch boundary was
+separately proven with controlled fixtures; and the catalog-driven native
+publication reused and republished those exact payload bytes. This follows the
+repository's validation-efficiency rule without weakening coverage.
