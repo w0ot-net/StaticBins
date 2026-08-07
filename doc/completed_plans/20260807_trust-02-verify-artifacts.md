@@ -233,3 +233,32 @@ or vulnerability guarantee.
 - The later protection plan can create a fresh attestation for every verified
   artifact from protected `main` without changing artifact bytes or adding a
   second build implementation.
+
+## Execution Notes
+
+Completed on 2026-08-07.
+
+- Implementation commit: `8ad61d8534170c88025773a69296c697325f54cd`.
+- The bounded native classification ran once per supported artifact in workflow
+  run `31158793815`. Tcpdump reproduced
+  `cdd8f895dceb63d428f137ed910cc083dde2bc76d1006e3468b6f8d654c053b1`
+  exactly. GDB produced
+  `8e729a88937e2187a9288ae9914748ae3946285227a76ce37232802df8319f4a`
+  instead of committed
+  `5e96e51367020e6be6e2cb0a7f0014573da838a8f7d1d099fd2e5a4a55c820ab`;
+  its protected original and executable mode were restored without a retry.
+- `artifacts/SHA256SUMS` covers all six distributed executables. Catalog
+  validation now rejects malformed, unsafe, duplicate, unsorted, missing,
+  extra, untracked, wrong-mode, and checksum-mismatched artifact state.
+- Main workflow run `31159482588` rebuilt tcpdump exactly, attested the same
+  file, and passed `artifact-assurance`; recipe-validation run `31159482802`
+  also passed.
+- The attestation was independently verified against the raw tcpdump file at
+  the implementation commit using GitHub CLI 2.97.0, the exact signer workflow,
+  and `refs/heads/main` source policy.
+- Disposable documentation-only pull request 3 passed both stable checks in
+  runs `31159628911` and `31159630189` without Docker or compilation. Manual
+  non-main dispatch `31159661370` failed during selection, with both rebuild
+  jobs skipped, as designed. The pull request and branch were then removed.
+- GDB and all four legacy executables remain explicitly `Not verified`; only
+  tcpdump is in the workflow's exact-rebuild and attestation matrix.
