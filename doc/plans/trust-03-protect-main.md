@@ -40,6 +40,8 @@ In scope:
   reference is already a full commit SHA.
 - Document the enforced controls, remaining owner/GitHub trust, and how users
   inspect the workflow and attestation identity.
+- After protection is active, run the existing bounded manual exact-build path
+  once so each qualified artifact has an attestation from protected `main`.
 - Record the exact before/after external state and ruleset identifier.
 
 Out of scope:
@@ -52,6 +54,8 @@ Out of scope:
 - Self-hosted runners, independent rebuild infrastructure, a custom admission
   controller, or protection from a malicious/compromised repository owner.
 - Changing build, source, artifact, checksum, or attestation behavior.
+- Scheduling attestation refreshes or diagnosing/remediating an unexpected exact-
+  build failure during the one protected-main refresh.
 - Vulnerability policy, secret scanning, Dependabot, or unrelated GitHub
   hardening.
 
@@ -100,6 +104,15 @@ the initial API responses, create/update only the exact named ruleset, re-read
 the effective configuration, and stop on unexpected existing protection rather
 than deleting or broadly replacing repository policy.
 
+After the documentation pull request is merged, invoke the manual entry point in
+`.github/workflows/verify-artifacts.yml` at `refs/heads/main` exactly once. It
+reuses the preceding plan's jobs to rebuild every qualified artifact before
+attesting. Verify the resulting subject, signer workflow, source ref, and source
+commit against the now-protected head. If an expected exact build or attestation
+fails, preserve the ruleset, do not chase the failure here, and stop for a
+separate status/remediation decision. If no artifact qualified, record that
+honest state and do not dispatch an empty attestation run.
+
 ## Affected Components
 
 - GitHub repository rulesets for `w0ot-net/static_bins`: add one bounded active
@@ -125,8 +138,10 @@ than deleting or broadly replacing repository policy.
 4. Open a controlled documentation-only pull request containing the bounded
    `TRUST.md` and `AGENTS.md` updates. Prove both required gates report without an
    absent build job, then merge it through the new protected path.
-5. Re-read the ruleset and Actions policy, then record the ruleset ID and
-   effective API state in the completed plan.
+5. Re-read the ruleset and Actions policy. If any artifact is qualified, dispatch
+   the exact-build workflow once at the protected `main` head, wait for success,
+   and verify the fresh attestations. Record the ruleset ID, workflow run, hashes,
+   and effective API state in the completed plan.
 
 ## Validation
 
@@ -141,6 +156,10 @@ than deleting or broadly replacing repository policy.
   gates to report successfully without an expensive build.
 - Query Actions policy and require `sha_pinning_required=true`; scan every
   workflow and reject tag, branch, or short-SHA `uses:` references.
+- For each qualified artifact, require the post-protection manual run to rebuild
+  the committed bytes and produce an attestation whose signer is
+  `.github/workflows/verify-artifacts.yml`, source ref is `refs/heads/main`, and
+  source digest is the protected head commit.
 - Confirm the ruleset does not require a nonexistent reviewer, signed-history
   rewrite, deployment, or unrelated check, and that administrators have no
   accidental broad bypass entry beyond unavoidable repository ownership.
@@ -158,5 +177,8 @@ than deleting or broadly replacing repository policy.
   plans.
 - Users have a concise, accurate explanation of what repository protection and
   attestations prove and what still requires trust.
+- Every artifact still labeled verified has at least one successful attestation
+  from a commit on protected `main`; an empty verified set remains acceptable and
+  explicit.
 - The project gains no fake reviewer ceremony, signed-history migration, custom
   security service, or organization-scale policy.
