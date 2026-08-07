@@ -180,3 +180,39 @@ change.
   committed artifacts and assurance labels do not change.
 - No per-utility GHCR image, VM, mutable builder reference, or package fallback
   is introduced.
+
+## Execution Notes
+
+Completed on 2026-08-07.
+
+- Plan correction commits `e40c874` and `a6c748a` aligned the regression check
+  with the repository's current QEMU-built GDB artifact. Implementation commit
+  `3632674` added the package locks, capability checks, and r2 tags; commit
+  `abf5288` adopted the verified public digests. Pull request 15 merged the
+  digest adoption to `main` as `f65aab0`.
+- The bounded recipe probes retained xz `5.8.3-r0` on x86-64 for tracked
+  `.tar.xz` inputs, selected package-owned `libtirpc-nokrb.a` for lsof's static
+  RPC profile, and found no x86-64 GMP or MPFR requirement for GDBserver.
+  LibreSSL, libtirpc, expat, musl, and libgcc static probes passed in both final
+  candidate builders.
+- The preserved AArch64 GDB candidate equaled the committed QEMU artifact at
+  `5e96e51367020e6be6e2cb0a7f0014573da838a8f7d1d099fd2e5a4a55c820ab`.
+  The preserved x86-64 tcpdump candidate equaled the committed attested artifact
+  at `cdd8f895dceb63d428f137ed910cc083dde2bc76d1006e3468b6f8d654c053b1`.
+  Neither artifact or assurance label changed, and neither compilation was
+  repeated after this evidence passed.
+- Native publication runs `31197919497` and `31197921943` created, respectively,
+  x86-64 digest
+  `sha256:42799e31a407a5d39203e748f46981c20fedd4bb1c4cf20c5127c68d62a8a274`
+  and AArch64 digest
+  `sha256:b14fafbd85762923af74173d370ade1c54abe4db4f32206af6fcad77e0fd8b57`.
+  Anonymous exact-digest pulls confirmed `amd64` and `arm64`, the repository
+  source label, and attached SPDX SBOM and SLSA provenance statements.
+- Both final `./builders/*/build.sh` checks passed. Catalog validation, all 19
+  recipe unit tests, dispatcher listing, shell syntax, tag-to-digest checks,
+  and `git diff --check` passed after lock adoption. Pull-request run
+  `31198198424` reproduced tcpdump exactly; post-merge run `31198342922`
+  reproduced and attested it on `main` with `artifact-assurance` passing.
+- No utility image, tool-specific builder, VM, mutable fallback, package
+  resolution during ordinary recipes, artifact replacement, or third builder
+  architecture was introduced.
