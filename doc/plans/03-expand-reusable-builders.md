@@ -1,7 +1,5 @@
 # Plan: Expand the Reusable Static Builders
 
-*Distilled: 2026-08-07*
-
 ## Summary
 
 Publish one new version of each architecture's reusable Alpine builder with
@@ -9,7 +7,8 @@ the static libraries and build tools required by gdbserver, lsof, socat, and
 strace. Keep GHCR ownership architecture-based rather than creating an image
 per utility, and adopt each new image only after it is published and its
 immutable digest is committed. Prove once that the expanded environments do
-not alter the existing tcpdump build or the already-recorded GDB recipe output.
+not alter the existing tcpdump build or the current committed QEMU-built GDB
+output.
 
 ## Problem
 
@@ -40,9 +39,10 @@ In scope:
 - Bump both non-replaceable builder tags, publish them through the existing
   architecture-allowlisted workflow, and commit their public immutable
   digests.
-- Before adopting the digests, build existing tcpdump and GDB candidates once
-  with the new builders and check that the expansion did not change their
-  established recipe outputs.
+- Before adopting the digests, compare existing tcpdump and GDB candidates
+  built through the same local execution paths against their current committed
+  artifacts. Reuse preserved candidates from this execution rather than
+  compiling them again.
 - Update the concise builder documentation and any existing notice that names
   an obsolete builder digest.
 
@@ -69,21 +69,27 @@ unnecessary:
 
 - both architectures: `libtirpc-dev`, `libtirpc-static`, `rpcsvc-proto`,
   `libressl`, `libressl-dev`, and `libressl-static`;
-- x86-64: `autoconf`, `automake`, `libtool`, `pkgconf`, `expat-dev`, and
-  `expat-static`, plus only any GMP/MPFR tool that GDB 16.3 actually requires
-  for `all-gdbserver`. AArch64 already contains the generated-build tools.
+- x86-64: `autoconf`, `automake`, `libtool`, `pkgconf`, `expat-dev`,
+  `expat-static`, and `xz`. AArch64 already contains these generated-build and
+  archive-extraction tools. The completed `all-gdbserver` probe required
+  `--disable-inprocess-agent` but no x86-64 GMP or MPFR package, so do not add
+  them.
 
 Commit every retained direct input as an exact `name=version` row in the
 architecture's `packages.lock`. The initial Alpine 3.24.1 resolution observed
 libtirpc `1.3.5-r1`, rpcsvc-proto `1.4.4-r0`, LibreSSL `4.3.1-r0`, expat
-`2.8.2-r0`, and pkgconf `2.5.1-r0`; implementation must re-resolve against the
-unchanged locked base and fail rather than silently substitute versions.
+`2.8.2-r0`, pkgconf `2.5.1-r0`, and xz `5.8.3-r0`. Those versions were then
+resolved against the unchanged locked base during execution; retain them and
+fail rather than silently substitute versions.
 
 Extend `builders/*/build.sh` validation to aggregate missing commands, package
 version mismatches, and required archives in one pass. At minimum prove static
-links against libtirpc, LibreSSL's `libssl.a`/`libcrypto.a`, expat where
-selected, and musl/libgcc, in addition to the existing architecture and
-OCI-label checks. This validates capabilities, not the utilities themselves.
+links against libtirpc's no-Kerberos `libtirpc-nokrb.a`, LibreSSL's
+`libssl.a`/`libcrypto.a`, expat where selected, and musl/libgcc, in addition to
+the existing architecture and OCI-label checks. The completed lsof probe showed
+that the ordinary `libtirpc.a` pulls unavailable static GSS dependencies while
+the package-owned `libtirpc-nokrb.a` supplies the required RPC profile. This
+validates capabilities, not the utilities themselves.
 
 Use new versioned tags (the next `*-alpine-3.24.1-rN` values) and the unchanged
 manual `.github/workflows/publish-builder.yml`. Publish from the implementation
@@ -94,13 +100,18 @@ unpublished digest.
 
 Before lock adoption, use the candidate images as Docker build arguments to
 produce temporary outputs without installing them over committed artifacts.
-The x86-64 tcpdump candidate must equal its committed attested SHA-256. The
-AArch64 GDB candidate must equal the prior documented recipe result
-`8e729a88937e2187a9288ae9914748ae3946285227a76ce37232802df8319f4a`, proving
-the package additions did not create a second GDB result; its different
-committed artifact remains explicitly `Not verified` and unchanged. Do not
-repeat builds using the old images because the comparison values are already
-recorded.
+The x86-64 tcpdump candidate must equal its committed attested SHA-256,
+`cdd8f895dceb63d428f137ed910cc083dde2bc76d1006e3468b6f8d654c053b1`. The
+AArch64 GDB candidate built through the repository's local QEMU path must equal
+the current committed QEMU-built artifact,
+`5e96e51367020e6be6e2cb0a7f0014573da838a8f7d1d099fd2e5a4a55c820ab`.
+The separately recorded native-ARM result
+`8e729a88937e2187a9288ae9914748ae3946285227a76ce37232802df8319f4a` is not a
+valid byte-for-byte baseline for this emulated build and is not an exact
+rebuild claim. GDB remains explicitly `Not verified`. Preserved candidates from
+this execution already match both current artifacts; verify and reuse them,
+and rebuild only if those candidates are unavailable or their relevant inputs
+change.
 
 ## Affected Components
 
@@ -118,19 +129,19 @@ recorded.
 
 ## Implementation Sequence
 
-1. Resolve exact packages against each unchanged base digest and run bounded
-   configure/link probes for GDB 16.3 gdbserver, lsof 4.99.5 with libtirpc,
-   socat 1.8.1.3 with LibreSSL and no readline, and strace 6.16 without optional
-   unwind libraries. Remove packages not required by those profiles.
-2. Update package locks and candidate validation, then build each candidate
-   image and report every missing capability in one run.
-3. Build temporary GDB and tcpdump outputs once with the candidates. Require
-   the recorded GDB recipe-result hash and exact committed tcpdump hash before
-   publication. Warn the user before the AArch64 GDB build because emulation
-   may exceed ten minutes.
-4. Bump versioned tags, publish each candidate through the existing native
-   workflow, inspect the reported architectures/SBOM/provenance/labels, and
-   verify anonymous pulls by digest.
+1. Carry forward the completed bounded configure/link probes for GDB 16.3
+   gdbserver, lsof 4.99.5 with `libtirpc-nokrb`, socat 1.8.1.3 with LibreSSL and
+   no readline, and strace 6.16 without optional unwind libraries. Do not rerun
+   exploratory builds unless a relevant locked input changes.
+2. Update package locks, candidate validation, and the next non-replaceable
+   versioned tags, then build each candidate image and report every missing
+   capability in one run.
+3. Verify the preserved temporary GDB and tcpdump outputs against the exact
+   current committed hashes recorded in the design. Rebuild a missing candidate
+   at most once, warning first if the emulated AArch64 GDB build is required.
+4. Publish each versioned candidate through the existing native workflow,
+   inspect the reported architectures/SBOM/provenance/labels, and verify
+   anonymous pulls by digest.
 5. Commit and push the immutable digests and bounded documentation updates.
    Require the selected post-push workflow on `main` to perform the exact
    tcpdump comparison and attestation once; reuse the candidate evidence instead
@@ -143,9 +154,10 @@ recorded.
   each candidate verify `uname -m`, every direct package version, expected
   commands, required `.a` files, static probe architecture/type, no interpreter,
   and no `DT_NEEDED` entries.
-- Perform one candidate build for existing tcpdump and GDB as described in the
-  design, preserving their committed files and comparing hashes from temporary
-  output.
+- Verify the preserved tcpdump and GDB candidates described in the design, or
+  perform one candidate build only when the corresponding preserved output is
+  unavailable or invalid. Preserve committed files and compare hashes from the
+  temporary output.
 - Dispatch the builder workflow once per architecture, confirm versioned-tag
   non-replacement, then anonymously pull the exact reported digests and inspect
   their OCI architecture, source label, SBOM, and provenance.
@@ -162,6 +174,7 @@ recorded.
 - Builder validation fails clearly for a missing package, wrong version,
   missing static archive, wrong architecture, dynamic probe, or bad OCI label.
 - Existing GDB and tcpdump outputs are demonstrably unaffected by the package
-  expansion; their committed artifacts and assurance labels do not change.
+  expansion through their respective established local execution paths; their
+  committed artifacts and assurance labels do not change.
 - No per-utility GHCR image, VM, mutable builder reference, or package fallback
   is introduced.
