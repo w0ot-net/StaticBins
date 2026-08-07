@@ -219,3 +219,45 @@ hash inequality alone.
   builder-only.
 - Fast validation runs on relevant changes without compiling or publishing
   every utility.
+
+## Execution Notes
+
+Completed on 2026-08-07.
+
+- Implementation commit `9235d2c461a4e6e00b61553aee832e645b33f29e`
+  removed `.github/workflows/publish-containers.yml` and added the
+  read-only, non-Docker `.github/workflows/validate-recipes.yml`. The new
+  workflow validates the catalog, unit tests, dispatcher, and tracked shell
+  syntax without requesting package-write permission or building utilities.
+- The catalog remained the same three-field, two-row allowlist. The validator
+  and its tests no longer expose the utility-image matrix command or derive
+  image names, tags, cache scopes, runners, or OCI platforms; source-version,
+  source-archive, mode, path, environment-lock, notice, and inventory checks
+  remain enforced. The focused suite now contains 12 passing tests.
+- Both recipe Dockerfiles retain their unchanged builder commands and use a
+  one-copy `FROM scratch AS artifact` final stage for Buildx local output.
+  Runtime-image labels, license/source packaging, and entrypoints were removed.
+  Current documentation and notices now identify committed executables as the
+  utility distribution and GHCR as builder-only.
+- Protected baseline artifacts were GDB
+  `5e96e51367020e6be6e2cb0a7f0014573da838a8f7d1d099fd2e5a4a55c820ab`
+  and tcpdump
+  `cdd8f895dceb63d428f137ed910cc083dde2bc76d1006e3468b6f8d654c053b1`,
+  both with Git mode `100755`. Each cleaned recipe was run exactly once and
+  passed its complete static, architecture, version, and focused smoke checks;
+  both outputs reproduced those protected bytes exactly, so no artifact was
+  staged or restored.
+- The required distribution-notice edits invalidated the Docker builder layer
+  that copies `licenses/`, so the single GDB recipe validation compiled under
+  QEMU instead of reusing the prior compile layer. That run was preserved to
+  completion and was not repeated; tcpdump completed natively in the same
+  one-run policy.
+- Fast validation passed: catalog validation, all 12 unit tests, dispatcher
+  listing, obsolete-matrix rejection, tracked shell syntax, workflow YAML
+  parsing, link resolution, publication-state searches, ASCII checks, and
+  `git diff --check`. ShellCheck was unavailable on the execution host.
+- Exact-commit Actions run `31157959146` completed the new validation job in
+  six seconds. It was the only workflow run for the implementation commit.
+  GHCR utility version counts remained unchanged across the push at 28 for
+  `static_bins-gdb` and 9 for `static_bins-tcpdump`; destructive package
+  cleanup remains owned by the ordered follow-up plan.
