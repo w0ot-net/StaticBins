@@ -205,3 +205,48 @@ request list rather than assuming GitHub cannot evict a cache independently.
   runs, and completed plan records remain intact.
 - The completed plan records exact deletion results and the time-bounded package
   restoration window without committing credentials or raw API dumps.
+
+## Execution Notes
+
+Completed on 2026-08-07 from protected `main` commit
+`16865b2d2ced0f7635b99c62165434e7ab8fe9ff`.
+
+- The repository-cleanup prerequisite was present and validation run
+  `31157959146` was successful. No utility publisher or active related run
+  remained. The authenticated account was exactly `w0ot-net`; the classic token
+  advertised `repo`, `write:packages`, and `delete:packages`, while successful
+  package GETs proved effective read access. No credential value was recorded.
+- The exact preflight package set linked to this repository was protected
+  `static_bins-builder` ID `14271571`, GDB ID `14272131`, and tcpdump ID
+  `14274682`. GDB had 28 versions; tags `17.2-aarch64` and `aarch64-latest`
+  were on version `sha256:bd8cf4c9c7031dbbd7550a865151c82ed7ef0f08c287883ee9ceed33dfeb46b8`.
+  Tcpdump had 9 versions; tags `4.99.4-x86_64` and `x86_64-latest` were on
+  version `sha256:72d57e5565b5ae9924b54fc602a9cacc35767db1c3fe4256f915cd92c1c2e41d`.
+- An isolated, empty Docker configuration anonymously resolved all four utility
+  tags and both locked builder digests before deletion. The exact GDB and
+  tcpdump package DELETE requests returned HTTP 204 at
+  `2026-08-07T08:05:57Z` and `2026-08-07T08:05:58Z`, respectively, so rollback
+  was not needed. Authenticated GETs then returned 404 and all four tags were
+  anonymously unavailable on the first bounded check.
+- Deleted utility cache IDs were `6411210811`, `6411890939`, `6412740440`,
+  `6413846671`, `6414147127`, `6415186755`, `6415442851`, `6415573679`,
+  `6415585089`, `6417205582`, `6417286210`, `6418407506`, and `6418408240`.
+  Every deletion used that numeric ID after its key was rechecked against the
+  exact GDB/tcpdump prefixes.
+- Protected builder cache IDs `6410131270`, `6411111025`, and `6411803363`
+  remained unchanged; no x86-64 builder index was present before deletion. All
+  67 shared `buildkit-blob-*` entries remained and were never deletion targets.
+- `static_bins-builder` remains the only linked container package. Its locked
+  AArch64 digest
+  `sha256:23ec20af641f786105254b2c773e2951f66673b9618f350522f60c95e192c5af`
+  and x86-64 digest
+  `sha256:ed0de561168a27489545d883e790707ae9a34c9412ce6e944c973bc3d848b030`
+  both resolved anonymously after cleanup.
+- All eight tracked source-evidence files were unchanged. Committed GDB remained
+  `5e96e51367020e6be6e2cb0a7f0014573da838a8f7d1d099fd2e5a4a55c820ab`
+  and tcpdump remained
+  `cdd8f895dceb63d428f137ed910cc083dde2bc76d1006e3468b6f8d654c053b1`.
+- The supported 30-day restoration window ends at
+  `2026-09-06T08:05:58Z`, provided the deleted namespaces remain unused. A
+  requested rollback within that window must use the exact package restore API;
+  do not republish either namespace from repository code.
