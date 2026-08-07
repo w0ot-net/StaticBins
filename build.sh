@@ -7,10 +7,10 @@ readonly CATALOG="${SCRIPT_DIR}/recipes/catalog.tsv"
 readonly HEADER=$'name\tarchitecture\tenabled'
 
 usage() {
-    echo "usage: ./build.sh list | ./build.sh <recipe>" >&2
+    echo "usage: ./build.sh list | ./build.sh <recipe> [architecture]" >&2
 }
 
-if [[ $# -ne 1 ]]; then
+if [[ $# -lt 1 || $# -gt 2 || ( "$1" == "list" && $# -ne 1 ) ]]; then
     usage
     exit 2
 fi
@@ -32,10 +32,22 @@ if [[ "${requested_recipe}" != "list" && ! "${requested_recipe}" =~ ^[a-z0-9][a-
     exit 2
 fi
 
+requested_architecture="${2:-}"
+if [[ -n "${requested_architecture}" ]]; then
+    case "${requested_architecture}" in
+        aarch64 | x86_64) ;;
+        *)
+            echo "error: unsupported architecture: ${requested_architecture}" >&2
+            exit 2
+            ;;
+    esac
+fi
+
 match_count=0
 matched_enabled=""
 matched_script=""
-declare -A seen_names=()
+declare -a matched_architectures=()
+declare -A seen_pairs=()
 
 while IFS= read -r catalog_line || [[ -n "${catalog_line}" ]]; do
     [[ -n "${catalog_line}" ]] || {
@@ -56,11 +68,6 @@ while IFS= read -r catalog_line || [[ -n "${catalog_line}" ]]; do
         echo "error: invalid recipe name in catalog: ${name}" >&2
         exit 1
     fi
-    if [[ -n "${seen_names[${name}]:-}" ]]; then
-        echo "error: duplicate recipe name in catalog: ${name}" >&2
-        exit 1
-    fi
-    seen_names["${name}"]=1
     case "${architecture}" in
         aarch64 | x86_64) ;;
         *)
@@ -68,6 +75,12 @@ while IFS= read -r catalog_line || [[ -n "${catalog_line}" ]]; do
             exit 1
             ;;
     esac
+    pair="${name}/${architecture}"
+    if [[ -n "${seen_pairs[${pair}]:-}" ]]; then
+        echo "error: duplicate recipe pair in catalog: ${pair}" >&2
+        exit 1
+    fi
+    seen_pairs["${pair}"]=1
     if [[ "${enabled}" != "true" && "${enabled}" != "false" ]]; then
         echo "error: invalid enabled value for ${name}" >&2
         exit 1
@@ -82,15 +95,16 @@ while IFS= read -r catalog_line || [[ -n "${catalog_line}" ]]; do
 
     if [[ "${requested_recipe}" == "list" ]]; then
         if [[ "${enabled}" == "true" ]]; then
-            printf '%s\n' "${name}"
+            printf '%s\t%s\n' "${name}" "${architecture}"
         fi
         continue
     fi
 
-    if [[ "${name}" == "${requested_recipe}" ]]; then
+    if [[ "${name}" == "${requested_recipe}" && ( -z "${requested_architecture}" || "${architecture}" == "${requested_architecture}" ) ]]; then
         match_count=$((match_count + 1))
         matched_enabled="${enabled}"
         matched_script="${absolute_script}"
+        matched_architectures+=("${architecture}")
     fi
 done < <(tail -n +2 "${CATALOG}")
 
@@ -98,15 +112,26 @@ if [[ "${requested_recipe}" == "list" ]]; then
     exit 0
 fi
 if [[ ${match_count} -eq 0 ]]; then
-    echo "error: unknown recipe: ${requested_recipe}" >&2
+    if [[ -n "${requested_architecture}" ]]; then
+        echo "error: unknown recipe: ${requested_recipe}/${requested_architecture}" >&2
+    else
+        echo "error: unknown recipe: ${requested_recipe}" >&2
+    fi
     exit 2
 fi
 if [[ ${match_count} -ne 1 ]]; then
-    echo "error: duplicate recipe: ${requested_recipe}" >&2
-    exit 1
+    echo "error: recipe '${requested_recipe}' is available for multiple architectures; choose one:" >&2
+    for architecture in "${matched_architectures[@]}"; do
+        echo "  ./build.sh ${requested_recipe} ${architecture}" >&2
+    done
+    exit 2
 fi
 if [[ "${matched_enabled}" != "true" ]]; then
-    echo "error: recipe is disabled: ${requested_recipe}" >&2
+    if [[ -n "${requested_architecture}" ]]; then
+        echo "error: recipe is disabled: ${requested_recipe}/${requested_architecture}" >&2
+    else
+        echo "error: recipe is disabled: ${requested_recipe}" >&2
+    fi
     exit 2
 fi
 

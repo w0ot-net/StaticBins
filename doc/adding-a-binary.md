@@ -65,7 +65,7 @@ Add one tab-delimited row to `recipes/catalog.tsv`:
 
 | Field | Contract |
 | --- | --- |
-| `name` | Globally unique lowercase recipe identifier and artifact filename |
+| `name` | Lowercase tool identifier and artifact filename; unique with architecture |
 | `architecture` | `aarch64` or `x86_64` |
 | `enabled` | `true` to list and build; otherwise `false` |
 
@@ -96,8 +96,11 @@ only their committed evidence.
 Then build and test the selected recipe through the stable public command:
 
 ```sh
-./build.sh <tool>
+./build.sh <tool> <architecture>
 ```
+
+The architecture may be omitted only while exactly one catalog row has that
+tool name. Multi-architecture tools always require the explicit form.
 
 Verify the resulting architecture, static linkage, version behavior, and the
 tool's focused functional smoke test. Commit the validated executable under

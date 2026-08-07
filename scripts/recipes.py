@@ -551,11 +551,14 @@ def load_catalog(root: Path, catalog_path: Path) -> list[Recipe]:
     if not any(recipe.enabled for recipe in recipes):
         raise CatalogError("catalog has no enabled recipes")
 
-    seen_names: set[str] = set()
+    seen_pairs: set[tuple[str, str]] = set()
     for recipe in recipes:
-        if recipe.name in seen_names:
-            raise CatalogError(f"duplicate recipe name: {recipe.name}")
-        seen_names.add(recipe.name)
+        pair = (recipe.name, recipe.architecture)
+        if pair in seen_pairs:
+            raise CatalogError(
+                f"duplicate recipe pair: {recipe.name}/{recipe.architecture}"
+            )
+        seen_pairs.add(pair)
     _validate_artifact_manifest(root)
     return recipes
 
@@ -581,7 +584,9 @@ def main(argv: list[str] | None = None) -> int:
     enabled_count = sum(recipe.enabled for recipe in recipes)
     for recipe in recipes:
         for authentication in recipe.source_authentications:
-            source_id = f"{recipe.name}:{authentication.name}"
+            source_id = (
+                f"{recipe.name}/{recipe.architecture}:{authentication.name}"
+            )
             if authentication.mode == "pgp":
                 print(
                     f"authenticated source {source_id}: upstream PGP "

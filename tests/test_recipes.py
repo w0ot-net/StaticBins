@@ -599,14 +599,30 @@ class RecipeCatalogTests(unittest.TestCase):
         with self.assertRaisesRegex(recipes.CatalogError, "header"):
             recipes.load_catalog(fixture.root, catalog)
 
-    def test_duplicate_name_is_rejected(self) -> None:
+    def test_same_name_on_two_architectures_is_valid(self) -> None:
+        temporary_directory, fixture = self.make_fixture()
+        self.addCleanup(temporary_directory.cleanup)
+        fixture.add_recipe()
+        fixture.add_recipe("gdb", architecture="x86_64")
+        catalog = fixture.write_catalog()
+        fixture.track()
+
+        loaded = recipes.load_catalog(fixture.root, catalog)
+        self.assertEqual(
+            [("gdb", "aarch64"), ("gdb", "x86_64")],
+            [(recipe.name, recipe.architecture) for recipe in loaded],
+        )
+
+    def test_duplicate_pair_is_rejected(self) -> None:
         temporary_directory, fixture = self.make_fixture()
         self.addCleanup(temporary_directory.cleanup)
         fixture.add_recipe()
         fixture.rows.append(dict(fixture.rows[0]))
         catalog = fixture.write_catalog()
         fixture.track()
-        with self.assertRaisesRegex(recipes.CatalogError, "duplicate recipe name"):
+        with self.assertRaisesRegex(
+            recipes.CatalogError, "duplicate recipe pair: gdb/aarch64"
+        ):
             recipes.load_catalog(fixture.root, catalog)
 
     def test_unsafe_name_and_unsupported_architecture_are_rejected(self) -> None:
@@ -704,9 +720,16 @@ class RecipeCatalogTests(unittest.TestCase):
             [str(dispatcher), "list"], check=False, capture_output=True, text=True
         )
         self.assertEqual(0, listed.returncode)
-        self.assertEqual("gdb\n", listed.stdout)
+        self.assertEqual("gdb\taarch64\n", listed.stdout)
 
-        for arguments in ((), ("unknown",), ("../gdb",), ("gdb", "extra")):
+        for arguments in (
+            (),
+            ("unknown",),
+            ("../gdb",),
+            ("gdb", "amd64"),
+            ("list", "aarch64"),
+            ("gdb", "aarch64", "extra"),
+        ):
             with self.subTest(arguments=arguments):
                 rejected = subprocess.run(
                     [str(dispatcher), *arguments],
@@ -726,12 +749,75 @@ class RecipeCatalogTests(unittest.TestCase):
         )
         self.assertEqual(37, dispatched.returncode)
 
+        explicitly_dispatched = subprocess.run(
+            [str(dispatcher), "gdb", "aarch64"],
+            check=False,
+            capture_output=True,
+            text=True,
+            env=environment,
+        )
+        self.assertEqual(37, explicitly_dispatched.returncode)
+
         fixture.rows[0]["enabled"] = "false"
         fixture.write_catalog()
         disabled = subprocess.run(
             [str(dispatcher), "gdb"], check=False, capture_output=True, text=True
         )
         self.assertEqual(2, disabled.returncode)
+        explicitly_disabled = subprocess.run(
+            [str(dispatcher), "gdb", "aarch64"],
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+        self.assertEqual(2, explicitly_disabled.returncode)
+        self.assertIn("disabled: gdb/aarch64", explicitly_disabled.stderr)
+
+    def test_dispatcher_requires_architecture_for_repeated_name(self) -> None:
+        temporary_directory, fixture = self.make_fixture()
+        self.addCleanup(temporary_directory.cleanup)
+        fixture.add_recipe(script_body="#!/usr/bin/env bash\nexit 41\n")
+        fixture.add_recipe(
+            "gdb",
+            architecture="x86_64",
+            script_body="#!/usr/bin/env bash\nexit 42\n",
+        )
+        fixture.write_catalog()
+        dispatcher = fixture.root / "build.sh"
+        shutil.copy2(REPOSITORY_ROOT / "build.sh", dispatcher)
+        os.chmod(dispatcher, 0o755)
+
+        listed = subprocess.run(
+            [str(dispatcher), "list"], check=False, capture_output=True, text=True
+        )
+        self.assertEqual(0, listed.returncode)
+        self.assertEqual("gdb\taarch64\ngdb\tx86_64\n", listed.stdout)
+
+        ambiguous = subprocess.run(
+            [str(dispatcher), "gdb"], check=False, capture_output=True, text=True
+        )
+        self.assertEqual(2, ambiguous.returncode)
+        self.assertIn("./build.sh gdb aarch64", ambiguous.stderr)
+        self.assertIn("./build.sh gdb x86_64", ambiguous.stderr)
+
+        for architecture, expected_status in (("aarch64", 41), ("x86_64", 42)):
+            with self.subTest(architecture=architecture):
+                dispatched = subprocess.run(
+                    [str(dispatcher), "gdb", architecture],
+                    check=False,
+                    capture_output=True,
+                    text=True,
+                )
+                self.assertEqual(expected_status, dispatched.returncode)
+
+        unknown_pair = subprocess.run(
+            [str(dispatcher), "tool", "aarch64"],
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+        self.assertEqual(2, unknown_pair.returncode)
+        self.assertIn("unknown recipe: tool/aarch64", unknown_pair.stderr)
 
     def test_dispatcher_rejects_duplicate_malformed_and_missing_script(self) -> None:
         for mutation in ("duplicate", "malformed", "missing"):
