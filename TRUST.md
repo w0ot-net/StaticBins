@@ -28,6 +28,8 @@ It accepts a PGP record only when `gpgv` reports the full fingerprint pinned in
 | [lsof 4.99.5 (x86-64)](recipes/lsof/x86_64/source.lock) | Checksum only | Not available | [GitHub release](https://github.com/lsof-org/lsof/releases/tag/4.99.5) |
 | [socat 1.8.1.3 (AArch64)](recipes/socat/aarch64/source.lock) | Checksum only | Not available | [official Git repository](https://repo.or.cz/socat.git) |
 | [socat 1.8.1.3 (x86-64)](recipes/socat/x86_64/source.lock) | Checksum only | Not available | [official Git repository](https://repo.or.cz/socat.git) |
+| [strace 6.16 (AArch64)](recipes/strace/aarch64/source.lock) | Checksum only | Not adopted | [official release](https://strace.io/files/6.16/) |
+| [strace 6.16 (x86-64)](recipes/strace/x86_64/source.lock) | Checksum only | Not adopted | [official release](https://strace.io/files/6.16/) |
 | [tcpdump 4.99.4](recipes/tcpdump/x86_64/source.lock) | Upstream PGP | `1F166A5742ABB9E0249A8D30E089DEF1D9C15D0D` | [signature](https://www.tcpdump.org/release/tcpdump-4.99.4.tar.gz.sig); [Tcpdump Group key](https://www.tcpdump.org/release/signing-key-RSA-E089DEF1D9C15D0D.asc) |
 | [libpcap 1.10.4](recipes/tcpdump/x86_64/source.lock) | Upstream PGP | `1F166A5742ABB9E0249A8D30E089DEF1D9C15D0D` | [signature](https://www.tcpdump.org/release/libpcap-1.10.4.tar.gz.sig); [Tcpdump Group key](https://www.tcpdump.org/release/signing-key-RSA-E089DEF1D9C15D0D.asc) |
 
@@ -36,12 +38,17 @@ SHA-1. The tcpdump and libpcap signatures use RSA with SHA-512. These records
 are verified exactly as published; the table does not claim equal
 cryptographic strength.
 
-The AArch64 GDBserver functional test boots the checksum-locked Alpine 3.22.5
-`vmlinuz-virt` recorded in
-[`vm.lock`](recipes/gdbserver/aarch64/vm.lock). The kernel is a downloaded
-smoke-test environment input, not a linked input or distributed artifact; its
-`checksum-only` record provides weaker origin assurance than the GNU source
-signature.
+The AArch64 GDBserver and strace functional tests boot the same
+checksum-locked Alpine 3.22.5 `vmlinuz-virt`, recorded in their respective
+[`GDBserver vm.lock`](recipes/gdbserver/aarch64/vm.lock) and
+[`strace vm.lock`](recipes/strace/aarch64/vm.lock). The kernel is a downloaded
+smoke-test environment input, not a linked input or distributed artifact. Its
+checksum verifies accepted bytes but does not authenticate their origin.
+
+strace publishes a detached release signature, but these recipes have not
+adopted a signer key backed by authenticated official full-fingerprint
+evidence. They choose `checksum-only` explicitly and do not attempt PGP
+verification or fall back after a failed signature check.
 
 Every source record declares one of two modes:
 
@@ -74,11 +81,12 @@ does not identify who built a binary or establish its provenance.
 | `artifacts/aarch64/gdbserver` | Upstream PGP | `Not verified` |
 | `artifacts/aarch64/lsof` | Checksum only | `Not verified` |
 | `artifacts/aarch64/socat` | Checksum only | `Not verified` |
+| `artifacts/aarch64/strace` | Checksum only | `Not verified` |
 | `artifacts/x86_64/tcpdump` | Upstream PGP for tcpdump and libpcap | `Exact rebuild + GitHub attestation` |
 | `artifacts/x86_64/gdbserver` | Upstream PGP | `Not verified` |
 | `artifacts/x86_64/lsof` | Checksum only | `Not verified` |
 | `artifacts/x86_64/socat` | Checksum only | `Not verified` |
-| `artifacts/x86_64/strace` | Legacy; no recipe evidence | `Not verified` |
+| `artifacts/x86_64/strace` | Checksum only | `Not verified` |
 
 `Exact rebuild + GitHub attestation` means a clean native build passed the
 recipe checks, reproduced the committed SHA-256 exactly, and the repository
