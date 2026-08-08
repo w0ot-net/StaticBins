@@ -39,5 +39,7 @@ the live user, trust, contributor, or recipe documentation.
 ## Implementation records
 
 [`plans/`](plans/) contains accepted work that has not been completed.
-[`completed_plans/`](completed_plans/) records how prior changes were executed.
-Neither directory defines current behavior; use the authorities above.
+Plans are created when explicitly requested or when a maintainer chooses design
+review for cross-cutting work; routine bounded changes do not require one.
+[`completed_plans/`](completed_plans/) contains historical execution records,
+not required templates or current authorities; use the authorities above.
