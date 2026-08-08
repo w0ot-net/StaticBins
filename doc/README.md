@@ -6,8 +6,13 @@ the live user, trust, contributor, or recipe documentation.
 
 ## Current authorities
 
-- [`README.md`](../README.md) is the concise user entry point and current
-  artifact index.
+- [`README.md`](../README.md) is the concise user entry point for discovering,
+  verifying, and rebuilding artifacts.
+- [`recipes/catalog.tsv`](../recipes/catalog.tsv) owns the current enabled
+  `(tool, architecture)` pairs; [`artifacts/`](../artifacts/) contains the
+  distributed executables, and
+  [`artifacts/SHA256SUMS`](../artifacts/SHA256SUMS) is their complete exact file
+  inventory.
 - [`TRUST.md`](../TRUST.md) owns current source and artifact assurance status,
   limitations, and verification commands.
 - [`adding-a-binary.md`](adding-a-binary.md) is the contributor procedure.

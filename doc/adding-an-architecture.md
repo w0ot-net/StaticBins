@@ -75,9 +75,11 @@ smoke test, and install only its validated candidate at
 `artifacts/<architecture>/<tool>`.
 
 Add its sorted `recipes/catalog.tsv` row only with the complete recipe and
-artifact change. Update `artifacts/SHA256SUMS`, `TRUST.md`, the user-facing
-artifact index, and the owning ABI/build documentation. Finish with the direct
-recipe build and `./validate.sh`; do not rebuild unrelated architectures.
+artifact change. Update `artifacts/SHA256SUMS`, `TRUST.md`, and the owning
+ABI/build documentation. Current availability is discovered from the enabled
+catalog and committed artifact set, not a separately maintained user-facing
+index. Finish with the direct recipe build and `./validate.sh`; do not rebuild
+unrelated architectures.
 
 The published builder remains a builder-only foundation during this rollout.
 Present the architecture as ready for utility users only after it has an

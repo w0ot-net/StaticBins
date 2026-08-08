@@ -38,7 +38,7 @@ Repository contract:
   but present an architecture as ready for utility users only when every
   currently distributed tool has an enabled recipe and artifact for it. Adopt
   a new distributed tool for every ready architecture as one coordinated
-  rollout; keep incomplete coverage out of the public artifact index.
+  rollout; keep incomplete coverage out of the public artifact set.
 - Keep `artifacts/SHA256SUMS` complete and exact for every distributed file,
   excluding the manifest itself. Record every artifact's source
   authentication, recipe build validation, and any independent evidence in
@@ -129,9 +129,12 @@ Documentation and distribution:
 - Distribute utilities only as committed executables under `artifacts/`. GHCR
   is reserved for reusable builder environments; recipe Dockerfiles export
   local build results and must not define or publish utility runtime images.
-- Keep `README.md` concise and task-oriented. Document the one-command build,
-  prerequisites, output path, pinned upstream version, important feature
-  tradeoffs, and any host-wide setup such as `binfmt_misc` registration.
+- Keep `README.md` concise, task-oriented, and stable as catalogs grow. It owns
+  generic artifact discovery, integrity verification, and rebuild entry points,
+  including common prerequisites and the conventional output path. Recipe
+  READMEs own pinned versions, feature tradeoffs, extra prerequisites, and
+  tool-specific validation; `doc/README.md` routes contributor and maintainer
+  operations.
 - Preserve upstream license and copyright requirements. Before distributing a
   new binary, identify its license and ensure the repository or linked release
   process provides whatever source, notices, or written offer the license
