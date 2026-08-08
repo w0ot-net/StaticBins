@@ -1,0 +1,7 @@
+# ltrace source acceptance and provenance metadata.
+SOURCE_VERSION=0.8.1
+SOURCE_ARCHIVE=ltrace-0.8.1.tar.gz
+SOURCE_SHA256=11c85a1353fcf2b5438b19d0ccc2d376c96656ce6f11cf9537e3a92b84392c58
+SOURCE_UPSTREAM_URL=https://gitlab.com/cespedes/ltrace/-/archive/0.8.1/ltrace-0.8.1.tar.gz
+SOURCE_LICENSE=GPL-2.0-or-later
+SOURCE_AUTHENTICATION=checksum-only

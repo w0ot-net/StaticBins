@@ -1,0 +1,31 @@
+From: static_bins maintainers
+Subject: [PATCH] linux: do not reload the main executable from link_map
+
+musl records the main executable pathname in the first link_map entry.
+ltrace already loaded the main executable before crawling the map, so loading
+that entry again as a DSO creates duplicate PLT symbols and an assertion
+failure when their breakpoints collide.
+
+The first entry in the runtime linker's map describes the main executable.
+Skip it explicitly instead of relying on the glibc convention that its name is
+empty.
+---
+ sysdeps/linux-gnu/proc.c | 10 ++++++++++
+ 1 file changed, 10 insertions(+)
+
+diff --git a/sysdeps/linux-gnu/proc.c b/sysdeps/linux-gnu/proc.c
+index b954997..b564998 100644
+--- a/sysdeps/linux-gnu/proc.c
++++ b/sysdeps/linux-gnu/proc.c
+@@ -485,0 +486 @@ crawl_linkmap(struct process *proc, struct lt_r_debug_64 *dbg)
++	bool first = true;
+@@ -508,0 +510,9 @@ crawl_linkmap(struct process *proc, struct lt_r_debug_64 *dbg)
++		/* The first link map describes the main executable.  Most
++		 * dynamic linkers leave its name empty, but musl records the
++		 * executable pathname.  The main executable was loaded before
++		 * crawling the link map, so do not load it again as a DSO.  */
++		if (first) {
++			first = false;
++			continue;
++		}
++

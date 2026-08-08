@@ -34,6 +34,10 @@ keyserver, or network lookup.
 | [lsof 4.99.5 (ARMv7)](recipes/lsof/armv7/source.lock) | Checksum only | Not available | [GitHub release](https://github.com/lsof-org/lsof/releases/tag/4.99.5) |
 | [lsof 4.99.5 (x86)](recipes/lsof/x86/source.lock) | Checksum only | Not available | [GitHub release](https://github.com/lsof-org/lsof/releases/tag/4.99.5) |
 | [lsof 4.99.5 (x86-64)](recipes/lsof/x86_64/source.lock) | Checksum only | Not available | [GitHub release](https://github.com/lsof-org/lsof/releases/tag/4.99.5) |
+| [ltrace 0.8.1 (AArch64)](recipes/ltrace/aarch64/source.lock) | Checksum only | Not available | [official GitLab release](https://gitlab.com/cespedes/ltrace/-/tags/0.8.1) |
+| [ltrace 0.8.1 (ARMv7)](recipes/ltrace/armv7/source.lock) | Checksum only | Not available | [official GitLab release](https://gitlab.com/cespedes/ltrace/-/tags/0.8.1) |
+| [ltrace 0.8.1 (x86)](recipes/ltrace/x86/source.lock) | Checksum only | Not available | [official GitLab release](https://gitlab.com/cespedes/ltrace/-/tags/0.8.1) |
+| [ltrace 0.8.1 (x86-64)](recipes/ltrace/x86_64/source.lock) | Checksum only | Not available | [official GitLab release](https://gitlab.com/cespedes/ltrace/-/tags/0.8.1) |
 | [socat 1.8.1.3 (AArch64)](recipes/socat/aarch64/source.lock) | Checksum only | Not available | [official Git repository](https://repo.or.cz/socat.git) |
 | [socat 1.8.1.3 (ARMv7)](recipes/socat/armv7/source.lock) | Checksum only | Not available | [official Git repository](https://repo.or.cz/socat.git) |
 | [socat 1.8.1.3 (x86)](recipes/socat/x86/source.lock) | Checksum only | Not available | [official Git repository](https://repo.or.cz/socat.git) |
@@ -56,23 +60,26 @@ SHA-1. The tcpdump and libpcap signatures use RSA with SHA-512. These records
 are verified exactly as published; the table does not claim equal
 cryptographic strength.
 
-The AArch64 GDBserver and strace functional tests boot the same
+The AArch64 GDBserver, ltrace, and strace functional tests boot the same
 checksum-locked Alpine 3.22.5 `vmlinuz-virt`, recorded in their respective
 [`GDBserver vm.lock`](recipes/gdbserver/aarch64/vm.lock) and
+[`ltrace vm.lock`](recipes/ltrace/aarch64/vm.lock), and
 [`strace vm.lock`](recipes/strace/aarch64/vm.lock). The kernel is a downloaded
 smoke-test environment input, not a linked input or distributed artifact. Its
 checksum verifies accepted bytes but does not authenticate their origin.
 
-The ARMv7 GDBserver and strace functional tests boot the same checksum-locked
+The ARMv7 GDBserver, ltrace, and strace functional tests boot the same checksum-locked
 Alpine 3.22.5 `vmlinuz-lts`, recorded in their respective
 [`GDBserver vm.lock`](recipes/gdbserver/armv7/vm.lock) and
+[`ltrace vm.lock`](recipes/ltrace/armv7/vm.lock), and
 [`strace vm.lock`](recipes/strace/armv7/vm.lock). Its published configuration
 and an evidence boot establish the required QEMU `virt`, PL011 console, and
 generated-initramfs support. The same checksum-only kernel limitation applies.
 
-The x86 GDBserver and strace functional tests boot the same checksum-locked
+The x86 GDBserver, ltrace, and strace functional tests boot the same checksum-locked
 Alpine 3.22.5 x86 `vmlinuz-lts`, recorded in their respective
 [`GDBserver vm.lock`](recipes/gdbserver/x86/vm.lock) and
+[`ltrace vm.lock`](recipes/ltrace/x86/vm.lock), and
 [`strace vm.lock`](recipes/strace/x86/vm.lock). The published configuration and
 successful QEMU PC boots establish 32-bit x86, initramfs, devtmpfs, procfs, and
 8250 serial-console support; both guests also verify that the fixed `qemu32`

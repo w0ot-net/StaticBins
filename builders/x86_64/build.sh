@@ -113,6 +113,7 @@ docker run --rm \
         for archive_path in \
             /usr/lib/libc.a \
             /usr/lib/libcrypto.a \
+            /usr/lib/libelf.a \
             /usr/lib/libexpat.a \
             /usr/lib/libgmp.a \
             /usr/lib/libmpfr.a \
@@ -156,6 +157,7 @@ docker run --rm \
             fi
         }
 
+        validate_archive_metadata /usr/lib/libelf.a elfutils-dev "GPL-3.0-or-later AND ( GPL-2.0-or-later OR LGPL-3.0-or-later )"
         validate_archive_metadata /usr/lib/libexpat.a expat-static MIT
         validate_archive_metadata /usr/lib/libgmp.a gmp-static "LGPL-3.0-or-later OR GPL-2.0-or-later"
         validate_archive_metadata /usr/lib/libmpfr.a mpfr-dev LGPL-3.0-or-later
@@ -215,6 +217,12 @@ docker run --rm \
             > /tmp/expat-probe.c
         cc -static -no-pie /tmp/expat-probe.c -lexpat -o /tmp/expat-probe
 
+        printf "%s\n" "#include <libelf.h>" \
+            "int main(void) { return elf_version(EV_CURRENT) == EV_NONE; }" \
+            > /tmp/libelf-probe.c
+        cc -static -no-pie /tmp/libelf-probe.c -lelf -lzstd -lz \
+            -o /tmp/libelf-probe
+
         cat > /tmp/gdb-dependencies-probe.cc <<"EOF"
 #include <curses.h>
 #include <expat.h>
@@ -248,7 +256,8 @@ EOF
 
         for probe in \
             /tmp/base-probe /tmp/tirpc-probe /tmp/libressl-probe \
-            /tmp/expat-probe /tmp/gdb-dependencies-probe; do
+            /tmp/expat-probe /tmp/libelf-probe \
+            /tmp/gdb-dependencies-probe; do
             if ! validate_static_probe "${probe}"; then
                 validation_errors=$((validation_errors + 1))
             fi

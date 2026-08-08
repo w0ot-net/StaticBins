@@ -1,0 +1,16 @@
+From: static_bins maintainers
+Subject: [PATCH] aarch64: include sys/types.h for pid_t
+
+The AArch64 fetch backend includes proc.h, which exposes pid_t. Do not depend
+on another system header providing that type transitively; musl does not do so
+in this include order.
+---
+ sysdeps/linux-gnu/aarch64/fetch.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/sysdeps/linux-gnu/aarch64/fetch.c b/sysdeps/linux-gnu/aarch64/fetch.c
+index 03e4f91..196ee6e 100644
+--- a/sysdeps/linux-gnu/aarch64/fetch.c
++++ b/sysdeps/linux-gnu/aarch64/fetch.c
+@@ -21,0 +22 @@
++#include <sys/types.h>

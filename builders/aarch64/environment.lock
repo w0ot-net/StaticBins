@@ -1,5 +1,5 @@
 # Immutable AArch64 build-environment inputs.
 ALPINE_IMAGE=alpine:3.24.1@sha256:28bd5fe8b56d1bd048e5babf5b10710ebe0bae67db86916198a6eec434943f8b
 BINFMT_IMAGE=tonistiigi/binfmt@sha256:400a4873b838d1b89194d982c45e5fb3cda4593fbfd7e08a02e76b03b21166f0
-BUILDER_TAG=aarch64-alpine-3.24.1-r2
-BUILDER_IMAGE=ghcr.io/w0ot-net/static_bins-builder@sha256:b14fafbd85762923af74173d370ade1c54abe4db4f32206af6fcad77e0fd8b57
+BUILDER_TAG=aarch64-alpine-3.24.1-r3
+BUILDER_IMAGE=ghcr.io/w0ot-net/static_bins-builder@sha256:ad08678e77f05a97fe00b7dd0fc67c47aa4c7ec3ad903a0e826e4f1eb69b4a00

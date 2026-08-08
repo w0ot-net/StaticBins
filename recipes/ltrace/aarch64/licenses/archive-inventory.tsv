@@ -1,0 +1,10 @@
+# archive_path	package	version	Alpine_declared_license	license_file	Alpine_APKBUILD
+/usr/lib/libc.a	musl-dev	1.2.6-r2	MIT	musl-COPYRIGHT.txt	https://gitlab.alpinelinux.org/alpine/aports/-/blob/f5640d3a10f664c9119720c60515265d3d6f6d01/main/musl/APKBUILD
+/usr/lib/libssp_nonshared.a	musl-dev	1.2.6-r2	MIT	musl-COPYRIGHT.txt	https://gitlab.alpinelinux.org/alpine/aports/-/blob/f5640d3a10f664c9119720c60515265d3d6f6d01/main/musl/APKBUILD
+/usr/lib/libelf.a	elfutils-dev	0.195-r0	GPL-3.0-or-later AND ( GPL-2.0-or-later OR LGPL-3.0-or-later )	elfutils-COPYING.txt	https://gitlab.alpinelinux.org/alpine/aports/-/blob/8f13294206888f3dd44ed74a8eb3dd9934499e81/main/elfutils/APKBUILD
+/usr/lib/libz.a	zlib-static	1.3.2-r0	Zlib	zlib-LICENSE.txt	https://gitlab.alpinelinux.org/alpine/aports/-/blob/f248b33b5943c7dc69bf691031d7612ab2e8ed93/main/zlib/APKBUILD
+/usr/lib/libzstd.a	zstd-static	1.5.7-r2	BSD-3-Clause OR GPL-2.0-or-later	zstd-LICENSE.txt	https://gitlab.alpinelinux.org/alpine/aports/-/blob/3c6e2ee2b16f403d53eab39c4426eb61f003c322/main/zstd/APKBUILD
+/usr/lib/libstdc++.a	libstdc++-dev	15.2.0-r5	GPL-2.0-or-later AND LGPL-2.1-or-later	GCC-COPYING.RUNTIME.txt	https://gitlab.alpinelinux.org/alpine/aports/-/blob/423a8ad043d07f2c7546c8ec3e2b0384cda360ae/main/gcc/APKBUILD
+/usr/lib/libsupc++.a	libstdc++-dev	15.2.0-r5	GPL-2.0-or-later AND LGPL-2.1-or-later	GCC-COPYING.RUNTIME.txt	https://gitlab.alpinelinux.org/alpine/aports/-/blob/423a8ad043d07f2c7546c8ec3e2b0384cda360ae/main/gcc/APKBUILD
+/usr/lib/gcc/aarch64-alpine-linux-musl/15.2.0/libgcc.a	libgcc-static	15.2.0-r5	GPL-2.0-or-later AND LGPL-2.1-or-later	GCC-COPYING.RUNTIME.txt	https://gitlab.alpinelinux.org/alpine/aports/-/blob/423a8ad043d07f2c7546c8ec3e2b0384cda360ae/main/gcc/APKBUILD
+/usr/lib/gcc/aarch64-alpine-linux-musl/15.2.0/libgcc_eh.a	gcc	15.2.0-r5	GPL-2.0-or-later AND LGPL-2.1-or-later	GCC-COPYING.RUNTIME.txt	https://gitlab.alpinelinux.org/alpine/aports/-/blob/423a8ad043d07f2c7546c8ec3e2b0384cda360ae/main/gcc/APKBUILD

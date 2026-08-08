@@ -108,6 +108,7 @@ docker run --rm \
         for archive_path in \
             /usr/lib/libc.a \
             /usr/lib/libcrypto.a \
+            /usr/lib/libelf.a \
             /usr/lib/libexpat.a \
             /usr/lib/libssl.a \
             /usr/lib/libtirpc.a \
@@ -170,7 +171,15 @@ docker run --rm \
             > /tmp/expat-probe.c
         cc -static -no-pie /tmp/expat-probe.c -lexpat -o /tmp/expat-probe
 
-        for probe in /tmp/base-probe /tmp/tirpc-probe /tmp/libressl-probe /tmp/expat-probe; do
+        printf "%s\n" "#include <libelf.h>" \
+            "int main(void) { return elf_version(EV_CURRENT) == EV_NONE; }" \
+            > /tmp/libelf-probe.c
+        cc -static -no-pie /tmp/libelf-probe.c -lelf -lzstd -lz \
+            -o /tmp/libelf-probe
+
+        for probe in \
+            /tmp/base-probe /tmp/tirpc-probe /tmp/libressl-probe \
+            /tmp/expat-probe /tmp/libelf-probe; do
             if ! validate_static_probe "${probe}"; then
                 validation_errors=$((validation_errors + 1))
             fi

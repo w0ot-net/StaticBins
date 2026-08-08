@@ -6,6 +6,7 @@ build-base=0.5-r4
 ca-certificates=20260611-r0
 cmake=4.2.3-r0
 curl=8.21.0-r0
+elfutils-dev=0.195-r0
 expat-dev=2.8.2-r0
 expat-static=2.8.2-r0
 file=5.47-r2

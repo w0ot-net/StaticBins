@@ -2,6 +2,7 @@ autoconf=2.73-r0
 automake=1.18.1-r1
 bison=3.8.2-r3
 build-base=0.5-r4
+elfutils-dev=0.195-r0
 expat-dev=2.8.2-r0
 expat-static=2.8.2-r0
 file=5.47-r2

@@ -1,5 +1,5 @@
 # Immutable ARMv7 build-environment inputs.
 ALPINE_IMAGE=alpine:3.24.1@sha256:48bf253520b161ff0f7bd9c6b2aded4126fa8ee2bc29386580b2a8a0322a1742
 BINFMT_IMAGE=tonistiigi/binfmt@sha256:400a4873b838d1b89194d982c45e5fb3cda4593fbfd7e08a02e76b03b21166f0
-BUILDER_TAG=armv7-alpine-3.24.1-r2
-BUILDER_IMAGE=ghcr.io/w0ot-net/static_bins-builder@sha256:99d94a69934cb238379a5dd875d6de4683de3d2725ce29167de4344c73acf2e9
+BUILDER_TAG=armv7-alpine-3.24.1-r3
+BUILDER_IMAGE=ghcr.io/w0ot-net/static_bins-builder@sha256:a197c59a45f7fb1683437dd6a4fc1939f010f9cb4606cc64222d966c4341b7c4

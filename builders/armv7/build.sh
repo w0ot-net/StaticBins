@@ -143,6 +143,7 @@ docker run --rm \
             validate_archive_owner "${archive_path}" musl-dev 1.2.6-r2
         done
         validate_archive_owner /usr/lib/libcrypto.a libressl-static 4.3.1-r0
+        validate_archive_owner /usr/lib/libelf.a elfutils-dev 0.195-r0
         validate_archive_owner /usr/lib/libexpat.a expat-static 2.8.2-r0
         validate_archive_owner /usr/lib/libgmp.a gmp-static 6.3.0-r4
         validate_archive_owner /usr/lib/liblzma.a xz-static 5.8.3-r0
@@ -227,6 +228,12 @@ docker run --rm \
             > /tmp/expat-probe.c
         cc -static -no-pie /tmp/expat-probe.c -lexpat -o /tmp/expat-probe
 
+        printf "%s\n" "#include <libelf.h>" \
+            "int main(void) { return elf_version(EV_CURRENT) == EV_NONE; }" \
+            > /tmp/libelf-probe.c
+        cc -static -no-pie /tmp/libelf-probe.c -lelf -lzstd -lz \
+            -o /tmp/libelf-probe
+
         cat > /tmp/gdb-libraries-probe.cpp <<"EOF"
 #include <expat.h>
 #include <gmp.h>
@@ -264,6 +271,7 @@ EOF
             /tmp/tirpc-probe \
             /tmp/libressl-probe \
             /tmp/expat-probe \
+            /tmp/libelf-probe \
             /tmp/gdb-libraries-probe; do
             if ! validate_static_probe "${probe}"; then
                 validation_errors=$((validation_errors + 1))
