@@ -182,3 +182,30 @@ factual after the required successful rebuild, so it does not change.
 - Existing `ET_EXEC` recipes and artifacts remain accepted without a conversion
   campaign, and no unrelated builder, recipe, artifact, or policy work is
   absorbed.
+
+## Execution Notes
+
+- Defined classic static `ET_EXEC` and static PIE `ET_DYN` as recipe-selected
+  release profiles in the repository contract, artifact authority, and
+  contributor procedure. Explicit `-no-pie` is no longer treated as evidence
+  of static linkage or a default for new and reviewed link policies.
+- Added one executable AArch64 GDB validator and used it for the guest output,
+  exported host candidate, and installed artifact. It enforces ELF64
+  little-endian AArch64 `ET_DYN`, a nonzero entry point, an executable
+  `PT_LOAD`, `DF_1_PIE`, no `PT_INTERP`, `DT_NEEDED`, or text relocations, and
+  stripped output.
+- Rebuilt AArch64 GDB 17.2 through its locked Buildx/QEMU path. The target
+  `--version` smoke test passed, and the installed artifact reproduced the
+  committed SHA-256 exactly:
+  `5e96e51367020e6be6e2cb0a7f0014573da838a8f7d1d099fd2e5a4a55c820ab`.
+  No artifact, checksum manifest, or trust-record update was required.
+- Shell syntax checks, direct positive validation, negative rejection of the
+  AArch64 `ET_EXEC` GDBserver artifact, all artifact checksum checks,
+  `git diff --check`, and `./validate.sh` passed. Repository validation covered
+  28 enabled recipes and 25 tests.
+- No material implementation deviation was required. Four recipes were added
+  concurrently after the plan recorded 24 total recipes, making the literal
+  "other 23" count stale; the intended boundary remained intact because no
+  other recipe, artifact, builder, catalog, source, feature, or license was
+  changed by this implementation.
+- Implementation commit: `0801f37`.
