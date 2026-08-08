@@ -165,7 +165,7 @@ def _sha256_file(path: Path) -> str:
     return digest.hexdigest()
 
 
-def _validate_artifact_manifest(root: Path) -> None:
+def _validate_artifact_manifest(root: Path, recipe_outputs: set[str]) -> None:
     manifest_relative = "artifacts/SHA256SUMS"
     manifest_path = root / manifest_relative
     if manifest_path.is_symlink() or not manifest_path.is_file():
@@ -235,6 +235,10 @@ def _validate_artifact_manifest(root: Path) -> None:
         errors.append(f"artifact missing from SHA256SUMS: {relative_path}")
     for relative_path in sorted(records.keys() - actual_paths):
         errors.append(f"SHA256SUMS names missing artifact: {relative_path}")
+    for relative_path in sorted(actual_paths - recipe_outputs):
+        errors.append(f"artifact has no catalog recipe: {relative_path}")
+    for relative_path in sorted(recipe_outputs - actual_paths):
+        errors.append(f"catalog recipe has no artifact: {relative_path}")
     for relative_path in sorted(actual_paths & records.keys()):
         expected_digest, line_number = records[relative_path]
         mode = _git_index_mode(root, relative_path)
@@ -656,7 +660,7 @@ def load_catalog(root: Path, catalog_path: Path) -> list[Recipe]:
                 f"duplicate recipe pair: {recipe.name}/{recipe.architecture}"
             )
         seen_pairs.add(pair)
-    _validate_artifact_manifest(root)
+    _validate_artifact_manifest(root, {recipe.output for recipe in recipes})
     return recipes
 
 

@@ -27,7 +27,9 @@ file unchanged.
 `artifacts/SHA256SUMS` is a sorted, complete, exact manifest for every
 distributed file other than the manifest itself. Repository validation rejects
 missing, extra, unsafe, duplicate, unsorted, wrong-mode, untracked, and
-checksum-mismatched artifact state.
+checksum-mismatched artifact state. It also requires the manifest's artifact
+paths to equal the conventional outputs derived from `recipes/catalog.tsv`, so
+every distributed file has exactly one validated recipe owner.
 
 Three recorded assurance concepts remain distinct:
 
@@ -40,5 +42,6 @@ Three recorded assurance concepts remain distinct:
 Recipe build validation is the artifact acceptance boundary. Exact rebuilds
 and provenance attestations are optional independent facts; their absence does
 not negate the target checks, and their presence does not make source safe.
-[`TRUST.md`](../../../TRUST.md) owns the current factual record for every
-artifact and preserves any historical independent evidence.
+[`TRUST.md`](../../../TRUST.md) records common acceptance facts once and lists
+artifact-specific independent evidence as exceptions; artifacts not listed
+there are explicitly defined as having none.

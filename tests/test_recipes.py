@@ -519,6 +519,7 @@ class RecipeCatalogTests(unittest.TestCase):
             ("extra record", "SHA256SUMS names missing artifact"),
             ("duplicate record", "duplicate artifact path"),
             ("unsorted records", "artifact paths are not sorted"),
+            ("artifact without recipe", "artifact has no catalog recipe"),
             ("unsafe path", "unsafe artifact path"),
             ("malformed record", "malformed record"),
             ("corrupt artifact", "checksum mismatch"),
@@ -545,7 +546,7 @@ class RecipeCatalogTests(unittest.TestCase):
                     )
                 elif mutation == "duplicate record":
                     manifest.write_text(record + "\n" + record + "\n", encoding="utf-8")
-                elif mutation == "unsorted records":
+                elif mutation in {"unsorted records", "artifact without recipe"}:
                     extra = fixture.root / "artifacts/x86_64/extra"
                     extra.parent.mkdir(parents=True, exist_ok=True)
                     extra.write_bytes(b"extra")
@@ -564,7 +565,12 @@ class RecipeCatalogTests(unittest.TestCase):
                         f"{hashlib.sha256(extra.read_bytes()).hexdigest()}  "
                         "artifacts/x86_64/extra"
                     )
-                    manifest.write_text(extra_record + "\n" + record + "\n", encoding="utf-8")
+                    records = (
+                        (extra_record, record)
+                        if mutation == "unsorted records"
+                        else (record, extra_record)
+                    )
+                    manifest.write_text("\n".join(records) + "\n", encoding="utf-8")
                 elif mutation == "unsafe path":
                     manifest.write_text(
                         "0" * 64 + "  artifacts/../outside\n", encoding="utf-8"

@@ -40,10 +40,12 @@ Repository contract:
   a new distributed tool for every ready architecture as one coordinated
   rollout; keep incomplete coverage out of the public artifact set.
 - Keep `artifacts/SHA256SUMS` complete and exact for every distributed file,
-  excluding the manifest itself. Record every artifact's source
-  authentication, recipe build validation, and any independent evidence in
-  `TRUST.md`; checksums and source authentication alone do not establish who
-  built an artifact.
+  excluding the manifest itself, and require its paths to equal the catalog's
+  conventional recipe outputs. In `TRUST.md`, derive artifact source
+  authentication from the validated recipe locks, record the common recipe
+  build-validation status once, and list artifact-specific independent evidence
+  as exceptions; define unlisted artifacts explicitly as having none. Checksums
+  and source authentication alone do not establish who built an artifact.
 
 Reproducible build guidance:
 

@@ -107,41 +107,28 @@ integrity manifest:
 sha256sum -c artifacts/SHA256SUMS
 ```
 
-This detects missing or changed bytes relative to the checked-out manifest. It
-does not identify who built a binary or establish its provenance.
+This detects missing or changed bytes relative to the checked-out manifest. The
+validator also requires the manifest's artifact paths to equal the conventional
+outputs derived from `recipes/catalog.tsv`. Each artifact therefore maps to the
+validated `recipes/<tool>/<architecture>/source.lock` records summarized above.
+Checksums and source authentication do not identify who built a binary.
 
-| Artifact | Source authentication | Build validation | Independent evidence |
-| --- | --- | --- | --- |
-| `artifacts/aarch64/gdb` | Upstream PGP | Committed recipe and target checks passed | One native exact-rebuild mismatch |
-| `artifacts/aarch64/gdbserver` | Upstream PGP | Committed recipe and target checks passed | None |
-| `artifacts/aarch64/lsof` | Checksum only | Committed recipe and target checks passed | None |
-| `artifacts/aarch64/socat` | Checksum only | Committed recipe and target checks passed | None |
-| `artifacts/aarch64/strace` | Checksum only | Committed recipe and target checks passed | None |
-| `artifacts/aarch64/tcpdump` | Upstream PGP for tcpdump and libpcap | Committed recipe and target checks passed | None |
-| `artifacts/armv7/gdb` | Upstream PGP | Committed recipe and target checks passed | None |
-| `artifacts/armv7/gdbserver` | Upstream PGP | Committed recipe and target checks passed | None |
-| `artifacts/armv7/lsof` | Checksum only | Committed recipe and target checks passed | None |
-| `artifacts/armv7/socat` | Checksum only | Committed recipe and target checks passed | None |
-| `artifacts/armv7/strace` | Checksum only | Committed recipe and target checks passed | None |
-| `artifacts/armv7/tcpdump` | Upstream PGP for tcpdump and libpcap | Committed recipe and target checks passed | None |
-| `artifacts/x86/gdb` | Upstream PGP | Committed recipe and target checks passed | None |
-| `artifacts/x86/gdbserver` | Upstream PGP | Committed recipe and target checks passed | None |
-| `artifacts/x86/lsof` | Checksum only | Committed recipe and target checks passed | None |
-| `artifacts/x86/socat` | Checksum only | Committed recipe and target checks passed | None |
-| `artifacts/x86/strace` | Checksum only | Committed recipe and target checks passed | None |
-| `artifacts/x86/tcpdump` | Upstream PGP for tcpdump and libpcap | Committed recipe and target checks passed | None |
-| `artifacts/x86_64/gdb` | Upstream PGP | Committed recipe and target checks passed | None |
-| `artifacts/x86_64/tcpdump` | Upstream PGP for tcpdump and libpcap | Committed recipe and target checks passed | Exact native rebuild and historical GitHub attestation |
-| `artifacts/x86_64/gdbserver` | Upstream PGP | Committed recipe and target checks passed | None |
-| `artifacts/x86_64/lsof` | Checksum only | Committed recipe and target checks passed | None |
-| `artifacts/x86_64/socat` | Checksum only | Committed recipe and target checks passed | None |
-| `artifacts/x86_64/strace` | Checksum only | Committed recipe and target checks passed | None |
+Every distributed artifact was built through its committed recipe and passed
+that recipe's source, link, ELF, architecture, version, and focused functional
+checks. Target execution may be native or use the recipe's supported
+Buildx/QEMU path.
 
-Build validation records that the maintainer built the artifact through its
-committed recipe and that the recipe's source, link, ELF, architecture, version,
-and focused functional checks passed. Target execution may be native or use the
-recipe's supported Buildx/QEMU path. `None` in the independent-evidence column
-does not mean those build checks were skipped.
+Only the following artifacts have independent evidence beyond those required
+recipe checks:
+
+| Artifact | Independent evidence |
+| --- | --- |
+| `artifacts/aarch64/gdb` | One native exact-rebuild mismatch |
+| `artifacts/x86_64/tcpdump` | Exact native rebuild and historical GitHub attestation |
+
+Every artifact not listed in this exception table has no independent rebuild
+or attestation evidence. That absence does not mean its required recipe checks
+were skipped.
 
 The tcpdump evidence records a clean native build that reproduced the committed
 SHA-256 exactly and a past repository workflow that attested the same rebuilt

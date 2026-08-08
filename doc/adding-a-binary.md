@@ -124,13 +124,13 @@ build or publish a utility image. GHCR publication is reserved for the
 separately maintained reusable builders.
 
 Update `artifacts/SHA256SUMS` with exactly one sorted, repository-relative
-SHA-256 record for the new executable. In `TRUST.md`, record its source
-authentication, that the maintainer-built artifact passed the committed
-recipe's target checks, and any independent exact-rebuild or attestation
-evidence. Use `None` when no independent evidence exists; that does not erase
-the recipe validation. A source signature or checksum still does not identify
-who built the artifact.
+SHA-256 record for the new executable. Repository validation requires that set
+of paths to match the catalog's conventional outputs. The common source and
+recipe-validation statements in `TRUST.md` apply automatically; update its
+exception table only when the artifact has independent exact-rebuild or
+attestation evidence, or when a common trust statement itself changes. A source
+signature or checksum still does not identify who built the artifact.
 
 Run `./validate.sh` again after updating the catalog, artifact manifest, and
-TRUST record. Commit and push only after both it and the direct recipe build
-succeed.
+any required TRUST evidence. Commit and push only after both it and the direct
+recipe build succeed.
