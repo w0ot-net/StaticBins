@@ -1,5 +1,7 @@
 # Plan: Derive Artifact Trust Records from Validated State
 
+*Distilled: 2026-08-08*
+
 ## Summary
 
 Remove the redundant 24-row artifact ledger from `TRUST.md` instead of adding a

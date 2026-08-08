@@ -1,5 +1,7 @@
 # Plan: Add Minimal Hosted Validation
 
+*Distilled: 2026-08-08*
+
 ## Summary
 
 Add one read-only GitHub Actions workflow with exactly two functional steps:

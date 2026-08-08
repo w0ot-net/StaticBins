@@ -1,5 +1,7 @@
 # Plan: Make Planning Records Explicitly Optional
 
+*Distilled: 2026-08-08*
+
 ## Summary
 
 Clarify the existing implementation-records paragraph in `doc/README.md` so

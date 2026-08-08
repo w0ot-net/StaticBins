@@ -1,5 +1,7 @@
 # Plan: Validate Source Records Generically
 
+*Distilled: 2026-08-08*
+
 ## Summary
 
 Replace the duplicated tcpdump-only source validation with one loop over
