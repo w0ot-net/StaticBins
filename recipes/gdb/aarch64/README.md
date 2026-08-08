@@ -1,7 +1,7 @@
 # AArch64 GDB recipe
 
-This recipe builds GDB 17.2 as a stripped static AArch64 executable. From the
-repository root, use the stable dispatcher or the direct recipe command:
+This recipe builds GDB 17.2 as a stripped static-PIE AArch64 executable. From
+the repository root, use the stable dispatcher or the direct recipe command:
 
 ```sh
 ./build.sh gdb aarch64
@@ -33,7 +33,11 @@ committed detached signature offline against full signer fingerprint
 DSA/SHA-1; [`TRUST.md`](../../../TRUST.md) explains what that evidence does and
 does not establish.
 
-The build rejects an ELF interpreter, dynamic dependencies, a wrong machine,
-or an incomplete link inventory. Python, Guile, debuginfod, Babeltrace, libipt,
-and source-highlight are intentionally disabled to keep the artifact
-self-contained.
+The tool-owned `validate-elf.sh` requires ELF64 little-endian AArch64
+`ET_DYN`, a nonzero entry point, an executable load segment, `DF_1_PIE`, and
+stripped output. It rejects an ELF interpreter, dynamic dependencies, text
+relocations, or an incomplete link inventory. The host applies the same
+structural validator to the exported candidate and installed artifact, while
+target execution proves the static runtime starts successfully. Python, Guile,
+debuginfod, Babeltrace, libipt, and source-highlight are intentionally disabled
+to keep the artifact self-contained.

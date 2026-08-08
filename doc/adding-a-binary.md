@@ -49,7 +49,18 @@ be non-interactive, validate a temporary candidate completely before replacing
 the committed artifact, and enforce the target architecture and static-ELF
 contract. It must fail before build setup when Docker Buildx is unavailable and
 must use its Dockerfile through one unconditional Buildx path; do not select a
-direct-container or classic Docker fallback. `source.lock` owns the source
+direct-container or classic Docker fallback.
+
+Select one release profile: classic static `ET_EXEC` or static PIE `ET_DYN`.
+Both reject `PT_INTERP` and `DT_NEEDED`; static PIE additionally requires a
+nonzero entry point, an executable `PT_LOAD`, `DF_1_PIE`, and no text
+relocations. Do not use `-no-pie` as evidence of static linkage. A new recipe,
+or an existing recipe whose final-link policy is under review, may explicitly
+force non-PIE output only with a concrete compatibility or toolchain reason in
+its README. Existing validated artifacts need not be relinked solely to change
+profile.
+
+`source.lock` owns the source
 version, archive, checksum, official provenance URL, license identifier, and
 explicit authentication mode. The corresponding regular, non-symlink archive
 must be committed with mode `100644` at `sources/<archive>` and its actual bytes

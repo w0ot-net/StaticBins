@@ -101,10 +101,20 @@ Reproducible build guidance:
 
 Static artifact validation:
 
-- Building with `-static` is not proof. Use `file` plus `readelf` and fail if the
-  ELF has a requested program interpreter or any `DT_NEEDED` entries.
-- Verify the exact ELF machine/architecture and executable type expected by the
-  destination directory.
+- Building with `-static`, using `-no-pie`, or observing one ELF type is not
+  proof of static linkage. Use `file` plus `readelf` and fail if the ELF has a
+  `PT_INTERP` program header or any `DT_NEEDED` entries.
+- Select and enforce one reviewed release profile per recipe: classic static
+  `ET_EXEC` or static PIE `ET_DYN`. Both profiles require the exact ELF machine,
+  class, endianness, ABI, and stripping state promised by the destination.
+- For static PIE, additionally require a nonzero entry point, an executable
+  `PT_LOAD`, `DF_1_PIE`, and no `DT_TEXTREL` or `DF_TEXTREL`. `ET_DYN` alone is
+  not proof that a file is an executable or self-contained.
+- Do not add or retain explicit `-no-pie` in a new recipe or an otherwise
+  reviewed final-link policy merely to satisfy staticness. When an explicit
+  non-PIE switch selects `ET_EXEC`, document the concrete compatibility or
+  toolchain reason in the recipe README. Do not relink an existing validated
+  artifact solely to convert its executable profile.
 - For 32-bit ARM, also require ELF32, little-endian data, and the intended ARM
   EABI hard-float flags; an `ARM` machine field alone is insufficient.
 - For 32-bit x86, also require ELF32, little-endian data, the `Intel 80386`

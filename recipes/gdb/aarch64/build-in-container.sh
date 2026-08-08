@@ -212,33 +212,6 @@ fi
 install -m 0755 gdb/gdb /out/gdb
 strip /out/gdb
 
-file /out/gdb
-
-if ! readelf -h /out/gdb | grep -Eq 'Machine:[[:space:]]+AArch64'; then
-    echo "error: GDB is not an AArch64 executable" >&2
-    readelf -h /out/gdb >&2
-    exit 1
-fi
-
-if ! readelf -h /out/gdb | grep -Eq 'Type:[[:space:]]+DYN'; then
-    echo "error: GDB is not an ELF ET_DYN static-PIE executable" >&2
-    exit 1
-fi
-
-if readelf -l /out/gdb | grep -q 'Requesting program interpreter'; then
-    echo "error: GDB has a dynamic program interpreter" >&2
-    exit 1
-fi
-
-if readelf -d /out/gdb 2>/dev/null | grep -q '(NEEDED)'; then
-    echo "error: GDB has dynamic library dependencies" >&2
-    readelf -d /out/gdb | grep '(NEEDED)' >&2
-    exit 1
-fi
-
-if readelf -S /out/gdb | grep -Eq '[.]debug|[.]symtab'; then
-    echo "error: GDB retains debug or full symbol-table sections" >&2
-    exit 1
-fi
+/usr/local/bin/validate-static-pie-gdb /out/gdb
 
 /out/gdb --batch --version

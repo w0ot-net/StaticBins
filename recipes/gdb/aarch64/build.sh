@@ -85,32 +85,7 @@ docker buildx build \
     "${SCRIPT_DIR}"
 
 candidate="${temporary_dir}/gdb"
-validate_elf() {
-    local binary="$1"
-    file "${binary}"
-    if ! readelf -h "${binary}" | grep -Eq 'Type:[[:space:]]+DYN'; then
-        echo "error: output is not an ELF ET_DYN static-PIE executable" >&2
-        exit 1
-    fi
-    if ! readelf -h "${binary}" | grep -Eq 'Machine:[[:space:]]+AArch64'; then
-        echo "error: output is not an AArch64 executable" >&2
-        exit 1
-    fi
-    if readelf -l "${binary}" | grep -q 'Requesting program interpreter'; then
-        echo "error: output has a dynamic program interpreter" >&2
-        exit 1
-    fi
-    if readelf -d "${binary}" 2>/dev/null | grep -q '(NEEDED)'; then
-        echo "error: output has dynamic library dependencies" >&2
-        exit 1
-    fi
-    if readelf -S "${binary}" | grep -Eq '[.]debug|[.]symtab'; then
-        echo "error: output retains debug or full symbol-table sections" >&2
-        exit 1
-    fi
-}
-
-validate_elf "${candidate}"
+"${SCRIPT_DIR}/validate-elf.sh" "${candidate}"
 docker run --rm \
     --platform "${PLATFORM}" \
     --mount "type=bind,src=${candidate},dst=/gdb,readonly" \
@@ -119,7 +94,7 @@ docker run --rm \
 read -r candidate_sha256 _ < <(sha256sum "${candidate}")
 
 install -m 0755 "${candidate}" "${OUTPUT_FILE}"
-validate_elf "${OUTPUT_FILE}"
+"${SCRIPT_DIR}/validate-elf.sh" "${OUTPUT_FILE}"
 read -r installed_sha256 _ < <(sha256sum "${OUTPUT_FILE}")
 if [[ "${installed_sha256}" != "${candidate_sha256}" ]]; then
     echo "error: installed GDB does not match the validated candidate" >&2
