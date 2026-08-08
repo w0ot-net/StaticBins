@@ -1,5 +1,7 @@
 # Plan: Make the Root README a Stable Front Door
 
+*Distilled: 2026-08-08*
+
 ## Summary
 
 Replace the exhaustive utility matrix and maintainer runbook in `README.md`
