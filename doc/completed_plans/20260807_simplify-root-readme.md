@@ -156,3 +156,24 @@ index.
   and checksum manifest as the current distribution inventory.
 - No production code, test code, recipe, builder, artifact, catalog, checksum,
   or trust record changes.
+
+## Execution Notes
+
+Completed on 2026-08-08 in implementation commit
+`bba73adcae30d89958097fb93c8c27248ccfa9b6`.
+
+- Replaced the root utility matrix and maintainer runbook with stable artifact
+  discovery, checksum and trust verification, one fresh-checkout rebuild flow,
+  the conventional output path, and a link to the documentation map.
+- Assigned current enabled pairs, distributed files, and their exact inventory
+  to `recipes/catalog.tsv`, `artifacts/`, and `artifacts/SHA256SUMS` across
+  `AGENTS.md`, the documentation map, both contributor procedures, and the
+  distribution architecture authority.
+- Made no material deviation from the plan. No builder, recipe, artifact,
+  catalog, checksum, trust, production-code, or test-code state changed.
+- Validated all 34 relative links in the six changed files, required and
+  forbidden README content, removal of stale live artifact-index wording,
+  `git diff --check`, and the exact six-file documentation scope.
+- `./build.sh list` remained at 24 enabled pairs. `./validate.sh` validated all
+  24 recipes and passed 25 tests. All artifact hashes, the checksum manifest,
+  and tracked recipe, builder, and trust blobs matched the pre-edit snapshot.
