@@ -91,3 +91,17 @@ are not a reason to retain the duplicated branch.
   checks; incomplete, unused, or archive-aliasing fields fail clearly.
 - Every current lock validates without migration or rebuild.
 - `scripts/recipes.py` is smaller than before the implementation.
+
+## Execution Notes
+
+- Implemented one `_validate_source_record` helper and a deterministic prefix
+  loop; removed the tcpdump/`LIBPCAP_` validator branch.
+- Replaced the specialized fixture with arbitrary multi-source coverage and
+  updated the source-input authority and contributor procedure.
+- No material deviations were required. Source locks, recipes, artifacts,
+  checksums, and unrelated static-PIE/builder work were not changed.
+- Validation passed with `python3 -m unittest tests.test_recipes`,
+  `python3 scripts/recipes.py validate`, `./validate.sh`, and
+  `git diff --check`. All 24 recipes and 25 tests passed.
+- `scripts/recipes.py` decreased from 727 to 702 lines.
+- Implementation commit: `3f46b14`.
