@@ -79,3 +79,18 @@ the workflow begins with the final, smaller validation contract.
 - The job is read-only and performs no build, publication, or attestation.
 - Local checks and direct-push governance remain unchanged and accurately
   documented.
+
+## Execution Notes
+
+- Added one `ubuntu-24.04` job with `contents: read`, a five-minute timeout,
+  SHA-pinned `actions/checkout` v4.3.1, disabled credential persistence, and
+  one `./validate.sh` run step.
+- Updated the automation authority and live governance record without changing
+  rulesets, local acceptance, builds, publication, or historical evidence.
+- No implementation deviations were required. PyYAML performed the local
+  syntax parse because `ruby` and `actionlint` were unavailable.
+- Workflow shape assertions, `git diff --check`, and `./validate.sh` passed;
+  all 24 recipes and 25 tests passed locally.
+- Hosted run `31281993668` passed for exact implementation commit
+  `ee59ff398e0ca5a1cab994fa462b9b4c986d46a0`.
+- Implementation commit: `ee59ff3`.
