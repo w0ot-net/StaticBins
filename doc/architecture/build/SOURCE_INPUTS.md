@@ -7,7 +7,12 @@ Every recipe has one committed `source.lock` and a `sources/` directory. Each
 required upstream archive is a regular tracked mode-`100644` file whose
 SHA-256, official HTTPS provenance URL, license identifier, and explicit
 authentication mode are recorded in the lock. Multi-source recipes keep every
-record and byte under the same tool-and-architecture owner.
+record and byte under the same tool-and-architecture owner. The mandatory
+record uses `SOURCE_`; each additional record uses another uppercase prefix
+with the same `VERSION`, `ARCHIVE`, `SHA256`, `UPSTREAM_URL`, `LICENSE`, and
+`AUTHENTICATION` fields. Repository validation discovers those complete records
+from their `<PREFIX>VERSION` fields and applies the same checks without
+tool-specific branches.
 
 The accepted authentication modes are:
 

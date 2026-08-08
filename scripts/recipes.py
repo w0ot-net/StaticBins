@@ -364,6 +364,71 @@ def _validate_source_authentication(
     return SourceAuthentication(source_name, mode, fingerprint), pgp_fields
 
 
+def _validate_source_record(
+    root: Path,
+    recipe_path: Path,
+    values: dict[str, str],
+    prefix: str,
+    line_number: int,
+) -> tuple[str, SourceAuthentication, set[str]]:
+    required_fields = {
+        f"{prefix}{suffix}"
+        for suffix in (
+            "VERSION",
+            "ARCHIVE",
+            "SHA256",
+            "UPSTREAM_URL",
+            "LICENSE",
+            "AUTHENTICATION",
+        )
+    }
+    missing_fields = sorted(required_fields - values.keys())
+    if missing_fields:
+        raise _error(
+            line_number,
+            f"source.lock is missing: {', '.join(missing_fields)}",
+        )
+
+    version_field = f"{prefix}VERSION"
+    sha256_field = f"{prefix}SHA256"
+    archive_field = f"{prefix}ARCHIVE"
+    upstream_url_field = f"{prefix}UPSTREAM_URL"
+    if VERSION_RE.fullmatch(values[version_field]) is None:
+        raise _error(line_number, f"invalid {version_field}: {values[version_field]}")
+    if SHA256_RE.fullmatch(values[sha256_field]) is None:
+        raise _error(
+            line_number,
+            f"{sha256_field} must be 64 lowercase hexadecimal characters",
+        )
+    archive_name = values[archive_field]
+    _safe_filename(archive_name, archive_field, line_number)
+    if not values[upstream_url_field].startswith("https://"):
+        raise _error(line_number, f"{upstream_url_field} must use HTTPS")
+
+    source_name = "source" if prefix == "SOURCE_" else prefix[:-1].lower()
+    archive_description = (
+        "source archive" if prefix == "SOURCE_" else f"{source_name} source archive"
+    )
+    _require_source_archive(
+        root,
+        recipe_path,
+        archive_name,
+        values[sha256_field],
+        archive_description,
+        line_number,
+    )
+    authentication, authentication_fields = _validate_source_authentication(
+        root,
+        recipe_path,
+        values,
+        prefix,
+        source_name,
+        archive_name,
+        line_number,
+    )
+    return archive_name, authentication, required_fields | authentication_fields
+
+
 def load_builder_catalog(
     root: Path, catalog_path: Path | None = None
 ) -> dict[str, BuilderArchitecture]:
@@ -518,120 +583,30 @@ def _validate_recipe(
     _require_executable(root, output, line_number)
 
     source_values = _read_lock(recipe_path / "source.lock", line_number)
-    required_source_fields = {
-        "SOURCE_VERSION",
-        "SOURCE_ARCHIVE",
-        "SOURCE_SHA256",
-        "SOURCE_UPSTREAM_URL",
-        "SOURCE_LICENSE",
-        "SOURCE_AUTHENTICATION",
-    }
-    missing_source_fields = sorted(required_source_fields - source_values.keys())
-    if missing_source_fields:
+    additional_prefixes = sorted(
+        key[: -len("VERSION")]
+        for key in source_values
+        if key.endswith("_VERSION") and key != "SOURCE_VERSION"
+    )
+    source_authentications: list[SourceAuthentication] = []
+    source_archives: set[str] = set()
+    expected_fields: set[str] = set()
+    for prefix in ("SOURCE_", *additional_prefixes):
+        archive_name, authentication, record_fields = _validate_source_record(
+            root, recipe_path, source_values, prefix, line_number
+        )
+        if archive_name in source_archives:
+            raise _error(line_number, "source archives must be distinct")
+        source_archives.add(archive_name)
+        source_authentications.append(authentication)
+        expected_fields.update(record_fields)
+
+    unexpected_fields = sorted(source_values.keys() - expected_fields)
+    if unexpected_fields:
         raise _error(
             line_number,
-            f"source.lock is missing: {', '.join(missing_source_fields)}",
+            f"source.lock has unexpected fields: {', '.join(unexpected_fields)}",
         )
-
-    version = source_values["SOURCE_VERSION"]
-    if VERSION_RE.fullmatch(version) is None:
-        raise _error(line_number, f"invalid SOURCE_VERSION: {version}")
-    if SHA256_RE.fullmatch(source_values["SOURCE_SHA256"]) is None:
-        raise _error(line_number, "SOURCE_SHA256 must be 64 lowercase hexadecimal characters")
-    source_archive = source_values["SOURCE_ARCHIVE"]
-    _safe_filename(source_archive, "SOURCE_ARCHIVE", line_number)
-    if not source_values["SOURCE_UPSTREAM_URL"].startswith("https://"):
-        raise _error(line_number, "SOURCE_UPSTREAM_URL must use HTTPS")
-    _require_source_archive(
-        root,
-        recipe_path,
-        source_archive,
-        source_values["SOURCE_SHA256"],
-        "source archive",
-        line_number,
-    )
-    source_authentication, source_authentication_fields = (
-        _validate_source_authentication(
-            root,
-            recipe_path,
-            source_values,
-            "SOURCE_",
-            "source",
-            source_archive,
-            line_number,
-        )
-    )
-    source_authentications = [source_authentication]
-
-    if name == "tcpdump":
-        required_libpcap_fields = {
-            "LIBPCAP_VERSION",
-            "LIBPCAP_ARCHIVE",
-            "LIBPCAP_SHA256",
-            "LIBPCAP_UPSTREAM_URL",
-            "LIBPCAP_LICENSE",
-            "LIBPCAP_AUTHENTICATION",
-        }
-        missing_libpcap_fields = sorted(required_libpcap_fields - source_values.keys())
-        if missing_libpcap_fields:
-            raise _error(
-                line_number,
-                f"tcpdump source.lock is missing: {', '.join(missing_libpcap_fields)}",
-            )
-        libpcap_version = source_values["LIBPCAP_VERSION"]
-        if VERSION_RE.fullmatch(libpcap_version) is None:
-            raise _error(line_number, f"invalid LIBPCAP_VERSION: {libpcap_version}")
-        if SHA256_RE.fullmatch(source_values["LIBPCAP_SHA256"]) is None:
-            raise _error(
-                line_number,
-                "LIBPCAP_SHA256 must be 64 lowercase hexadecimal characters",
-            )
-        libpcap_archive = source_values["LIBPCAP_ARCHIVE"]
-        _safe_filename(libpcap_archive, "LIBPCAP_ARCHIVE", line_number)
-        if libpcap_archive == source_archive:
-            raise _error(line_number, "tcpdump source archives must be distinct")
-        if not source_values["LIBPCAP_UPSTREAM_URL"].startswith("https://"):
-            raise _error(line_number, "LIBPCAP_UPSTREAM_URL must use HTTPS")
-        _require_source_archive(
-            root,
-            recipe_path,
-            libpcap_archive,
-            source_values["LIBPCAP_SHA256"],
-            "libpcap source archive",
-            line_number,
-        )
-        libpcap_authentication, libpcap_authentication_fields = (
-            _validate_source_authentication(
-                root,
-                recipe_path,
-                source_values,
-                "LIBPCAP_",
-                "libpcap",
-                libpcap_archive,
-                line_number,
-            )
-        )
-        source_authentications.append(libpcap_authentication)
-        expected_fields = (
-            required_source_fields
-            | source_authentication_fields
-            | required_libpcap_fields
-            | libpcap_authentication_fields
-        )
-        unexpected_fields = sorted(source_values.keys() - expected_fields)
-        if unexpected_fields:
-            raise _error(
-                line_number,
-                f"tcpdump source.lock has unexpected fields: {', '.join(unexpected_fields)}",
-            )
-    else:
-        expected_fields = required_source_fields | source_authentication_fields
-        unexpected_fields = sorted(source_values.keys() - expected_fields)
-        if unexpected_fields:
-            raise _error(
-                line_number,
-                f"source.lock has unexpected fields: {', '.join(unexpected_fields)}",
-            )
 
     environment_values = _read_lock(root / environment_lock, line_number)
     if DIGEST_IMAGE_RE.fullmatch(environment_values.get("BUILDER_IMAGE", "")) is None:

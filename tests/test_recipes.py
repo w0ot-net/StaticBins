@@ -89,6 +89,7 @@ class CatalogFixture:
         version: str = "1.0",
         enabled: str = "true",
         authentication: str = "checksum-only",
+        additional_sources: tuple[str, ...] = (),
         script_body: str = "#!/usr/bin/env bash\nexit 37\n",
     ) -> dict[str, str]:
         recipe_dir = self.root / "recipes" / name / architecture
@@ -142,16 +143,18 @@ class CatalogFixture:
                 "SOURCE_SIGNER_FINGERPRINT="
                 "1F166A5742ABB9E0249A8D30E089DEF1D9C15D0D\n"
             )
-        if name == "tcpdump":
-            libpcap_bytes = b"libpcap-1.10.4 source fixture\n"
-            (source_dir / "libpcap-1.10.4.tar.gz").write_bytes(libpcap_bytes)
+        for prefix in additional_sources:
+            source_name = prefix.removesuffix("_").lower()
+            additional_bytes = f"{source_name}-1.0 source fixture\n".encode()
+            archive_name = f"{source_name}-1.0.tar.xz"
+            (source_dir / archive_name).write_bytes(additional_bytes)
             source_lock += (
-                "LIBPCAP_VERSION=1.10.4\n"
-                "LIBPCAP_ARCHIVE=libpcap-1.10.4.tar.gz\n"
-                f"LIBPCAP_SHA256={hashlib.sha256(libpcap_bytes).hexdigest()}\n"
-                "LIBPCAP_UPSTREAM_URL=https://upstream.invalid/libpcap.tar.gz\n"
-                "LIBPCAP_LICENSE=BSD-3-Clause\n"
-                "LIBPCAP_AUTHENTICATION=checksum-only\n"
+                f"{prefix}VERSION=1.0\n"
+                f"{prefix}ARCHIVE={archive_name}\n"
+                f"{prefix}SHA256={hashlib.sha256(additional_bytes).hexdigest()}\n"
+                f"{prefix}UPSTREAM_URL=https://upstream.invalid/{archive_name}\n"
+                f"{prefix}LICENSE=MIT\n"
+                f"{prefix}AUTHENTICATION=checksum-only\n"
             )
         (recipe_dir / "source.lock").write_text(source_lock, encoding="utf-8")
         (recipe_dir / "build.sh").write_text(script_body, encoding="utf-8")
@@ -785,62 +788,74 @@ class RecipeCatalogTests(unittest.TestCase):
                 with self.assertRaisesRegex(recipes.CatalogError, expected_message):
                     recipes.load_catalog(fixture.root, catalog)
 
-    def test_tcpdump_two_source_lock_is_bounded_and_validated(self) -> None:
+    def test_prefixed_source_records_are_generic_and_ordered(self) -> None:
         temporary_directory, fixture = self.make_fixture()
         self.addCleanup(temporary_directory.cleanup)
-        fixture.add_recipe("tcpdump", architecture="x86_64", version="4.99.4")
+        fixture.add_recipe(
+            "tool",
+            architecture="x86_64",
+            version="4.99.4",
+            authentication="pgp",
+            additional_sources=("ZLIB_", "LIBRARY_"),
+        )
         catalog = fixture.write_catalog()
         fixture.track()
         loaded = recipes.load_catalog(fixture.root, catalog)
-        self.assertEqual("tcpdump", loaded[0].name)
+        self.assertEqual(
+            [
+                ("source", "pgp"),
+                ("library", "checksum-only"),
+                ("zlib", "checksum-only"),
+            ],
+            [
+                (authentication.name, authentication.mode)
+                for authentication in loaded[0].source_authentications
+            ],
+        )
 
         mutations = (
             (
-                "missing dependency field",
-                "LIBPCAP_LICENSE=BSD-3-Clause\n",
+                "incomplete record",
+                "LIBRARY_LICENSE=MIT\n",
                 "",
-                "tcpdump source.lock is missing: LIBPCAP_LICENSE",
+                "source.lock is missing: LIBRARY_LICENSE",
             ),
             (
-                "malformed dependency checksum",
-                "LIBPCAP_SHA256="
-                + hashlib.sha256(b"libpcap-1.10.4 source fixture\n").hexdigest(),
-                "LIBPCAP_SHA256=not-a-checksum",
-                "LIBPCAP_SHA256 must be",
-            ),
-            (
-                "unsafe dependency archive",
-                "LIBPCAP_ARCHIVE=libpcap-1.10.4.tar.gz",
-                "LIBPCAP_ARCHIVE=../libpcap.tar.gz",
-                "LIBPCAP_ARCHIVE must be a safe filename",
+                "invalid checksum",
+                "LIBRARY_SHA256="
+                + hashlib.sha256(b"library-1.0 source fixture\n").hexdigest(),
+                "LIBRARY_SHA256=invalid",
+                "LIBRARY_SHA256 must be",
             ),
             (
                 "duplicate source archive",
-                "LIBPCAP_ARCHIVE=libpcap-1.10.4.tar.gz",
-                "LIBPCAP_ARCHIVE=tcpdump-4.99.4.tar.xz",
+                "LIBRARY_ARCHIVE=library-1.0.tar.xz\n"
+                "LIBRARY_SHA256="
+                + hashlib.sha256(b"library-1.0 source fixture\n").hexdigest(),
+                "LIBRARY_ARCHIVE=tcpdump-4.99.4.tar.gz\n"
+                "LIBRARY_SHA256="
+                + hashlib.sha256(
+                    (
+                        REPOSITORY_ROOT
+                        / "recipes/tcpdump/x86_64/sources/tcpdump-4.99.4.tar.gz"
+                    ).read_bytes()
+                ).hexdigest(),
                 "source archives must be distinct",
             ),
             (
-                "obsolete release field",
-                "LIBPCAP_LICENSE=BSD-3-Clause\n",
-                "LIBPCAP_LICENSE=BSD-3-Clause\n"
-                + "SOURCE_"
-                + "MIRROR_URL=https://mirror.invalid/source\n",
-                "unexpected fields: " + "SOURCE_" + "MIRROR_URL",
-            ),
-            (
-                "unexpected third source field",
-                "LIBPCAP_LICENSE=BSD-3-Clause\n",
-                "LIBPCAP_LICENSE=BSD-3-Clause\nTHIRD_SOURCE_VERSION=1.0\n",
-                "unexpected fields: THIRD_SOURCE_VERSION",
+                "unused field",
+                "LIBRARY_LICENSE=MIT\n",
+                "LIBRARY_LICENSE=MIT\n"
+                "LIBRARY_MIRROR_URL=https://mirror.invalid/source\n",
+                "unexpected fields: LIBRARY_MIRROR_URL",
             ),
         )
         original_lock = (
-            fixture.root / "recipes/tcpdump/x86_64/source.lock"
+            fixture.root / "recipes/tool/x86_64/source.lock"
         ).read_text(encoding="utf-8")
         for label, old, new, expected_message in mutations:
             with self.subTest(label=label):
-                lock_path = fixture.root / "recipes/tcpdump/x86_64/source.lock"
+                lock_path = fixture.root / "recipes/tool/x86_64/source.lock"
                 lock_path.write_text(original_lock.replace(old, new), encoding="utf-8")
                 with self.assertRaisesRegex(recipes.CatalogError, expected_message):
                     recipes.load_catalog(fixture.root, catalog)

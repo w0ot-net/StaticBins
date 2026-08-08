@@ -65,8 +65,9 @@ fields. It is accepted but visibly weaker, never a fallback after a signature
 failure. See [`TRUST.md`](../TRUST.md) for the assurance model.
 
 If a tool requires another source archive, keep that dependency in the same
-tool-owned lock and `sources/` directory. Extend catalog validation only for
-that bounded lock shape, verify every archive independently, and keep
+tool-owned lock and `sources/` directory. Add another complete uppercase
+`<PREFIX>` record with the same base fields as `SOURCE_`; generic repository
+validation discovers and verifies it without tool-specific changes. Keep
 dependency-specific configuration inside the recipe; the catalog is not a
 general dependency resolver. Source updates are reviewed repository changes:
 download from the recorded official HTTPS URL into temporary storage, verify
