@@ -102,3 +102,19 @@ remains generic for future multi-source recipes.
   other artifacts are explicitly covered by the set-wide default.
 - No Markdown parser or trust sidecar exists, and the implementation is a net
   reduction in repository lines.
+
+## Execution Notes
+
+- The existing manifest validator now compares actual artifact paths with all
+  derived `Recipe.output` paths and reports both missing ownership directions.
+- `TRUST.md` records common source/build facts once and preserves the AArch64
+  GDB and x86_64 tcpdump evidence as the only exceptions.
+- Repository, artifact-contract, and contributor guidance now use that derived
+  model. No Markdown parser, formatter, sidecar, rebuild, or attestation was
+  added.
+- No material deviations were required. Concurrent static-PIE changes in
+  overlapping documents were preserved and excluded by hunk-level staging.
+- The focused manifest test, `python3 scripts/recipes.py validate`,
+  `./validate.sh`, and `git diff --check` passed; all 24 recipes and 25 tests
+  passed. The scoped implementation removed two net repository lines.
+- Implementation commit: `94eae51`.
