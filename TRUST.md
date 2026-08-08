@@ -162,6 +162,10 @@ targets only `main` and blocks deletion and non-fast-forward updates. Direct
 pushes are allowed; pull requests and successful hosted checks are not required
 before a commit reaches `main`. Maintainers run `./validate.sh` before pushing
 and run the narrow recipe or builder validation when those paths change.
+The read-only `repository-validation` GitHub Actions job also runs
+`./validate.sh` on pushes to `main` and pull requests as advisory clean-checkout
+feedback; it does not build, publish, or attest artifacts and is not an
+acceptance gate.
 Builder publication is a separate local maintainer operation that uses Docker's
 external GHCR credentials and reports an immutable digest for reviewed
 adoption.
