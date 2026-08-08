@@ -2,111 +2,90 @@
 
 ## Summary
 
-Replace the tcpdump-specific secondary-source branch in repository validation
-with generic validation of complete, prefixed source records in each existing
-`source.lock`. Keep the current shell-compatible lock format, committed source
-layout, and `Recipe.source_authentications` interface; the existing `SOURCE_`
-and `LIBPCAP_` records require no migration.
+Replace the duplicated tcpdump-only source validation with one loop over
+prefixed records in the existing `source.lock` format. Reuse the current checks
+and data model, preserve every current lock unchanged, and make
+`scripts/recipes.py` smaller by deleting the specialized branch.
 
 ## Problem
 
-`scripts/recipes.py` validates the primary `SOURCE_*` record for every recipe,
-but recognizes a second record only when the recipe name is `tcpdump` and its
-fields begin with `LIBPCAP_`. Adding another conforming multi-source tool would
-therefore require another tool-specific validator branch, contrary to the
-repository contract that catalog validation remain generic. The onboarding
-guide currently instructs maintainers to extend validation for each bounded
-lock shape, preserving that coupling.
+`scripts/recipes.py` validates `SOURCE_*` for every recipe but repeats the same
+logic for `LIBPCAP_*` only when the recipe is tcpdump. Another multi-source tool
+would require another branch, contrary to the repository rule that conforming
+tools must not specialize repository validation.
 
 ## Scope
 
 In scope:
 
-- Discover and validate any complete source-record prefix already expressed in
-  a recipe's `source.lock`.
-- Preserve all existing checksum, tracked-file, HTTPS, PGP, fingerprint, and
-  safe-filename checks for every discovered record.
-- Require `SOURCE_` as the primary record, reject malformed or incomplete
-  record groups, reject unknown fields, and require distinct archive filenames
-  within one lock.
-- Return source authentication records in deterministic primary-then-prefix
-  order for current and future consumers.
-- Replace tcpdump-specific tests and documentation with the generic contract.
+- Validate the mandatory `SOURCE_` record and any additional complete prefixed
+  records with the same existing invariants.
+- Reject incomplete records, unused lock fields, and duplicate archive names.
+- Delete the tcpdump condition and replace specialized tests and instructions.
+- Preserve deterministic `Recipe.source_authentications` output.
 
 Out of scope:
 
-- Changing the `source.lock` file format or adding a separate source manifest.
-- Migrating existing recipe locks, source archives, guest build scripts, or
-  artifact bytes.
-- Turning the catalog into a dependency resolver or centralizing
-  recipe-specific configure and build behavior.
-- Deduplicating tracked source archives or adopting Git LFS.
+- A new lock format, source manifest, registry, schema layer, or dependency
+  resolver.
+- Changes to recipe locks, source bytes, builds, artifacts, or checksums.
+- Source deduplication, Git LFS, or shared recipe build machinery.
 
 ## Design
 
-Keep `_read_lock` as the sole parser for the existing `KEY=value` format. Add a
-small source-record validation path in `scripts/recipes.py` that groups keys by
-the known field suffixes rather than by tool name. A valid record prefix is an
-uppercase identifier ending in `_`; `SOURCE_` is mandatory and is always
-processed first, while additional prefixes are processed lexically for stable
-diagnostics and `Recipe.source_authentications` ordering.
+Keep `_read_lock`, `SourceAuthentication`, and
+`_validate_source_authentication`. Discover records from keys ending in
+`_VERSION`: require `SOURCE_`, then process additional prefixes lexically.
+For each prefix, one small helper should require and validate the existing six
+base fields (`VERSION`, `ARCHIVE`, `SHA256`, `UPSTREAM_URL`, `LICENSE`, and
+`AUTHENTICATION`), call the authentication helper, and return the archive name,
+authentication result, and consumed fields. After the loop, reject unconsumed
+keys; this catches unknown suffixes and authentication fields without a second
+classification system.
 
-Each prefix must provide exactly the six base fields `VERSION`, `ARCHIVE`,
-`SHA256`, `UPSTREAM_URL`, `LICENSE`, and `AUTHENTICATION`. Apply the current
-version, digest, HTTPS, archive-path, tracked-mode, and archive-byte checks to
-each group. Reuse `_validate_source_authentication` for the two supported
-authentication modes: `pgp` requires `SIGNATURE`, `SIGNING_KEY`, and
-`SIGNER_FINGERPRINT`, while `checksum-only` forbids those fields. Reject keys
-that cannot be assigned to a valid record, partial groups, unsupported suffixes,
-and duplicate archive filenames across prefixes.
+Track archive names in the loop and reject reuse within a lock. Derive the
+existing display name directly from the prefix (`SOURCE_` becomes `source` and
+`LIBPCAP_` becomes `libpcap`). Do not add a prefix registry or compatibility
+path.
 
-Derive the authentication display name without adding state: `SOURCE_` remains
-`source`, and another prefix becomes its lowercase identifier without the
-trailing underscore (`LIBPCAP_` becomes `libpcap`). Remove the `name ==
-"tcpdump"` branch after generic validation covers the existing two-record
-locks. Error messages should identify the offending prefix or field rather
-than a particular tool.
+The production diff must remove more validator code than it adds. If the
+helper and loop do not produce a net reduction in `scripts/recipes.py`, simplify
+the implementation before accepting it; correctness tests and documentation
+are not a reason to retain the duplicated branch.
 
 ## Affected Components
 
-- `scripts/recipes.py`: discover source-record groups, validate each through
-  the existing invariants, enforce archive uniqueness, and remove the
-  tcpdump-specific branch.
-- `tests/test_recipes.py`: replace special tcpdump fixtures with generic
-  one-, two-, and three-record coverage plus malformed-group failures.
-- `doc/architecture/build/SOURCE_INPUTS.md`: define the generic prefixed-record
-  ownership and validation contract.
-- `doc/adding-a-binary.md`: tell maintainers how to add another complete source
-  record without specializing repository validation.
+- `scripts/recipes.py`: replace primary/tcpdump duplication with the helper and
+  loop while retaining current validation behavior.
+- `tests/test_recipes.py`: replace tcpdump-specific setup with focused generic
+  single- and multi-source cases and failure cases for incomplete, unused, or
+  duplicate-archive records.
+- `doc/architecture/build/SOURCE_INPUTS.md`: state the generic prefixed-record
+  invariant.
+- `doc/adding-a-binary.md`: remove the instruction to specialize validation for
+  another source.
 
 ## Implementation Sequence
 
-1. Refactor the source-record field definitions and per-record checks in
-   `scripts/recipes.py` without changing the public catalog or recipe result.
-2. Add generic prefix discovery, deterministic ordering, complete-group and
-   archive-uniqueness checks, then delete the tcpdump-only branch.
-3. Update focused tests for existing single-source and multi-source success,
-   a third arbitrary source, mixed authentication modes, malformed prefixes,
-   incomplete or unknown fields, duplicate archives, and stable ordering.
-4. Update the source-input authority and onboarding guide to match the generic
-   invariant.
+1. Extract the repeated per-record checks, loop over `SOURCE_` plus discovered
+   prefixes, and delete the tcpdump branch.
+2. Replace specialized tests with the smallest cases that prove arbitrary
+   prefixes, both authentication modes, rejection of bad records, and stable
+   ordering.
+3. Align the source authority and contributor procedure with the generic rule.
 
 ## Validation
 
-- Run `python3 -m unittest tests.test_recipes` to exercise success and failure
-  fixtures, including the unchanged tcpdump lock shape.
-- Run `python3 scripts/recipes.py validate` against all committed recipes and
-  confirm all 24 catalog rows still validate.
-- Run `./validate.sh` for the complete offline repository check.
-- Run `git diff --check` and inspect the diff to confirm no `source.lock`,
-  recipe, artifact, or checksum-manifest files changed.
+- Run `python3 -m unittest tests.test_recipes`.
+- Run `python3 scripts/recipes.py validate` against all 24 current recipes.
+- Run `./validate.sh` and `git diff --check`.
+- Inspect `git diff --stat -- scripts/recipes.py` and confirm production
+  validator lines decrease and no recipe or artifact files changed.
 
 ## Success Criteria
 
-- No validator behavior is selected by recipe name or by the literal
-  `LIBPCAP_` prefix.
-- Any well-formed additional source record receives the same checksum,
-  provenance, tracked-file, and authentication validation as `SOURCE_`.
-- Partial, unknown, unsafe, or archive-aliasing source records fail with an
-  actionable field or prefix diagnostic.
-- Every current recipe validates without lock migration or artifact rebuild.
+- No validator branch names tcpdump or `LIBPCAP_`.
+- Any complete prefixed record receives the current source and authentication
+  checks; incomplete, unused, or archive-aliasing fields fail clearly.
+- Every current lock validates without migration or rebuild.
+- `scripts/recipes.py` is smaller than before the implementation.

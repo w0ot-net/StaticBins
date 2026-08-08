@@ -1,112 +1,102 @@
-# Plan: Validate Artifact Trust Records
+# Plan: Derive Artifact Trust Records from Validated State
 
 ## Summary
 
-Make the existing artifact table in `TRUST.md` part of offline repository
-validation. Parse that table directly, require one row for every catalog-backed
-artifact, and compare a canonical source-authentication summary with the
-generic source records produced by the validator. Do not add a second trust
-manifest or attempt to machine-verify narrative evidence.
+Remove the redundant 24-row artifact ledger from `TRUST.md` instead of adding a
+Markdown parser to keep it synchronized. Validate the real artifact-to-recipe
+mapping in the existing manifest validator, state common trust facts once, and
+retain only exceptional independent evidence. The result adds only one small
+set comparison to production code and deletes substantially more documentation
+than it adds.
 
 ## Problem
 
-The repository contract requires `TRUST.md` to record source authentication,
-recipe build validation, and independent evidence for every distributed
-artifact, but `./validate.sh` does not inspect those records. A catalog or
-artifact change can therefore pass while its table row is missing, duplicated,
-stale, or inconsistent with `source.lock`. The current prose labels also do not
-form a deterministic representation for tools with multiple sources.
+The artifact table repeats catalog paths, source authentication already owned
+by `source.lock`, the same build-validation sentence 24 times, and mostly
+`None` evidence cells. Parsing that prose would create a new schema and a large
+test surface solely to police duplicated state. The actual missing invariant is
+simpler: every distributed artifact must correspond to a validated catalog
+recipe.
 
 ## Scope
 
 In scope:
 
-- Parse the existing four-column Markdown table under `## Artifact records`.
-- Require its artifact paths to match the validated recipe output set exactly,
-  with no missing, extra, duplicate, or out-of-order rows.
-- Derive and require a canonical source-authentication cell from each recipe's
-  ordered `SourceAuthentication` records.
-- Require an explicit build-validation value and an explicit independent-
-  evidence value for every row, preserving the current factual evidence.
-- Add the trust-table check to the existing `scripts/recipes.py validate` path
-  and document the enforced format.
+- Require the artifact paths validated by `artifacts/SHA256SUMS` to equal the
+  output paths derived from `recipes/catalog.tsv`.
+- Replace the repetitive artifact table with set-wide source/build statements
+  and a short table containing only artifacts with independent evidence.
+- State explicitly that an artifact absent from the exception table has no
+  independent evidence.
+- Align contributor and trust-contract documentation with the derived model.
 
 Out of scope:
 
-- Adding a TSV, JSON, or other sidecar as a new trust source of truth.
-- Validating the narrative source table, historical attestation prose, or the
-  truth of independent rebuild claims.
-- Creating attestations, rebuilding artifacts, or changing the trust model.
-- Enforcing GitHub review or status-check policy.
+- Parsing Markdown in repository validation or adding a trust sidecar.
+- Changing the source-record table, authentication rules, build-validation
+  standard, or factual evidence.
+- Rebuilding artifacts, creating attestations, or changing GitHub policy.
 
 ## Design
 
-Implement a focused parser for the artifact-record section of `TRUST.md` in
-the existing catalog validator. Locate one exact table header and separator,
-accept only its four cells, normalize the backticked artifact path, and stop at
-the end of that contiguous table. Fail on a missing or repeated table, malformed
-rows, blank cells, duplicate artifact paths, or paths outside the conventional
-catalog outputs. Require rows in lexical artifact-path order so the file has
-one deterministic representation.
+Pass the set of `Recipe.output` values from `load_catalog` into the existing
+artifact-manifest validator. That function already enumerates every actual
+artifact and checks manifest coverage, file mode, and digest; add one direct set
+comparison so an artifact without a catalog recipe, or a recipe output absent
+from the artifact set, fails in the same aggregated error report. Do not create
+a trust parser, formatter, or new data class.
 
-Represent source assurance from actual validated state rather than introducing
-another model. For each `Recipe.source_authentications` entry, emit
-`<name>=<mode>` in its existing deterministic order and join multiple entries
-with `; `, for example `source=pgp` or `source=pgp; libpcap=pgp`. Migrate the
-current human labels in the artifact table to that canonical syntax. Require
-the build-validation cell to remain the exact repository statement
-`Committed recipe and target checks passed`; require the independent-evidence
-cell to be nonempty but leave its factual text human-maintained.
+In `TRUST.md`, explain the conventional mapping from each manifest path to its
+catalog recipe and validated `source.lock`. Record once that every distributed
+artifact passed its committed recipe and target checks. Replace the four-column
+per-artifact table with an exception-only independent-evidence table preserving
+the current AArch64 GDB mismatch and x86_64 tcpdump evidence verbatim, followed
+by a statement that all unlisted artifacts have none. This records the same
+facts without duplicating source modes and defaults for every architecture.
 
-Run the trust check only after catalog rows, source records, recipe outputs, and
-the artifact manifest have validated, so its expected set and authentication
-summary come from trusted in-memory `Recipe` values. This plan therefore
-depends on `20260808_rebuild-maintenance-01-generic-source-records.md`; it must
-not reproduce source-prefix logic in the Markdown parser.
+Update the repository contract and onboarding text to require the set-wide
+statement plus factual exceptions, not one copied row per artifact. This plan
+follows the generic source-record plan so the derived artifact-to-source mapping
+remains generic for future multi-source recipes.
 
 ## Affected Components
 
-- `scripts/recipes.py`: parse and validate the artifact trust table against the
-  loaded recipes as part of the existing validation command.
-- `tests/test_recipes.py`: extend the repository fixture with trust records and
-  cover missing, extra, duplicate, unordered, malformed, blank, and
-  authentication-mismatch failures.
-- `TRUST.md`: convert source-authentication cells to the canonical derived
-  syntax while preserving all build and independent-evidence facts.
-- `doc/architecture/trust/TRUST_CHAIN.md`: describe the artifact-table
-  consistency check and its limits.
-- `doc/adding-a-binary.md`: specify the exact trust row that accompanies a new
-  catalog artifact.
+- `scripts/recipes.py`: compare manifest artifact paths directly with recipe
+  outputs using the sets already available during catalog loading.
+- `tests/test_recipes.py`: add one focused case proving a manifest-valid
+  artifact without a catalog recipe is rejected.
+- `TRUST.md`: delete the repetitive artifact ledger and retain common facts
+  plus the two current evidence exceptions.
+- `AGENTS.md`: express the compact trust-record contract without requiring
+  duplicated per-artifact rows.
+- `doc/architecture/artifacts/ARTIFACT_CONTRACT.md`: own the validated
+  one-recipe-per-artifact set invariant and compact evidence-record model.
+- `doc/adding-a-binary.md`: remove the requirement to copy a default trust row;
+  require an update only for a changed common fact or new independent evidence.
 
 ## Implementation Sequence
 
-1. Complete the generic source-record plan so every recipe exposes all of its
-   authentication records without tool-specific knowledge.
-2. Add a canonical authentication formatter and strict artifact-table parser
-   to `scripts/recipes.py`, then compare the table with the validated recipes.
-3. Update test fixtures and add focused positive and negative table cases,
-   including a multi-source recipe.
-4. Migrate all existing artifact rows in `TRUST.md` mechanically and update
-   the nearest authority and onboarding instructions.
+1. After the generic source-record plan, add the artifact/recipe set comparison
+   and its single regression case.
+2. Compact `TRUST.md` without changing either exceptional evidence record.
+3. Align the repository contract, trust authority, and contributor procedure.
 
 ## Validation
 
-- Run `python3 -m unittest tests.test_recipes` and confirm each malformed table
-  case fails for its intended reason.
-- Run `python3 scripts/recipes.py validate` and confirm all 24 artifact rows
-  match their catalog outputs and source locks.
-- Temporarily exercise, through tests rather than worktree edits, one missing
-  row, one extra row, one authentication mismatch, and one two-source record.
+- Run the focused artifact-manifest unit tests and
+  `python3 -m unittest tests.test_recipes`.
+- Run `python3 scripts/recipes.py validate` and confirm the 24 catalog outputs
+  exactly match the 24 distributed artifacts.
 - Run `./validate.sh` and `git diff --check`.
-- Inspect the `TRUST.md` diff to confirm independent-evidence text was not
-  weakened or replaced.
+- Inspect the diff to confirm no artifact, checksum, source, or evidence fact
+  changed and that the total repository line count decreases.
 
 ## Success Criteria
 
-- Offline validation fails unless `TRUST.md` has exactly one deterministic
-  artifact record for every validated catalog output and no other artifact.
-- Each source-authentication cell is mechanically consistent with all source
-  records in the corresponding recipe lock.
-- Every row explicitly records build validation and independent evidence.
-- Existing narrative evidence remains human-owned, and no duplicate trust
-  manifest or artifact rebuild is introduced.
+- A distributed artifact without exactly one catalog recipe fails validation.
+- Trust facts are derived from validated catalog, manifest, and source-lock
+  state rather than copied into a Markdown schema.
+- The two current independent evidence records remain factual and visible; all
+  other artifacts are explicitly covered by the set-wide default.
+- No Markdown parser or trust sidecar exists, and the implementation is a net
+  reduction in repository lines.

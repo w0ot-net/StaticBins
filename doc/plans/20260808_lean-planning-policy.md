@@ -2,95 +2,54 @@
 
 ## Summary
 
-Clarify, prospectively, that a plan document is not a prerequisite for routine
-repository work. Keep existing completed plans as historical execution records,
-but document that maintainers may implement a bounded conforming change
-directly and validate it through the owning repository contracts. This is a
-documentation-only policy clarification with no migration or enforcement tool.
+Clarify the existing implementation-records paragraph in `doc/README.md` so
+routine work does not appear to require a plan document. Edit that owner in
+place; do not add policy machinery or duplicate the rule in `AGENTS.md`.
 
 ## Problem
 
-The repository contains many completed plan documents from its initial build-
-out, while `doc/README.md` describes their storage locations without saying
-whether future changes are expected to create one. That history can make the
-planning ceremony look like a standing repository requirement even though
-`AGENTS.md` does not currently require it. Routine changes should be governed
-by scope, architecture contracts, validation, and user direction rather than
-by the existence of an extra planning file.
+`doc/README.md` explains where active and completed plans live but does not say
+whether every change needs one. The unusually large historical archive can
+therefore look like a standing requirement even though none exists.
 
 ## Scope
 
 In scope:
 
-- State that routine, bounded, conforming changes do not require a repository
-  plan before implementation.
-- Reserve plan documents for explicit user requests or genuinely cross-cutting
-  work where a reviewed design and execution sequence add value.
-- Describe existing completed plans as historical records, not mandatory
-  templates or current architecture authorities.
-- Preserve the existing locations for plans that are intentionally created.
+- State that plans are created when explicitly requested or when a maintainer
+  chooses design review for cross-cutting work, not for every bounded change.
+- Clarify that completed plans are historical records, not templates or current
+  authorities.
 
 Out of scope:
 
-- Deleting, consolidating, rewriting, or reclassifying existing completed or
-  abandoned plans.
-- Adding plan linting, templates, issue automation, commit-message rules, or a
-  numerical threshold for when planning is required.
-- Weakening required validation, documentation ownership, rebuild, commit, or
-  push rules.
-- Changing Codex skills or other tooling outside this repository.
+- Changes to `AGENTS.md`, validation, Git workflow, or external Codex skills.
+- Deleting, reorganizing, or rewriting existing plan archives.
+- Templates, linting, automation, thresholds, or new planning rules.
 
 ## Design
 
-Add one concise forward-looking rule to `AGENTS.md`: repository plans are
-optional for routine work, are required when the user explicitly asks for one,
-and are otherwise appropriate only when a cross-cutting or risky change
-benefits from review before implementation. Do not attempt to enumerate file or
-line-count thresholds; maintainers should judge the coupling and risk of the
-outcome, while explicit user direction remains decisive.
-
-Update the implementation-records section of `doc/README.md` to distinguish
-active plans, completed historical records, and architecture authorities. Say
-plainly that the volume and detail of historical plans reflect prior work and
-do not establish a required ceremony for future bounded changes. Preserve the
-current plan directories and archive behavior so intentionally planned work
-still has an obvious home.
-
-This plan is independent of the three validator/automation plans and may be
-implemented or reverted separately.
+Replace the current three-sentence implementation-records paragraph in
+`doc/README.md` with equally concise text that preserves the current directory
+meanings and authority map while making planning optional. This is an edit to
+existing text, not a new section or enforcement mechanism.
 
 ## Affected Components
 
-- `AGENTS.md`: add the prospective rule governing when repository plan
-  documents are and are not required.
-- `doc/README.md`: clarify the non-authoritative, historical role of plan
-  records and the optional workflow for future work.
-
-## Implementation Sequence
-
-1. Add the concise planning rule to `AGENTS.md` without changing any execution,
-   validation, or Git requirements.
-2. Align the implementation-records description in `doc/README.md` with that
-   rule and keep architecture pages as the stable contract authorities.
-3. Cross-check both documents for consistent terminology and no implication
-   that existing plans must be migrated.
+- `doc/README.md`: clarify the role of active and historical plan records.
 
 ## Validation
 
-- Run `rg -n "plan|plans|completed_plans|abandoned_plans" AGENTS.md doc/README.md`
-  and review every repository-policy statement in context.
-- Run `./validate.sh` to confirm the documentation-only change leaves existing
-  repository checks intact.
-- Run `git diff --check` and inspect the diff for accidental changes to plan
-  archives or operational requirements.
+- Read the updated implementation-records paragraph with the surrounding
+  authority map and confirm it does not alter any operational requirement.
+- Run `./validate.sh` and `git diff --check` as required before committing.
+- Confirm no plan archive or other policy file changed.
 
 ## Success Criteria
 
-- Repository guidance clearly allows routine conforming work without creating
-  a plan document.
-- Explicit user requests for planning and genuinely cross-cutting design work
-  still have a documented path under `doc/plans/`.
-- Existing completed and abandoned plans remain unchanged and are clearly
-  historical rather than normative.
-- No validation, build, documentation-authority, commit, or push requirement is
-  weakened.
+- Bounded work is clearly allowed without a repository plan.
+- Explicitly requested or intentionally designed plans retain their existing
+  locations.
+- Historical plans remain unchanged and non-authoritative.
+- The implementation is one concise replacement in `doc/README.md` with no new
+  tooling or duplicated policy.

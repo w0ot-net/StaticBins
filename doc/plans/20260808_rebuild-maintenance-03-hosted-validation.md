@@ -2,105 +2,78 @@
 
 ## Summary
 
-Add one read-only GitHub Actions workflow that runs the existing
-`./validate.sh` on pushes to `main` and pull requests. Keep local validation as
-the pre-push acceptance step and leave the current direct-push ruleset
-unchanged. The workflow provides prompt shared feedback without building
-artifacts, publishing containers, or handling credentials.
+Add one read-only GitHub Actions workflow with exactly two functional steps:
+checkout and `./validate.sh`. Run it on pushes to `main` and pull requests while
+leaving local acceptance, direct pushes, artifact builds, and publication
+unchanged.
 
 ## Problem
 
-Repository validation is fast and comprehensive for committed metadata, but it
-runs only on a maintainer's machine. The repository consequently has no shared
-status showing that the checked-in catalog, sources, artifacts, tests, shell
-syntax, and, after the preceding plans, trust records validate on a clean hosted
-checkout. Changing governance to require pull requests or a large build matrix
-would be a separate policy decision and is unnecessary for this feedback loop.
+The fast repository validator runs only on a maintainer's machine, so a pushed
+commit has no shared clean-checkout result. A build matrix or new CI framework
+is unnecessary; the existing four-second offline command is already the owned
+interface.
 
 ## Scope
 
 In scope:
 
-- Add one hosted workflow for pushes to `main` and pull requests.
-- Use a single Ubuntu job with read-only repository permissions, a short
-  timeout, official checkout, prerequisite checks, and `./validate.sh`.
-- Pin third-party action usage by full commit SHA and document its review/update
-  expectation.
-- Document that the hosted result is advisory and does not replace the required
-  local validation or recipe-specific build checks.
+- Add one Ubuntu job for pushes to `main` and pull requests.
+- Grant only `contents: read`, use a short timeout and SHA-pinned official
+  checkout action, then run `./validate.sh` unchanged.
+- Document the job as advisory shared feedback, not an acceptance or build
+  boundary.
 
 Out of scope:
 
-- Changing the `main-history` ruleset, requiring status checks, or requiring
-  pull requests.
-- Running Docker, Buildx, QEMU compilation, artifact rebuilds, or builder
-  publication in Actions.
-- Publishing utility images, source releases, attestations, logs, or artifacts.
-- Adding secrets, GHCR write permissions, dependency caching, a job matrix, or
-  third-party actions beyond official checkout.
+- Required status checks, ruleset changes, or mandatory pull requests.
+- Docker, Buildx, QEMU, builds, caches, artifacts, attestations, or publication.
+- Secrets, GHCR permissions, matrices, setup actions, or package installation.
 
 ## Design
 
-Create `.github/workflows/validate.yml` with `contents: read` as its only
-permission and one clearly named `repository-validation` job on the fixed
-`ubuntu-24.04` runner label. Give the job a five-minute timeout and use the
-current reviewed full commit SHA for `actions/checkout`; retain a comment
-naming the action release represented by that SHA. Avoid mutable action tags.
+Create `.github/workflows/validate.yml` with explicit `push` and `pull_request`
+triggers, top-level `contents: read`, and one `repository-validation` job on
+`ubuntu-24.04` with a five-minute timeout. Pin `actions/checkout` to the reviewed
+full SHA of its current major release and identify that release in a comment.
+The only run step is `./validate.sh`.
 
-The job should first assert the same external commands that `validate.sh`
-requires, including `gpgv`, and then invoke `./validate.sh` from the checkout.
-Rely on the runner image only for these basic tools; do not add an unpinned
-package-install step or a container image merely to run a four-second offline
-validator. A missing prerequisite should fail clearly, making a runner-baseline
-change visible and reviewable.
+Do not repeat prerequisite checks in YAML: `validate.sh` already checks every
+command it needs and produces the actionable error. Do not add dependency
+installation or another wrapper. After checkout, the workflow has no intended
+network or write role.
 
-Keep the workflow unprivileged and network-independent after checkout. It does
-not use Docker or repository credentials and cannot mutate repository contents
-or packages. Update the automation authority and `TRUST.md` governance prose to
-distinguish this live advisory check from local maintainer acceptance and from
-the historical tcpdump attestation workflow.
-
-Execute this plan after the generic source-record and trust-record plans so the
-first hosted contract covers the strengthened final validator and documentation
-needs only one transition.
+Update only the two documents that currently state the live automation and
+governance facts. Implement this after the preceding validator/trust plans so
+the workflow begins with the final, smaller validation contract.
 
 ## Affected Components
 
-- `.github/workflows/validate.yml`: define the minimal read-only hosted check.
-- `doc/architecture/trust/AUTOMATION_AND_GOVERNANCE.md`: own the live workflow's
-  role, permissions, triggers, runner dependency, and non-gating status.
-- `TRUST.md`: update repository-governance facts while preserving the limits of
-  hosted validation and the historical attestation record.
+- `.github/workflows/validate.yml`: add the two-step read-only job.
+- `doc/architecture/trust/AUTOMATION_AND_GOVERNANCE.md`: replace the no-workflow
+  statement with the job's exact advisory role and permissions.
+- `TRUST.md`: update current governance facts without changing historical
+  attestation evidence.
 
 ## Implementation Sequence
 
-1. Complete the two validator plans and verify the final `./validate.sh`
-   contract locally.
-2. Add the minimal workflow with explicit triggers, permissions, timeout,
-   pinned checkout action, prerequisite assertion, and one validation command.
-3. Update the automation authority and live trust/governance record to describe
-   exactly what the workflow does and does not establish.
-4. Validate locally, push under the repository's normal workflow, and inspect
-   the first hosted run for the pushed commit.
+1. Add the workflow using checkout and the existing validator only.
+2. Correct the two current automation/governance records.
+3. Push normally and inspect the first run for the exact commit.
 
 ## Validation
 
-- Inspect the workflow as YAML and confirm it has only `contents: read`, no
-  secret references, no write operations, and no Docker or publication steps.
+- Inspect the YAML and confirm it contains one job, two functional steps,
+  `contents: read`, no secrets, and no Docker or publication commands.
 - Run `./validate.sh` and `git diff --check` locally.
-- After pushing, use the GitHub Actions UI or `gh run list`/`gh run view` to
-  confirm `repository-validation` ran for the exact `main` commit and passed.
-- If a pull request event is available later, confirm the same job uses no
-  elevated permissions; creating a pull request solely for this check is not
-  required.
+- After pushing, confirm the exact `main` commit passed
+  `repository-validation` with `gh run view` or the Actions UI.
 
 ## Success Criteria
 
-- Every push to `main` and every pull request receives one shared hosted result
-  from the existing offline validator.
-- The job is read-only, credential-free, bounded to five minutes, and performs
-  no artifact build or publication.
-- Local validation and narrow recipe/build checks remain the acceptance
-  contract, and direct pushes remain allowed.
-- Documentation no longer claims that the repository has no hosted workflow
-  and does not overstate what the new check proves.
+- Pushes to `main` and pull requests receive one shared validator result.
+- The workflow delegates all validation and prerequisite errors to
+  `./validate.sh`; it introduces no second validation interface.
+- The job is read-only and performs no build, publication, or attestation.
+- Local checks and direct-push governance remain unchanged and accurately
+  documented.
