@@ -55,3 +55,16 @@ existing text, not a new section or enforcement mechanism.
 - Historical plans remain unchanged and non-authoritative.
 - The implementation is one concise replacement in `doc/README.md` with no new
   tooling or duplicated policy.
+
+## Execution Notes
+
+- Replaced the existing implementation-records paragraph with three sentences
+  that make plans optional for routine bounded changes and historical records
+  explicitly non-authoritative.
+- Only `doc/README.md` changed. No `AGENTS.md`, workflow, validation, archive,
+  template, threshold, or external skill policy was added.
+- No material deviations were required; unrelated builder, static-PIE, and
+  ltrace worktree changes were preserved.
+- The policy search, `git diff --check`, and `./validate.sh` passed; all 24
+  recipes and 25 tests passed.
+- Implementation commit: `e2f6eda`.
