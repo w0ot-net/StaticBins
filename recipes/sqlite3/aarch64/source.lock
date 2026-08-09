@@ -1,0 +1,7 @@
+# SQLite source acceptance and provenance metadata.
+SOURCE_VERSION=3.53.4
+SOURCE_ARCHIVE=sqlite-autoconf-3530400.tar.gz
+SOURCE_SHA256=0e9483900e92cd5de8fd48d16bf9200145a61f7fd5be542a5ac81d8a9516eb9c
+SOURCE_UPSTREAM_URL=https://www.sqlite.org/2026/sqlite-autoconf-3530400.tar.gz
+SOURCE_LICENSE=blessing
+SOURCE_AUTHENTICATION=checksum-only

@@ -3,9 +3,9 @@
 Ready-to-run static Linux utilities with committed, documented, repeatable
 build recipes.
 
-BusyBox, GDB, GDBserver, lsof, ltrace, netcat, netstat, nm, objdump, readelf,
-rsync, socat, strace, and tcpdump are available for AArch64, ARMv7, x86, and
-x86-64.
+The enabled catalog spans recovery, debugging, networking, file transfer, and
+data-inspection tools for AArch64, ARMv7, x86, and x86-64. Treat the catalog,
+not this overview, as the current inventory.
 
 ## Get a binary
 

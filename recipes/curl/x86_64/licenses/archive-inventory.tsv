@@ -1,0 +1,10 @@
+# archive_path	origin	package	version	license	license_file	source_evidence
+/build/curl-8.21.0/lib/.libs/libcurl.a	source	curl	8.21.0	curl	curl-COPYING.txt	https://curl.se/download/curl-8.21.0.tar.xz
+/usr/lib/libssl.a	builder	libressl-static	4.3.1-r0	custom	LibreSSL-COPYING.txt	https://gitlab.alpinelinux.org/alpine/aports/-/blob/479d8157e33eb662e1571c35603b7a30605ba434/community/libressl/APKBUILD
+/usr/lib/libcrypto.a	builder	libressl-static	4.3.1-r0	custom	LibreSSL-COPYING.txt	https://gitlab.alpinelinux.org/alpine/aports/-/blob/479d8157e33eb662e1571c35603b7a30605ba434/community/libressl/APKBUILD
+/usr/lib/libz.a	builder	zlib-static	1.3.2-r0	Zlib	zlib-LICENSE.txt	https://gitlab.alpinelinux.org/alpine/aports/-/blob/f248b33b5943c7dc69bf691031d7612ab2e8ed93/main/zlib/APKBUILD
+/usr/lib/libpthread.a	builder	musl-dev	1.2.6-r2	MIT	musl-COPYRIGHT.txt	https://gitlab.alpinelinux.org/alpine/aports/-/blob/f5640d3a10f664c9119720c60515265d3d6f6d01/main/musl/APKBUILD
+/usr/lib/libc.a	builder	musl-dev	1.2.6-r2	MIT	musl-COPYRIGHT.txt	https://gitlab.alpinelinux.org/alpine/aports/-/blob/f5640d3a10f664c9119720c60515265d3d6f6d01/main/musl/APKBUILD
+/usr/lib/libssp_nonshared.a	builder	musl-dev	1.2.6-r2	MIT	musl-COPYRIGHT.txt	https://gitlab.alpinelinux.org/alpine/aports/-/blob/f5640d3a10f664c9119720c60515265d3d6f6d01/main/musl/APKBUILD
+/usr/lib/gcc/x86_64-alpine-linux-musl/15.2.0/libgcc.a	builder	libgcc-static	15.2.0-r5	GPL-2.0-or-later AND LGPL-2.1-or-later	GCC-COPYING.RUNTIME.txt	https://gitlab.alpinelinux.org/alpine/aports/-/blob/423a8ad043d07f2c7546c8ec3e2b0384cda360ae/main/gcc/APKBUILD
+/usr/lib/gcc/x86_64-alpine-linux-musl/15.2.0/libgcc_eh.a	builder	gcc	15.2.0-r5	GPL-2.0-or-later AND LGPL-2.1-or-later	GCC-COPYING.RUNTIME.txt	https://gitlab.alpinelinux.org/alpine/aports/-/blob/423a8ad043d07f2c7546c8ec3e2b0384cda360ae/main/gcc/APKBUILD

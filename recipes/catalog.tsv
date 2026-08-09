@@ -3,6 +3,10 @@ busybox	aarch64	true
 busybox	armv7	true
 busybox	x86	true
 busybox	x86_64	true
+curl	aarch64	true
+curl	armv7	true
+curl	x86	true
+curl	x86_64	true
 dropbearmulti	aarch64	true
 dropbearmulti	armv7	true
 dropbearmulti	x86	true
@@ -51,6 +55,10 @@ socat	aarch64	true
 socat	armv7	true
 socat	x86	true
 socat	x86_64	true
+sqlite3	aarch64	true
+sqlite3	armv7	true
+sqlite3	x86	true
+sqlite3	x86_64	true
 strace	aarch64	true
 strace	armv7	true
 strace	x86	true

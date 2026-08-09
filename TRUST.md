@@ -26,6 +26,10 @@ keyserver, or network lookup.
 | [BusyBox 1.38.0 (ARMv7)](recipes/busybox/armv7/source.lock) | Checksum only | Not available | [official download](https://busybox.net/downloads/) |
 | [BusyBox 1.38.0 (x86)](recipes/busybox/x86/source.lock) | Checksum only | Not available | [official download](https://busybox.net/downloads/) |
 | [BusyBox 1.38.0 (x86-64)](recipes/busybox/x86_64/source.lock) | Checksum only | Not available | [official download](https://busybox.net/downloads/) |
+| [curl 8.21.0 (AArch64)](recipes/curl/aarch64/source.lock) | Upstream PGP | `27EDEAF22F3ABCEB50DB9A125CC908FDB71E12C2` | [signature](https://curl.se/download/curl-8.21.0.tar.xz.asc); [official signing-key guidance](https://curl.se/docs/signatures.html) |
+| [curl 8.21.0 (ARMv7)](recipes/curl/armv7/source.lock) | Upstream PGP | `27EDEAF22F3ABCEB50DB9A125CC908FDB71E12C2` | [signature](https://curl.se/download/curl-8.21.0.tar.xz.asc); [official signing-key guidance](https://curl.se/docs/signatures.html) |
+| [curl 8.21.0 (x86)](recipes/curl/x86/source.lock) | Upstream PGP | `27EDEAF22F3ABCEB50DB9A125CC908FDB71E12C2` | [signature](https://curl.se/download/curl-8.21.0.tar.xz.asc); [official signing-key guidance](https://curl.se/docs/signatures.html) |
+| [curl 8.21.0 (x86-64)](recipes/curl/x86_64/source.lock) | Upstream PGP | `27EDEAF22F3ABCEB50DB9A125CC908FDB71E12C2` | [signature](https://curl.se/download/curl-8.21.0.tar.xz.asc); [official signing-key guidance](https://curl.se/docs/signatures.html) |
 | [Dropbear 2026.94 (AArch64)](recipes/dropbearmulti/aarch64/source.lock) | Upstream PGP | `F7347EF2EE2E07A267628CA944931494F29C6773` | [signature](https://matt.ucc.asn.au/dropbear/releases/dropbear-2026.94.tar.bz2.asc); [official signing key](https://matt.ucc.asn.au/dropbear/releases/dropbear-key-2015.asc) |
 | [Dropbear 2026.94 (ARMv7)](recipes/dropbearmulti/armv7/source.lock) | Upstream PGP | `F7347EF2EE2E07A267628CA944931494F29C6773` | [signature](https://matt.ucc.asn.au/dropbear/releases/dropbear-2026.94.tar.bz2.asc); [official signing key](https://matt.ucc.asn.au/dropbear/releases/dropbear-key-2015.asc) |
 | [Dropbear 2026.94 (x86)](recipes/dropbearmulti/x86/source.lock) | Upstream PGP | `F7347EF2EE2E07A267628CA944931494F29C6773` | [signature](https://matt.ucc.asn.au/dropbear/releases/dropbear-2026.94.tar.bz2.asc); [official signing key](https://matt.ucc.asn.au/dropbear/releases/dropbear-key-2015.asc) |
@@ -74,6 +78,10 @@ keyserver, or network lookup.
 | [socat 1.8.1.3 (ARMv7)](recipes/socat/armv7/source.lock) | Checksum only | Not available | [official Git repository](https://repo.or.cz/socat.git) |
 | [socat 1.8.1.3 (x86)](recipes/socat/x86/source.lock) | Checksum only | Not available | [official Git repository](https://repo.or.cz/socat.git) |
 | [socat 1.8.1.3 (x86-64)](recipes/socat/x86_64/source.lock) | Checksum only | Not available | [official Git repository](https://repo.or.cz/socat.git) |
+| [SQLite 3.53.4 (AArch64)](recipes/sqlite3/aarch64/source.lock) | Checksum only | Not available | [official download and SHA3-256](https://www.sqlite.org/download.html) |
+| [SQLite 3.53.4 (ARMv7)](recipes/sqlite3/armv7/source.lock) | Checksum only | Not available | [official download and SHA3-256](https://www.sqlite.org/download.html) |
+| [SQLite 3.53.4 (x86)](recipes/sqlite3/x86/source.lock) | Checksum only | Not available | [official download and SHA3-256](https://www.sqlite.org/download.html) |
+| [SQLite 3.53.4 (x86-64)](recipes/sqlite3/x86_64/source.lock) | Checksum only | Not available | [official download and SHA3-256](https://www.sqlite.org/download.html) |
 | [strace 6.16 (AArch64)](recipes/strace/aarch64/source.lock) | Checksum only | Not adopted | [official release](https://strace.io/files/6.16/) |
 | [strace 6.16 (ARMv7)](recipes/strace/armv7/source.lock) | Checksum only | Not adopted | [official release](https://strace.io/files/6.16/) |
 | [strace 6.16 (x86)](recipes/strace/x86/source.lock) | Checksum only | Not adopted | [official release](https://strace.io/files/6.16/) |
@@ -89,7 +97,7 @@ keyserver, or network lookup.
 
 The GDB and GNU Netcat signatures are valid upstream origin evidence but use
 legacy DSA with SHA-1. The GNU Netcat signing key is also expired. The
-Binutils, Dropbear, rsync, tcpdump, and libpcap signatures use RSA with
+Binutils, curl, Dropbear, rsync, tcpdump, and libpcap signatures use RSA with
 SHA-512. These records are verified exactly as published; the table does not
 claim equal cryptographic strength.
 
@@ -98,6 +106,11 @@ signature, these recipes have not adopted a signer key backed by authenticated
 official full-fingerprint evidence. They therefore select `checksum-only`
 explicitly and do not attempt PGP verification or fall back after a failed
 signature check.
+
+SQLite publishes an official SHA3-256 for the accepted amalgamation archive
+but no detached release signature. The recipes record that upstream digest,
+lock the exact committed archive with SHA-256, and select `checksum-only`
+without implying signer-authenticated origin.
 
 The net-tools 2.10 release directory does not provide a detached signature
 over the accepted archive with authenticated full-fingerprint key evidence,
