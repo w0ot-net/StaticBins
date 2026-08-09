@@ -148,3 +148,48 @@ retrieval.
   closed; no runtime shared library, data download, or plugin is required.
 - Only `readelf` is distributed, with no suite bundle, sibling executable,
   builder publication, or new repository abstraction.
+
+## Execution Notes
+
+Completed on 2026-08-08 by implementation commit
+`b746e1ea30c3e302066de2dbbb06c28322267d90`.
+
+Implemented `readelf` for all four enabled architectures with independently
+owned recipe directories and conventional artifacts. Each recipe retains its
+own signed Binutils inputs, minimal keyring, source lock, architecture target
+lock, license and exact archive inventory, host entry point, ELF validator,
+fixture, and smoke test. Catalog, checksum, trust, and concise root
+documentation records landed atomically with the artifacts.
+
+Execution reused the already-proven Binutils compile and static-relink layers
+from the preceding objdump rollout. The source/configuration/fixture/relink and
+package-validation inputs remained byte-identical where truthful; BuildKit
+reported those expensive layers as cached for every readelf build. The only
+tool-specific build boundary changes were exporting `/out/readelf` and the
+unstripped test executable, then installing `artifacts/<architecture>/readelf`.
+
+The fixture is a temporary static `ET_EXEC` with loadable segments, named code
+and data, and DWARF information. It is not a distributed artifact. The target
+smoke test requires the exact `2.47.20260726` banner and successful `-hW`,
+`-lW`, `-SW`, `-sW`, and `--debug-dump=info` assertions for the ELF header,
+load segment, `.text`, `.debug_info`, named symbols, and the known function's
+DWARF entry.
+
+Validation performed:
+
+- Reverified the tracked 29,034,716-byte archive checksum and RSA/SHA-512
+  detached signature with only the tracked minimal keyring and exact
+  `3A24BC1E8FB409FA9F14371813FCEF89DD9E3C4F` fingerprint in every recipe.
+- Built all four targets once through their committed immutable builders and
+  observed compile/relink cache hits on every architecture.
+- Required stripped static PIE output, no interpreter, no `DT_NEEDED` or text
+  relocations, correct class/data/machine/entry/load flags, ARMv7 hard-float,
+  the x86 i686/SSE2 baseline, and candidate/installed byte identity.
+- Passed all target functional tests, script syntax and mode checks,
+  `git diff --check`, `python3 scripts/recipes.py validate`, the complete
+  checksum manifest, and `./validate.sh` (52 enabled recipes and 25 repository
+  tests).
+
+No sibling Binutils executable, suite bundle, runtime image, builder or generic
+validator change, mutable dependency, universal-format promise, independent
+attestation, or exact-rebuild claim was added.
