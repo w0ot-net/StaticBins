@@ -147,3 +147,49 @@ the acceptance assertions.
   evidence are explicit and enforced.
 - Only `nm` is distributed, without a Binutils bundle, sibling output, mutable
   dependency, utility image, or generic repository abstraction.
+
+## Execution Notes
+
+Completed on 2026-08-08 by implementation commit
+`6705a636170036237336611ce94cc6849e77468a`.
+
+Implemented `nm` as an independently owned artifact and recipe for every ready
+architecture. Each recipe retains its signed source, minimal signing key,
+source and target locks, component-aware license/archive evidence, host build
+entry point, static-PIE validator, object/archive fixtures, and functional
+smoke test. The four catalog records, binaries, checksums, trust records, and
+root supported-tool entry were committed together.
+
+The source/configuration/common compile, relink, and package-validation inputs
+remain byte-identical to the proven sibling Binutils recipes where their
+behavior is shared. Docker BuildKit reported the expensive compile and static
+relink layers as cached for every nm build. Only `/out/nm`, the temporary
+relocatable fixture, and the temporary fixture archive cross the scratch export
+used by the host build; only `nm` is installed in `artifacts/`.
+
+The target test uses POSIX-format nm output to require global data, local text,
+undefined, and global text classifications. It separately proves
+`--defined-only` and `--undefined-only`, exact default name order,
+nondecreasing hexadecimal values under numeric sorting, and an archive/member
+label for `static_bins_archive_member`. Assertions use only controlled C names,
+so no demangling or incidental compiler symbol forms enter the contract.
+
+Validation performed:
+
+- Reverified the exact Binutils archive checksum, tracked RSA/SHA-512
+  signature, minimal keyring, and full
+  `3A24BC1E8FB409FA9F14371813FCEF89DD9E3C4F` fingerprint for all four recipes.
+- Built each architecture once using only its committed immutable builder;
+  compile/relink were cache hits and target-side functional checks passed.
+- Required stripped static PIE, no interpreter, no `DT_NEEDED` or text
+  relocations, correct target ELF identity and executable structure, ARMv7
+  hard-float, the x86 i686/SSE2 baseline, complete link inventories, and
+  candidate/installed byte equality.
+- Passed script syntax/mode checks, `git diff --check`,
+  `python3 scripts/recipes.py validate`, all manifest checksums, and
+  `./validate.sh` (56 enabled recipes and 25 repository tests).
+
+Runtime LTO plugins, universal cross-target BFD support, a Binutils bundle,
+sibling artifact mutation, builder or generic orchestration changes, utility
+images, mutable dependencies, independent attestation, and exact-rebuild
+claims remain explicitly out of scope.
