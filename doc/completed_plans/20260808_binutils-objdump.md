@@ -162,3 +162,59 @@ owns all four architectures without hiding machine/ABI checks.
 - Only `objdump` is distributed; the rollout adds no Binutils bundle, sibling
   executable, runtime image, mutable dependency, or generic repository
   abstraction.
+
+## Execution Notes
+
+Completed on 2026-08-08 by implementation commit
+`acfda8f2c38619f7546c4b133626213a9c4592d4`.
+
+Implemented all four enabled catalog pairs and their conventional artifacts.
+Each recipe owns the signed Binutils 2.47 inputs, exact Nick Clifton signing
+key, immutable architecture builder, source and dependency license evidence,
+static-link inventory, target lock, host entry point, ELF validator, and
+functional fixture test. The root catalog, checksum manifest, trust record,
+and supported-tool summary were updated in the same implementation commit.
+
+Bounded corrections made during execution:
+
+- Binutils 2.47 reports the exact upstream banner version
+  `2.47.20260726`; this is pinned as target-output metadata while the
+  authenticated source record remains version `2.47`.
+- Binutils libtool consumed a plain final `-static` option without producing a
+  static program. The final program relink therefore uses libtool
+  `-all-static`, after which all candidates satisfied the planned static-PIE
+  invariants.
+- The common compile, final relink, and packaging checks were separated so the
+  expensive architecture build layer can be reused by the independent
+  `readelf` and `nm` recipes without one command installing sibling artifacts.
+- The link evidence uses the repository's conventional
+  `licenses/archive-inventory.tsv` path, and the in-builder ELF validator is
+  POSIX `sh` because the locked minimal builders do not include Bash.
+- Upstream LGPL whitespace was normalized in the reviewed license copies so
+  the committed diff passes the repository whitespace check; the license text
+  and meaning are unchanged.
+
+Validation performed:
+
+- Accepted the 29,034,716-byte official source archive at SHA-256
+  `154ab23b60070e8f27013c22977f1129425d67d1e8acd6e13010e617811e4cff`
+  and verified its RSA/SHA-512 detached signature using only the tracked
+  minimal keyring and fingerprint
+  `3A24BC1E8FB409FA9F14371813FCEF89DD9E3C4F`.
+- Built each architecture through its committed builder digest. Candidate and
+  installed bytes matched, and a corrected clean rebuild reproduced every
+  initially accepted checksum exactly.
+- Required stripped static PIE, no interpreter, no `DT_NEEDED` or text
+  relocations, correct class/data/machine/entry/load flags, ARMv7 hard-float,
+  and the x86 i686/SSE2 baseline.
+- Ran each target's exact version check plus `objdump -f`, `-h`, `-t`, and `-d`
+  against the controlled target object.
+- Passed shell syntax checks, `git diff --check`,
+  `python3 scripts/recipes.py validate`, the complete
+  `artifacts/SHA256SUMS` check, and `./validate.sh` (48 enabled recipes and 25
+  repository tests).
+
+The out-of-scope boundaries were preserved: no sibling Binutils artifact,
+bundle, runtime image, builder change, mutable dependency, catalog/schema
+change, universal-target promise, attestation, or byte-for-byte
+reproducibility claim was added.
