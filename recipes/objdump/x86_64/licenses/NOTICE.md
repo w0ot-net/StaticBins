@@ -7,7 +7,7 @@ GPL-3.0-or-later; the unmodified upstream GPLv3 text is included as
 `binutils-COPYING3.txt`. The separately licensed libiberty text is retained as
 `libiberty-COPYING.LIB.txt` when that archive enters the final link.
 
-`linked-inputs.tsv` reconciles every archive in the final linker maps for the
+`archive-inventory.tsv` reconciles every archive in the final linker maps for the
 Binutils programs built in the cacheable compile stage. Source-built rows refer
 to the tracked signed release; builder rows record exact APK ownership,
 versions, licenses, reviewed license texts, and immutable aports evidence.
