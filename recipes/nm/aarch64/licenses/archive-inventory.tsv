@@ -1,0 +1,28 @@
+# tool	archive_path	origin	package_or_component	version	license	license_file	source_evidence
+objdump	/build/binutils-build/bfd/.libs/libbfd.a	source	bfd	2.47	GPL-3.0-or-later	binutils-COPYING3.txt	https://ftp.gnu.org/gnu/binutils/binutils-2.47.tar.xz
+objdump	/build/binutils-build/libiberty/libiberty.a	source	libiberty	2.47	LGPL-2.1-or-later	libiberty-COPYING.LIB.txt	https://ftp.gnu.org/gnu/binutils/binutils-2.47.tar.xz
+objdump	/build/binutils-build/libsframe/.libs/libsframe.a	source	libsframe	2.47	GPL-3.0-or-later	binutils-COPYING3.txt	https://ftp.gnu.org/gnu/binutils/binutils-2.47.tar.xz
+objdump	/build/binutils-build/opcodes/.libs/libopcodes.a	source	opcodes	2.47	GPL-3.0-or-later	binutils-COPYING3.txt	https://ftp.gnu.org/gnu/binutils/binutils-2.47.tar.xz
+objdump	/usr/lib/libc.a	builder	musl-dev	1.2.6-r2	MIT	musl-COPYRIGHT.txt	https://gitlab.alpinelinux.org/alpine/aports/-/blob/f5640d3a10f664c9119720c60515265d3d6f6d01/main/musl/APKBUILD
+objdump	/usr/lib/libssp_nonshared.a	builder	musl-dev	1.2.6-r2	MIT	musl-COPYRIGHT.txt	https://gitlab.alpinelinux.org/alpine/aports/-/blob/f5640d3a10f664c9119720c60515265d3d6f6d01/main/musl/APKBUILD
+objdump	/usr/lib/libz.a	builder	zlib-static	1.3.2-r0	Zlib	zlib-LICENSE.txt	https://gitlab.alpinelinux.org/alpine/aports/-/blob/f248b33b5943c7dc69bf691031d7612ab2e8ed93/main/zlib/APKBUILD
+objdump	/usr/lib/libzstd.a	builder	zstd-static	1.5.7-r2	BSD-3-Clause OR GPL-2.0-or-later	zstd-LICENSE.txt	https://gitlab.alpinelinux.org/alpine/aports/-/blob/3c6e2ee2b16f403d53eab39c4426eb61f003c322/main/zstd/APKBUILD
+objdump	/usr/lib/gcc/aarch64-alpine-linux-musl/15.2.0/libgcc.a	builder	libgcc-static	15.2.0-r5	GPL-2.0-or-later AND LGPL-2.1-or-later	GCC-COPYING.RUNTIME.txt	https://gitlab.alpinelinux.org/alpine/aports/-/blob/423a8ad043d07f2c7546c8ec3e2b0384cda360ae/main/gcc/APKBUILD
+objdump	/usr/lib/gcc/aarch64-alpine-linux-musl/15.2.0/libgcc_eh.a	builder	gcc	15.2.0-r5	GPL-2.0-or-later AND LGPL-2.1-or-later	GCC-COPYING.RUNTIME.txt	https://gitlab.alpinelinux.org/alpine/aports/-/blob/423a8ad043d07f2c7546c8ec3e2b0384cda360ae/main/gcc/APKBUILD
+readelf	/build/binutils-build/libiberty/libiberty.a	source	libiberty	2.47	LGPL-2.1-or-later	libiberty-COPYING.LIB.txt	https://ftp.gnu.org/gnu/binutils/binutils-2.47.tar.xz
+readelf	/build/binutils-build/libsframe/.libs/libsframe.a	source	libsframe	2.47	GPL-3.0-or-later	binutils-COPYING3.txt	https://ftp.gnu.org/gnu/binutils/binutils-2.47.tar.xz
+readelf	/usr/lib/libc.a	builder	musl-dev	1.2.6-r2	MIT	musl-COPYRIGHT.txt	https://gitlab.alpinelinux.org/alpine/aports/-/blob/f5640d3a10f664c9119720c60515265d3d6f6d01/main/musl/APKBUILD
+readelf	/usr/lib/libssp_nonshared.a	builder	musl-dev	1.2.6-r2	MIT	musl-COPYRIGHT.txt	https://gitlab.alpinelinux.org/alpine/aports/-/blob/f5640d3a10f664c9119720c60515265d3d6f6d01/main/musl/APKBUILD
+readelf	/usr/lib/libz.a	builder	zlib-static	1.3.2-r0	Zlib	zlib-LICENSE.txt	https://gitlab.alpinelinux.org/alpine/aports/-/blob/f248b33b5943c7dc69bf691031d7612ab2e8ed93/main/zlib/APKBUILD
+readelf	/usr/lib/libzstd.a	builder	zstd-static	1.5.7-r2	BSD-3-Clause OR GPL-2.0-or-later	zstd-LICENSE.txt	https://gitlab.alpinelinux.org/alpine/aports/-/blob/3c6e2ee2b16f403d53eab39c4426eb61f003c322/main/zstd/APKBUILD
+readelf	/usr/lib/gcc/aarch64-alpine-linux-musl/15.2.0/libgcc.a	builder	libgcc-static	15.2.0-r5	GPL-2.0-or-later AND LGPL-2.1-or-later	GCC-COPYING.RUNTIME.txt	https://gitlab.alpinelinux.org/alpine/aports/-/blob/423a8ad043d07f2c7546c8ec3e2b0384cda360ae/main/gcc/APKBUILD
+readelf	/usr/lib/gcc/aarch64-alpine-linux-musl/15.2.0/libgcc_eh.a	builder	gcc	15.2.0-r5	GPL-2.0-or-later AND LGPL-2.1-or-later	GCC-COPYING.RUNTIME.txt	https://gitlab.alpinelinux.org/alpine/aports/-/blob/423a8ad043d07f2c7546c8ec3e2b0384cda360ae/main/gcc/APKBUILD
+nm	/build/binutils-build/bfd/.libs/libbfd.a	source	bfd	2.47	GPL-3.0-or-later	binutils-COPYING3.txt	https://ftp.gnu.org/gnu/binutils/binutils-2.47.tar.xz
+nm	/build/binutils-build/libiberty/libiberty.a	source	libiberty	2.47	LGPL-2.1-or-later	libiberty-COPYING.LIB.txt	https://ftp.gnu.org/gnu/binutils/binutils-2.47.tar.xz
+nm	/build/binutils-build/libsframe/.libs/libsframe.a	source	libsframe	2.47	GPL-3.0-or-later	binutils-COPYING3.txt	https://ftp.gnu.org/gnu/binutils/binutils-2.47.tar.xz
+nm	/usr/lib/libc.a	builder	musl-dev	1.2.6-r2	MIT	musl-COPYRIGHT.txt	https://gitlab.alpinelinux.org/alpine/aports/-/blob/f5640d3a10f664c9119720c60515265d3d6f6d01/main/musl/APKBUILD
+nm	/usr/lib/libssp_nonshared.a	builder	musl-dev	1.2.6-r2	MIT	musl-COPYRIGHT.txt	https://gitlab.alpinelinux.org/alpine/aports/-/blob/f5640d3a10f664c9119720c60515265d3d6f6d01/main/musl/APKBUILD
+nm	/usr/lib/libz.a	builder	zlib-static	1.3.2-r0	Zlib	zlib-LICENSE.txt	https://gitlab.alpinelinux.org/alpine/aports/-/blob/f248b33b5943c7dc69bf691031d7612ab2e8ed93/main/zlib/APKBUILD
+nm	/usr/lib/libzstd.a	builder	zstd-static	1.5.7-r2	BSD-3-Clause OR GPL-2.0-or-later	zstd-LICENSE.txt	https://gitlab.alpinelinux.org/alpine/aports/-/blob/3c6e2ee2b16f403d53eab39c4426eb61f003c322/main/zstd/APKBUILD
+nm	/usr/lib/gcc/aarch64-alpine-linux-musl/15.2.0/libgcc.a	builder	libgcc-static	15.2.0-r5	GPL-2.0-or-later AND LGPL-2.1-or-later	GCC-COPYING.RUNTIME.txt	https://gitlab.alpinelinux.org/alpine/aports/-/blob/423a8ad043d07f2c7546c8ec3e2b0384cda360ae/main/gcc/APKBUILD
+nm	/usr/lib/gcc/aarch64-alpine-linux-musl/15.2.0/libgcc_eh.a	builder	gcc	15.2.0-r5	GPL-2.0-or-later AND LGPL-2.1-or-later	GCC-COPYING.RUNTIME.txt	https://gitlab.alpinelinux.org/alpine/aports/-/blob/423a8ad043d07f2c7546c8ec3e2b0384cda360ae/main/gcc/APKBUILD
