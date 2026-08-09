@@ -1,5 +1,11 @@
 # Plan: Add Standalone Telnet Across Ready Architectures
 
+**ABANDONED 2026-08-08**: Every distributed BusyBox artifact already provides
+the telnet client through `busybox telnet`. A separate `telnet` artifact would
+duplicate source inputs, four recipes, four binaries, and their maintenance
+solely for command-name convenience, contrary to the repository's goal of the
+smallest practical rebuild process. No replacement plan is needed.
+
 ## Summary
 
 Add a directly executable `telnet` client for `aarch64`, `armv7`, `x86`, and
