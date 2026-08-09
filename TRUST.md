@@ -22,6 +22,10 @@ keyserver, or network lookup.
 
 | Source | Authentication | Full signer fingerprint | Official evidence |
 | --- | --- | --- | --- |
+| [BusyBox 1.38.0 (AArch64)](recipes/busybox/aarch64/source.lock) | Checksum only | Not available | [official download](https://busybox.net/downloads/) |
+| [BusyBox 1.38.0 (ARMv7)](recipes/busybox/armv7/source.lock) | Checksum only | Not available | [official download](https://busybox.net/downloads/) |
+| [BusyBox 1.38.0 (x86)](recipes/busybox/x86/source.lock) | Checksum only | Not available | [official download](https://busybox.net/downloads/) |
+| [BusyBox 1.38.0 (x86-64)](recipes/busybox/x86_64/source.lock) | Checksum only | Not available | [official download](https://busybox.net/downloads/) |
 | [GDB 17.2](recipes/gdb/aarch64/source.lock) | Upstream PGP | `F40ADB902B24264AA42E50BF92EDB04BFF325CF3` | [signature](https://ftp.gnu.org/gnu/gdb/gdb-17.2.tar.xz.sig); [GNU keyring](https://ftp.gnu.org/gnu/gnu-keyring.gpg) |
 | [GDB 17.2 (ARMv7)](recipes/gdb/armv7/source.lock) | Upstream PGP | `F40ADB902B24264AA42E50BF92EDB04BFF325CF3` | [signature](https://ftp.gnu.org/gnu/gdb/gdb-17.2.tar.xz.sig); [GNU keyring](https://ftp.gnu.org/gnu/gnu-keyring.gpg) |
 | [GDB 17.2 (x86)](recipes/gdb/x86/source.lock) | Upstream PGP | `F40ADB902B24264AA42E50BF92EDB04BFF325CF3` | [signature](https://ftp.gnu.org/gnu/gdb/gdb-17.2.tar.xz.sig); [GNU keyring](https://ftp.gnu.org/gnu/gnu-keyring.gpg) |
@@ -63,6 +67,12 @@ The GDB and GNU Netcat signatures are valid upstream origin evidence but use
 legacy DSA with SHA-1. The GNU Netcat signing key is also expired. The tcpdump
 and libpcap signatures use RSA with SHA-512. These records are verified exactly
 as published; the table does not claim equal cryptographic strength.
+
+BusyBox labels 1.38.0 an unstable release. Although upstream publishes a DSA
+signature, these recipes have not adopted a signer key backed by authenticated
+official full-fingerprint evidence. They therefore select `checksum-only`
+explicitly and do not attempt PGP verification or fall back after a failed
+signature check.
 
 The AArch64 GDBserver, ltrace, and strace functional tests boot the same
 checksum-locked Alpine 3.22.5 `vmlinuz-virt`, recorded in their respective

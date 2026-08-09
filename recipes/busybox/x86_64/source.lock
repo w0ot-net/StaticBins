@@ -1,0 +1,7 @@
+# BusyBox source acceptance and provenance metadata.
+SOURCE_VERSION=1.38.0
+SOURCE_ARCHIVE=busybox-1.38.0.tar.bz2
+SOURCE_SHA256=34f9ea6ff8636f2c9241153b9114eefa9e65674a45318ae1ef95bb5f31c53bb2
+SOURCE_UPSTREAM_URL=https://busybox.net/downloads/busybox-1.38.0.tar.bz2
+SOURCE_LICENSE=GPL-2.0-only
+SOURCE_AUTHENTICATION=checksum-only

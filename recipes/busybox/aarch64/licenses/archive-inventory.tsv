@@ -1,0 +1,34 @@
+# archive_path	origin	package	version	license	license_file	source_evidence
+/build/busybox-1.38.0/archival/lib.a	source	BusyBox	1.38.0	GPL-2.0-only	busybox-LICENSE.txt	https://busybox.net/downloads/busybox-1.38.0.tar.bz2
+/build/busybox-1.38.0/archival/libarchive/lib.a	source	BusyBox	1.38.0	GPL-2.0-only AND bzip2-1.0.4	busybox-bzip2-LICENSE.txt	https://busybox.net/downloads/busybox-1.38.0.tar.bz2
+/build/busybox-1.38.0/console-tools/lib.a	source	BusyBox	1.38.0	GPL-2.0-only	busybox-LICENSE.txt	https://busybox.net/downloads/busybox-1.38.0.tar.bz2
+/build/busybox-1.38.0/coreutils/lib.a	source	BusyBox	1.38.0	GPL-2.0-only	busybox-LICENSE.txt	https://busybox.net/downloads/busybox-1.38.0.tar.bz2
+/build/busybox-1.38.0/coreutils/libcoreutils/lib.a	source	BusyBox	1.38.0	GPL-2.0-only	busybox-LICENSE.txt	https://busybox.net/downloads/busybox-1.38.0.tar.bz2
+/build/busybox-1.38.0/debianutils/lib.a	source	BusyBox	1.38.0	GPL-2.0-only	busybox-LICENSE.txt	https://busybox.net/downloads/busybox-1.38.0.tar.bz2
+/build/busybox-1.38.0/e2fsprogs/lib.a	source	BusyBox	1.38.0	GPL-2.0-only	busybox-LICENSE.txt	https://busybox.net/downloads/busybox-1.38.0.tar.bz2
+/build/busybox-1.38.0/editors/lib.a	source	BusyBox	1.38.0	GPL-2.0-only	busybox-LICENSE.txt	https://busybox.net/downloads/busybox-1.38.0.tar.bz2
+/build/busybox-1.38.0/findutils/lib.a	source	BusyBox	1.38.0	GPL-2.0-only	busybox-LICENSE.txt	https://busybox.net/downloads/busybox-1.38.0.tar.bz2
+/build/busybox-1.38.0/init/lib.a	source	BusyBox	1.38.0	GPL-2.0-only	busybox-LICENSE.txt	https://busybox.net/downloads/busybox-1.38.0.tar.bz2
+/build/busybox-1.38.0/klibc-utils/lib.a	source	BusyBox	1.38.0	GPL-2.0-only	busybox-LICENSE.txt	https://busybox.net/downloads/busybox-1.38.0.tar.bz2
+/build/busybox-1.38.0/libbb/lib.a	source	BusyBox	1.38.0	GPL-2.0-only	busybox-LICENSE.txt	https://busybox.net/downloads/busybox-1.38.0.tar.bz2
+/build/busybox-1.38.0/libbb/yescrypt/lib.a	source	BusyBox	1.38.0	GPL-2.0-only AND BSD-2-Clause AND 0BSD	busybox-LICENSE.txt	https://busybox.net/downloads/busybox-1.38.0.tar.bz2
+/build/busybox-1.38.0/libpwdgrp/lib.a	source	BusyBox	1.38.0	GPL-2.0-only	busybox-LICENSE.txt	https://busybox.net/downloads/busybox-1.38.0.tar.bz2
+/build/busybox-1.38.0/loginutils/lib.a	source	BusyBox	1.38.0	GPL-2.0-only	busybox-LICENSE.txt	https://busybox.net/downloads/busybox-1.38.0.tar.bz2
+/build/busybox-1.38.0/mailutils/lib.a	source	BusyBox	1.38.0	GPL-2.0-only	busybox-LICENSE.txt	https://busybox.net/downloads/busybox-1.38.0.tar.bz2
+/build/busybox-1.38.0/miscutils/lib.a	source	BusyBox	1.38.0	GPL-2.0-only	busybox-LICENSE.txt	https://busybox.net/downloads/busybox-1.38.0.tar.bz2
+/build/busybox-1.38.0/modutils/lib.a	source	BusyBox	1.38.0	GPL-2.0-only	busybox-LICENSE.txt	https://busybox.net/downloads/busybox-1.38.0.tar.bz2
+/build/busybox-1.38.0/networking/lib.a	source	BusyBox	1.38.0	GPL-2.0-only	busybox-LICENSE.txt	https://busybox.net/downloads/busybox-1.38.0.tar.bz2
+/build/busybox-1.38.0/networking/libiproute/lib.a	source	BusyBox	1.38.0	GPL-2.0-only	busybox-LICENSE.txt	https://busybox.net/downloads/busybox-1.38.0.tar.bz2
+/build/busybox-1.38.0/networking/udhcp/lib.a	source	BusyBox	1.38.0	GPL-2.0-only	busybox-LICENSE.txt	https://busybox.net/downloads/busybox-1.38.0.tar.bz2
+/build/busybox-1.38.0/printutils/lib.a	source	BusyBox	1.38.0	GPL-2.0-only	busybox-LICENSE.txt	https://busybox.net/downloads/busybox-1.38.0.tar.bz2
+/build/busybox-1.38.0/procps/lib.a	source	BusyBox	1.38.0	GPL-2.0-only	busybox-LICENSE.txt	https://busybox.net/downloads/busybox-1.38.0.tar.bz2
+/build/busybox-1.38.0/runit/lib.a	source	BusyBox	1.38.0	GPL-2.0-only	busybox-LICENSE.txt	https://busybox.net/downloads/busybox-1.38.0.tar.bz2
+/build/busybox-1.38.0/selinux/lib.a	source	BusyBox	1.38.0	GPL-2.0-only	busybox-LICENSE.txt	https://busybox.net/downloads/busybox-1.38.0.tar.bz2
+/build/busybox-1.38.0/shell/lib.a	source	BusyBox	1.38.0	GPL-2.0-only	busybox-LICENSE.txt	https://busybox.net/downloads/busybox-1.38.0.tar.bz2
+/build/busybox-1.38.0/sysklogd/lib.a	source	BusyBox	1.38.0	GPL-2.0-only	busybox-LICENSE.txt	https://busybox.net/downloads/busybox-1.38.0.tar.bz2
+/build/busybox-1.38.0/util-linux/lib.a	source	BusyBox	1.38.0	GPL-2.0-only	busybox-LICENSE.txt	https://busybox.net/downloads/busybox-1.38.0.tar.bz2
+/build/busybox-1.38.0/util-linux/volume_id/lib.a	source	BusyBox	1.38.0	GPL-2.0-only	busybox-LICENSE.txt	https://busybox.net/downloads/busybox-1.38.0.tar.bz2
+/usr/lib/libc.a	builder	musl-dev	1.2.6-r2	MIT	musl-COPYRIGHT.txt	https://gitlab.alpinelinux.org/alpine/aports/-/blob/f5640d3a10f664c9119720c60515265d3d6f6d01/main/musl/APKBUILD
+/usr/lib/libssp_nonshared.a	builder	musl-dev	1.2.6-r2	MIT	musl-COPYRIGHT.txt	https://gitlab.alpinelinux.org/alpine/aports/-/blob/f5640d3a10f664c9119720c60515265d3d6f6d01/main/musl/APKBUILD
+/usr/lib/gcc/aarch64-alpine-linux-musl/15.2.0/libgcc.a	builder	libgcc-static	15.2.0-r5	GPL-2.0-or-later AND LGPL-2.1-or-later	GCC-COPYING.RUNTIME.txt	https://gitlab.alpinelinux.org/alpine/aports/-/blob/423a8ad043d07f2c7546c8ec3e2b0384cda360ae/main/gcc/APKBUILD
+/usr/lib/gcc/aarch64-alpine-linux-musl/15.2.0/libgcc_eh.a	builder	gcc	15.2.0-r5	GPL-2.0-or-later AND LGPL-2.1-or-later	GCC-COPYING.RUNTIME.txt	https://gitlab.alpinelinux.org/alpine/aports/-/blob/423a8ad043d07f2c7546c8ec3e2b0384cda360ae/main/gcc/APKBUILD

@@ -1,4 +1,8 @@
 name	architecture	enabled
+busybox	aarch64	true
+busybox	armv7	true
+busybox	x86	true
+busybox	x86_64	true
 gdb	aarch64	true
 gdb	armv7	true
 gdb	x86	true
