@@ -1,0 +1,7 @@
+# net-tools source acceptance and provenance metadata.
+SOURCE_VERSION=2.10
+SOURCE_ARCHIVE=net-tools-2.10.tar.xz
+SOURCE_SHA256=b262435a5241e89bfa51c3cabd5133753952f7a7b7b93f32e08cb9d96f580d69
+SOURCE_UPSTREAM_URL=https://downloads.sourceforge.net/project/net-tools/net-tools-2.10.tar.xz
+SOURCE_LICENSE=GPL-2.0-or-later
+SOURCE_AUTHENTICATION=checksum-only

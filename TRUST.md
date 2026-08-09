@@ -46,6 +46,10 @@ keyserver, or network lookup.
 | [GNU Netcat 0.7.1 (ARMv7)](recipes/nc/armv7/source.lock) | Upstream PGP | `6247640C1C901EE4D800E4E22D583DF1B2D79FC1` | [signature](https://netcat.sourceforge.net/signatures/netcat-0.7.1.tar.gz.asc); [signer key](https://netcat.sourceforge.net/b2d79fc1.asc) |
 | [GNU Netcat 0.7.1 (x86)](recipes/nc/x86/source.lock) | Upstream PGP | `6247640C1C901EE4D800E4E22D583DF1B2D79FC1` | [signature](https://netcat.sourceforge.net/signatures/netcat-0.7.1.tar.gz.asc); [signer key](https://netcat.sourceforge.net/b2d79fc1.asc) |
 | [GNU Netcat 0.7.1 (x86-64)](recipes/nc/x86_64/source.lock) | Upstream PGP | `6247640C1C901EE4E800E4E22D583DF1B2D79FC1` | [signature](https://netcat.sourceforge.net/signatures/netcat-0.7.1.tar.gz.asc); [signer key](https://netcat.sourceforge.net/b2d79fc1.asc) |
+| [net-tools 2.10 (netstat, AArch64)](recipes/netstat/aarch64/source.lock) | Checksum only | Not available | [official release](https://sourceforge.net/projects/net-tools/files/net-tools-2.10.tar.xz/) |
+| [net-tools 2.10 (netstat, ARMv7)](recipes/netstat/armv7/source.lock) | Checksum only | Not available | [official release](https://sourceforge.net/projects/net-tools/files/net-tools-2.10.tar.xz/) |
+| [net-tools 2.10 (netstat, x86)](recipes/netstat/x86/source.lock) | Checksum only | Not available | [official release](https://sourceforge.net/projects/net-tools/files/net-tools-2.10.tar.xz/) |
+| [net-tools 2.10 (netstat, x86-64)](recipes/netstat/x86_64/source.lock) | Checksum only | Not available | [official release](https://sourceforge.net/projects/net-tools/files/net-tools-2.10.tar.xz/) |
 | [socat 1.8.1.3 (AArch64)](recipes/socat/aarch64/source.lock) | Checksum only | Not available | [official Git repository](https://repo.or.cz/socat.git) |
 | [socat 1.8.1.3 (ARMv7)](recipes/socat/armv7/source.lock) | Checksum only | Not available | [official Git repository](https://repo.or.cz/socat.git) |
 | [socat 1.8.1.3 (x86)](recipes/socat/x86/source.lock) | Checksum only | Not available | [official Git repository](https://repo.or.cz/socat.git) |
@@ -73,6 +77,13 @@ signature, these recipes have not adopted a signer key backed by authenticated
 official full-fingerprint evidence. They therefore select `checksum-only`
 explicitly and do not attempt PGP verification or fall back after a failed
 signature check.
+
+The net-tools 2.10 release directory does not provide a detached signature
+over the accepted archive with authenticated full-fingerprint key evidence,
+so the netstat recipes select `checksum-only`. Their separately
+checksum-locked interface-counter patch is retained from an immutable Alpine
+aports revision and links to the upstream discussion; it is reviewed
+downstream evidence, not authentication of the release archive.
 
 The AArch64 GDBserver, ltrace, and strace functional tests boot the same
 checksum-locked Alpine 3.22.5 `vmlinuz-virt`, recorded in their respective

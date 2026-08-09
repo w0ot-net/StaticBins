@@ -1,0 +1,6 @@
+# Reviewed downstream correctness patch metadata.
+PATCH_1=0001-Revert-sscanf-pattern-is-Lu-not-llu-for-long-long-un.patch
+PATCH_1_SHA256=6d276b0f302a72a92229f211d4cc4a54ec6f8a44006f5453f6970ba361eae165
+PATCH_1_UPSTREAM_URL=https://gitlab.alpinelinux.org/alpine/aports/-/raw/dd997c499619e93e6e7bcef26c2482e37d433a04/main/net-tools/0001-Revert-sscanf-pattern-is-Lu-not-llu-for-long-long-un.patch
+PATCH_1_PROVENANCE_URL=https://sourceforge.net/p/net-tools/mailman/message/37860727/
+PATCH_1_AUTHENTICATION=checksum-only

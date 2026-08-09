@@ -1,1 +1,2 @@
 recipes/gdb/aarch64/licenses/*.txt -whitespace
+recipes/netstat/*/patches/*.patch -whitespace

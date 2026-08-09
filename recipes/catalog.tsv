@@ -23,6 +23,10 @@ nc	aarch64	true
 nc	armv7	true
 nc	x86	true
 nc	x86_64	true
+netstat	aarch64	true
+netstat	armv7	true
+netstat	x86	true
+netstat	x86_64	true
 socat	aarch64	true
 socat	armv7	true
 socat	x86	true
