@@ -31,6 +31,10 @@ objdump	aarch64	true
 objdump	armv7	true
 objdump	x86	true
 objdump	x86_64	true
+readelf	aarch64	true
+readelf	armv7	true
+readelf	x86	true
+readelf	x86_64	true
 rsync	aarch64	true
 rsync	armv7	true
 rsync	x86	true
