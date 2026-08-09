@@ -27,6 +27,10 @@ netstat	aarch64	true
 netstat	armv7	true
 netstat	x86	true
 netstat	x86_64	true
+objdump	aarch64	true
+objdump	armv7	true
+objdump	x86	true
+objdump	x86_64	true
 rsync	aarch64	true
 rsync	armv7	true
 rsync	x86	true

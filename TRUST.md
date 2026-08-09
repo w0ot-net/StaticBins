@@ -26,6 +26,10 @@ keyserver, or network lookup.
 | [BusyBox 1.38.0 (ARMv7)](recipes/busybox/armv7/source.lock) | Checksum only | Not available | [official download](https://busybox.net/downloads/) |
 | [BusyBox 1.38.0 (x86)](recipes/busybox/x86/source.lock) | Checksum only | Not available | [official download](https://busybox.net/downloads/) |
 | [BusyBox 1.38.0 (x86-64)](recipes/busybox/x86_64/source.lock) | Checksum only | Not available | [official download](https://busybox.net/downloads/) |
+| [GNU Binutils 2.47 (objdump, AArch64)](recipes/objdump/aarch64/source.lock) | Upstream PGP | `3A24BC1E8FB409FA9F14371813FCEF89DD9E3C4F` | [signature](https://ftp.gnu.org/gnu/binutils/binutils-2.47.tar.xz.sig); [GNU keyring](https://ftp.gnu.org/gnu/gnu-keyring.gpg) |
+| [GNU Binutils 2.47 (objdump, ARMv7)](recipes/objdump/armv7/source.lock) | Upstream PGP | `3A24BC1E8FB409FA9F14371813FCEF89DD9E3C4F` | [signature](https://ftp.gnu.org/gnu/binutils/binutils-2.47.tar.xz.sig); [GNU keyring](https://ftp.gnu.org/gnu/gnu-keyring.gpg) |
+| [GNU Binutils 2.47 (objdump, x86)](recipes/objdump/x86/source.lock) | Upstream PGP | `3A24BC1E8FB409FA9F14371813FCEF89DD9E3C4F` | [signature](https://ftp.gnu.org/gnu/binutils/binutils-2.47.tar.xz.sig); [GNU keyring](https://ftp.gnu.org/gnu/gnu-keyring.gpg) |
+| [GNU Binutils 2.47 (objdump, x86-64)](recipes/objdump/x86_64/source.lock) | Upstream PGP | `3A24BC1E8FB409FA9F14371813FCEF89DD9E3C4F` | [signature](https://ftp.gnu.org/gnu/binutils/binutils-2.47.tar.xz.sig); [GNU keyring](https://ftp.gnu.org/gnu/gnu-keyring.gpg) |
 | [GDB 17.2](recipes/gdb/aarch64/source.lock) | Upstream PGP | `F40ADB902B24264AA42E50BF92EDB04BFF325CF3` | [signature](https://ftp.gnu.org/gnu/gdb/gdb-17.2.tar.xz.sig); [GNU keyring](https://ftp.gnu.org/gnu/gnu-keyring.gpg) |
 | [GDB 17.2 (ARMv7)](recipes/gdb/armv7/source.lock) | Upstream PGP | `F40ADB902B24264AA42E50BF92EDB04BFF325CF3` | [signature](https://ftp.gnu.org/gnu/gdb/gdb-17.2.tar.xz.sig); [GNU keyring](https://ftp.gnu.org/gnu/gnu-keyring.gpg) |
 | [GDB 17.2 (x86)](recipes/gdb/x86/source.lock) | Upstream PGP | `F40ADB902B24264AA42E50BF92EDB04BFF325CF3` | [signature](https://ftp.gnu.org/gnu/gdb/gdb-17.2.tar.xz.sig); [GNU keyring](https://ftp.gnu.org/gnu/gnu-keyring.gpg) |
@@ -72,10 +76,10 @@ keyserver, or network lookup.
 | [libpcap 1.10.4 (x86-64)](recipes/tcpdump/x86_64/source.lock) | Upstream PGP | `1F166A5742ABB9E0249A8D30E089DEF1D9C15D0D` | [signature](https://www.tcpdump.org/release/libpcap-1.10.4.tar.gz.sig); [Tcpdump Group key](https://www.tcpdump.org/release/signing-key-RSA-E089DEF1D9C15D0D.asc) |
 
 The GDB and GNU Netcat signatures are valid upstream origin evidence but use
-legacy DSA with SHA-1. The GNU Netcat signing key is also expired. The rsync,
-tcpdump, and libpcap signatures use RSA with SHA-512. These records are
-verified exactly as published; the table does not claim equal cryptographic
-strength.
+legacy DSA with SHA-1. The GNU Netcat signing key is also expired. The
+Binutils, rsync, tcpdump, and libpcap signatures use RSA with SHA-512. These
+records are verified exactly as published; the table does not claim equal
+cryptographic strength.
 
 BusyBox labels 1.38.0 an unstable release. Although upstream publishes a DSA
 signature, these recipes have not adopted a signer key backed by authenticated

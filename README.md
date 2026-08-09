@@ -3,8 +3,8 @@
 Ready-to-run static Linux utilities with committed, documented, repeatable
 build recipes.
 
-GDB, GDBserver, lsof, ltrace, socat, strace, and tcpdump are available for
-AArch64, ARMv7, x86, and x86-64.
+BusyBox, GDB, GDBserver, lsof, ltrace, netcat, netstat, objdump, rsync, socat,
+strace, and tcpdump are available for AArch64, ARMv7, x86, and x86-64.
 
 ## Get a binary
 
