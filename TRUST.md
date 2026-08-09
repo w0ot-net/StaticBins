@@ -26,6 +26,10 @@ keyserver, or network lookup.
 | [BusyBox 1.38.0 (ARMv7)](recipes/busybox/armv7/source.lock) | Checksum only | Not available | [official download](https://busybox.net/downloads/) |
 | [BusyBox 1.38.0 (x86)](recipes/busybox/x86/source.lock) | Checksum only | Not available | [official download](https://busybox.net/downloads/) |
 | [BusyBox 1.38.0 (x86-64)](recipes/busybox/x86_64/source.lock) | Checksum only | Not available | [official download](https://busybox.net/downloads/) |
+| [Dropbear 2026.94 (AArch64)](recipes/dropbearmulti/aarch64/source.lock) | Upstream PGP | `F7347EF2EE2E07A267628CA944931494F29C6773` | [signature](https://matt.ucc.asn.au/dropbear/releases/dropbear-2026.94.tar.bz2.asc); [official signing key](https://matt.ucc.asn.au/dropbear/releases/dropbear-key-2015.asc) |
+| [Dropbear 2026.94 (ARMv7)](recipes/dropbearmulti/armv7/source.lock) | Upstream PGP | `F7347EF2EE2E07A267628CA944931494F29C6773` | [signature](https://matt.ucc.asn.au/dropbear/releases/dropbear-2026.94.tar.bz2.asc); [official signing key](https://matt.ucc.asn.au/dropbear/releases/dropbear-key-2015.asc) |
+| [Dropbear 2026.94 (x86)](recipes/dropbearmulti/x86/source.lock) | Upstream PGP | `F7347EF2EE2E07A267628CA944931494F29C6773` | [signature](https://matt.ucc.asn.au/dropbear/releases/dropbear-2026.94.tar.bz2.asc); [official signing key](https://matt.ucc.asn.au/dropbear/releases/dropbear-key-2015.asc) |
+| [Dropbear 2026.94 (x86-64)](recipes/dropbearmulti/x86_64/source.lock) | Upstream PGP | `F7347EF2EE2E07A267628CA944931494F29C6773` | [signature](https://matt.ucc.asn.au/dropbear/releases/dropbear-2026.94.tar.bz2.asc); [official signing key](https://matt.ucc.asn.au/dropbear/releases/dropbear-key-2015.asc) |
 | [GNU Binutils 2.47 (nm, AArch64)](recipes/nm/aarch64/source.lock) | Upstream PGP | `3A24BC1E8FB409FA9F14371813FCEF89DD9E3C4F` | [signature](https://ftp.gnu.org/gnu/binutils/binutils-2.47.tar.xz.sig); [GNU keyring](https://ftp.gnu.org/gnu/gnu-keyring.gpg) |
 | [GNU Binutils 2.47 (nm, ARMv7)](recipes/nm/armv7/source.lock) | Upstream PGP | `3A24BC1E8FB409FA9F14371813FCEF89DD9E3C4F` | [signature](https://ftp.gnu.org/gnu/binutils/binutils-2.47.tar.xz.sig); [GNU keyring](https://ftp.gnu.org/gnu/gnu-keyring.gpg) |
 | [GNU Binutils 2.47 (nm, x86)](recipes/nm/x86/source.lock) | Upstream PGP | `3A24BC1E8FB409FA9F14371813FCEF89DD9E3C4F` | [signature](https://ftp.gnu.org/gnu/binutils/binutils-2.47.tar.xz.sig); [GNU keyring](https://ftp.gnu.org/gnu/gnu-keyring.gpg) |
@@ -85,9 +89,9 @@ keyserver, or network lookup.
 
 The GDB and GNU Netcat signatures are valid upstream origin evidence but use
 legacy DSA with SHA-1. The GNU Netcat signing key is also expired. The
-Binutils, rsync, tcpdump, and libpcap signatures use RSA with SHA-512. These
-records are verified exactly as published; the table does not claim equal
-cryptographic strength.
+Binutils, Dropbear, rsync, tcpdump, and libpcap signatures use RSA with
+SHA-512. These records are verified exactly as published; the table does not
+claim equal cryptographic strength.
 
 BusyBox labels 1.38.0 an unstable release. Although upstream publishes a DSA
 signature, these recipes have not adopted a signer key backed by authenticated

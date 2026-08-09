@@ -1,0 +1,1 @@
+#define DROPBEAR_SFTPSERVER 0
