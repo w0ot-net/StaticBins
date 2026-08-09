@@ -1,0 +1,6 @@
+PATCH_1=0001-fix-pktinfo-address-copy-lengths.patch
+PATCH_1_SHA256=2d886a553a6a406072be0fde3293f3dc7f1fec5b682b40ef53508efb3c0d4b24
+PATCH_1_PROVENANCE=repository-reviewed-local-correctness-fix
+PATCH_2=0002-fix-flag-count-on-unsigned-char-targets.patch
+PATCH_2_SHA256=8746fbb01f8442c20d3437bd6549eab0077264d3869e454893b02f8e7dabceb7
+PATCH_2_PROVENANCE=https://archlinuxarm.org/forum/viewtopic.php?f=15&t=3055

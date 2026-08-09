@@ -1,0 +1,8 @@
+--- a/src/core.c
++++ b/src/core.c
+@@ -276 +276 @@
+-	       sizeof(local_addr));
++	       sizeof(local_addr.sin_addr));
+@@ -278 +278 @@
+-	       sizeof(local_addr));
++	       sizeof(rem_addr.sin_addr));

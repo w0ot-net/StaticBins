@@ -15,6 +15,10 @@ ltrace	aarch64	true
 ltrace	armv7	true
 ltrace	x86	true
 ltrace	x86_64	true
+nc	aarch64	true
+nc	armv7	true
+nc	x86	true
+nc	x86_64	true
 socat	aarch64	true
 socat	armv7	true
 socat	x86	true

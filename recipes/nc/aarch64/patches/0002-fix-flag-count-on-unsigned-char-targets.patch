@@ -1,0 +1,8 @@
+--- a/src/flagset.c
++++ b/src/flagset.c
+@@ -137 +137 @@
+-  register char c;
++  register unsigned char c;
+@@ -157 +157 @@
+-      ret -= (c >> 7);
++      ret += (c >> 7);

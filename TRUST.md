@@ -38,6 +38,10 @@ keyserver, or network lookup.
 | [ltrace 0.8.1 (ARMv7)](recipes/ltrace/armv7/source.lock) | Checksum only | Not available | [official GitLab release](https://gitlab.com/cespedes/ltrace/-/tags/0.8.1) |
 | [ltrace 0.8.1 (x86)](recipes/ltrace/x86/source.lock) | Checksum only | Not available | [official GitLab release](https://gitlab.com/cespedes/ltrace/-/tags/0.8.1) |
 | [ltrace 0.8.1 (x86-64)](recipes/ltrace/x86_64/source.lock) | Checksum only | Not available | [official GitLab release](https://gitlab.com/cespedes/ltrace/-/tags/0.8.1) |
+| [GNU Netcat 0.7.1 (AArch64)](recipes/nc/aarch64/source.lock) | Upstream PGP | `6247640C1C901EE4D800E4E22D583DF1B2D79FC1` | [signature](https://netcat.sourceforge.net/signatures/netcat-0.7.1.tar.gz.asc); [signer key](https://netcat.sourceforge.net/b2d79fc1.asc) |
+| [GNU Netcat 0.7.1 (ARMv7)](recipes/nc/armv7/source.lock) | Upstream PGP | `6247640C1C901EE4D800E4E22D583DF1B2D79FC1` | [signature](https://netcat.sourceforge.net/signatures/netcat-0.7.1.tar.gz.asc); [signer key](https://netcat.sourceforge.net/b2d79fc1.asc) |
+| [GNU Netcat 0.7.1 (x86)](recipes/nc/x86/source.lock) | Upstream PGP | `6247640C1C901EE4D800E4E22D583DF1B2D79FC1` | [signature](https://netcat.sourceforge.net/signatures/netcat-0.7.1.tar.gz.asc); [signer key](https://netcat.sourceforge.net/b2d79fc1.asc) |
+| [GNU Netcat 0.7.1 (x86-64)](recipes/nc/x86_64/source.lock) | Upstream PGP | `6247640C1C901EE4E800E4E22D583DF1B2D79FC1` | [signature](https://netcat.sourceforge.net/signatures/netcat-0.7.1.tar.gz.asc); [signer key](https://netcat.sourceforge.net/b2d79fc1.asc) |
 | [socat 1.8.1.3 (AArch64)](recipes/socat/aarch64/source.lock) | Checksum only | Not available | [official Git repository](https://repo.or.cz/socat.git) |
 | [socat 1.8.1.3 (ARMv7)](recipes/socat/armv7/source.lock) | Checksum only | Not available | [official Git repository](https://repo.or.cz/socat.git) |
 | [socat 1.8.1.3 (x86)](recipes/socat/x86/source.lock) | Checksum only | Not available | [official Git repository](https://repo.or.cz/socat.git) |
@@ -55,10 +59,10 @@ keyserver, or network lookup.
 | [tcpdump 4.99.4 (x86-64)](recipes/tcpdump/x86_64/source.lock) | Upstream PGP | `1F166A5742ABB9E0249A8D30E089DEF1D9C15D0D` | [signature](https://www.tcpdump.org/release/tcpdump-4.99.4.tar.gz.sig); [Tcpdump Group key](https://www.tcpdump.org/release/signing-key-RSA-E089DEF1D9C15D0D.asc) |
 | [libpcap 1.10.4 (x86-64)](recipes/tcpdump/x86_64/source.lock) | Upstream PGP | `1F166A5742ABB9E0249A8D30E089DEF1D9C15D0D` | [signature](https://www.tcpdump.org/release/libpcap-1.10.4.tar.gz.sig); [Tcpdump Group key](https://www.tcpdump.org/release/signing-key-RSA-E089DEF1D9C15D0D.asc) |
 
-The GDB signature is valid upstream origin evidence but uses legacy DSA with
-SHA-1. The tcpdump and libpcap signatures use RSA with SHA-512. These records
-are verified exactly as published; the table does not claim equal
-cryptographic strength.
+The GDB and GNU Netcat signatures are valid upstream origin evidence but use
+legacy DSA with SHA-1. The GNU Netcat signing key is also expired. The tcpdump
+and libpcap signatures use RSA with SHA-512. These records are verified exactly
+as published; the table does not claim equal cryptographic strength.
 
 The AArch64 GDBserver, ltrace, and strace functional tests boot the same
 checksum-locked Alpine 3.22.5 `vmlinuz-virt`, recorded in their respective
