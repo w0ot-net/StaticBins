@@ -27,6 +27,10 @@ netstat	aarch64	true
 netstat	armv7	true
 netstat	x86	true
 netstat	x86_64	true
+rsync	aarch64	true
+rsync	armv7	true
+rsync	x86	true
+rsync	x86_64	true
 socat	aarch64	true
 socat	armv7	true
 socat	x86	true

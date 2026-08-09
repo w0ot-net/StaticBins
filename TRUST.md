@@ -50,6 +50,10 @@ keyserver, or network lookup.
 | [net-tools 2.10 (netstat, ARMv7)](recipes/netstat/armv7/source.lock) | Checksum only | Not available | [official release](https://sourceforge.net/projects/net-tools/files/net-tools-2.10.tar.xz/) |
 | [net-tools 2.10 (netstat, x86)](recipes/netstat/x86/source.lock) | Checksum only | Not available | [official release](https://sourceforge.net/projects/net-tools/files/net-tools-2.10.tar.xz/) |
 | [net-tools 2.10 (netstat, x86-64)](recipes/netstat/x86_64/source.lock) | Checksum only | Not available | [official release](https://sourceforge.net/projects/net-tools/files/net-tools-2.10.tar.xz/) |
+| [rsync 3.4.4 (AArch64)](recipes/rsync/aarch64/source.lock) | Upstream PGP | `9FEF112DCE19A0DC7E882CB81BB24997A8535F6F` | [signature](https://download.samba.org/pub/rsync/src/rsync-3.4.4.tar.gz.asc); [official signer direction](https://rsync.samba.org/download.html) |
+| [rsync 3.4.4 (ARMv7)](recipes/rsync/armv7/source.lock) | Upstream PGP | `9FEF112DCE19A0DC7E882CB81BB24997A8535F6F` | [signature](https://download.samba.org/pub/rsync/src/rsync-3.4.4.tar.gz.asc); [official signer direction](https://rsync.samba.org/download.html) |
+| [rsync 3.4.4 (x86)](recipes/rsync/x86/source.lock) | Upstream PGP | `9FEF112DCE19A0DC7E882CB81BB24997A8535F6F` | [signature](https://download.samba.org/pub/rsync/src/rsync-3.4.4.tar.gz.asc); [official signer direction](https://rsync.samba.org/download.html) |
+| [rsync 3.4.4 (x86-64)](recipes/rsync/x86_64/source.lock) | Upstream PGP | `9FEF112DCE19A0DC7E882CB81BB24997A8535F6F` | [signature](https://download.samba.org/pub/rsync/src/rsync-3.4.4.tar.gz.asc); [official signer direction](https://rsync.samba.org/download.html) |
 | [socat 1.8.1.3 (AArch64)](recipes/socat/aarch64/source.lock) | Checksum only | Not available | [official Git repository](https://repo.or.cz/socat.git) |
 | [socat 1.8.1.3 (ARMv7)](recipes/socat/armv7/source.lock) | Checksum only | Not available | [official Git repository](https://repo.or.cz/socat.git) |
 | [socat 1.8.1.3 (x86)](recipes/socat/x86/source.lock) | Checksum only | Not available | [official Git repository](https://repo.or.cz/socat.git) |
@@ -68,9 +72,10 @@ keyserver, or network lookup.
 | [libpcap 1.10.4 (x86-64)](recipes/tcpdump/x86_64/source.lock) | Upstream PGP | `1F166A5742ABB9E0249A8D30E089DEF1D9C15D0D` | [signature](https://www.tcpdump.org/release/libpcap-1.10.4.tar.gz.sig); [Tcpdump Group key](https://www.tcpdump.org/release/signing-key-RSA-E089DEF1D9C15D0D.asc) |
 
 The GDB and GNU Netcat signatures are valid upstream origin evidence but use
-legacy DSA with SHA-1. The GNU Netcat signing key is also expired. The tcpdump
-and libpcap signatures use RSA with SHA-512. These records are verified exactly
-as published; the table does not claim equal cryptographic strength.
+legacy DSA with SHA-1. The GNU Netcat signing key is also expired. The rsync,
+tcpdump, and libpcap signatures use RSA with SHA-512. These records are
+verified exactly as published; the table does not claim equal cryptographic
+strength.
 
 BusyBox labels 1.38.0 an unstable release. Although upstream publishes a DSA
 signature, these recipes have not adopted a signer key backed by authenticated

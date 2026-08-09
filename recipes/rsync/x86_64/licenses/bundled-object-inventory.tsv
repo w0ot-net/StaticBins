@@ -1,0 +1,15 @@
+# object_path	package	version	license	license_file	source_evidence
+popt/popt.o	bundled-popt	rsync-3.4.4-bundled	MIT	popt-COPYING.txt	https://download.samba.org/pub/rsync/src/rsync-3.4.4.tar.gz
+popt/poptconfig.o	bundled-popt	rsync-3.4.4-bundled	MIT	popt-COPYING.txt	https://download.samba.org/pub/rsync/src/rsync-3.4.4.tar.gz
+popt/popthelp.o	bundled-popt	rsync-3.4.4-bundled	MIT	popt-COPYING.txt	https://download.samba.org/pub/rsync/src/rsync-3.4.4.tar.gz
+popt/poptparse.o	bundled-popt	rsync-3.4.4-bundled	MIT	popt-COPYING.txt	https://download.samba.org/pub/rsync/src/rsync-3.4.4.tar.gz
+popt/poptint.o	bundled-popt	rsync-3.4.4-bundled	MIT	popt-COPYING.txt	https://download.samba.org/pub/rsync/src/rsync-3.4.4.tar.gz
+zlib/deflate.o	bundled-zlib	1.2.8	Zlib	zlib-README.txt	https://download.samba.org/pub/rsync/src/rsync-3.4.4.tar.gz
+zlib/inffast.o	bundled-zlib	1.2.8	Zlib	zlib-README.txt	https://download.samba.org/pub/rsync/src/rsync-3.4.4.tar.gz
+zlib/inflate.o	bundled-zlib	1.2.8	Zlib	zlib-README.txt	https://download.samba.org/pub/rsync/src/rsync-3.4.4.tar.gz
+zlib/inftrees.o	bundled-zlib	1.2.8	Zlib	zlib-README.txt	https://download.samba.org/pub/rsync/src/rsync-3.4.4.tar.gz
+zlib/trees.o	bundled-zlib	1.2.8	Zlib	zlib-README.txt	https://download.samba.org/pub/rsync/src/rsync-3.4.4.tar.gz
+zlib/zutil.o	bundled-zlib	1.2.8	Zlib	zlib-README.txt	https://download.samba.org/pub/rsync/src/rsync-3.4.4.tar.gz
+zlib/adler32.o	bundled-zlib	1.2.8	Zlib	zlib-README.txt	https://download.samba.org/pub/rsync/src/rsync-3.4.4.tar.gz
+zlib/compress.o	bundled-zlib	1.2.8	Zlib	zlib-README.txt	https://download.samba.org/pub/rsync/src/rsync-3.4.4.tar.gz
+zlib/crc32.o	bundled-zlib	1.2.8	Zlib	zlib-README.txt	https://download.samba.org/pub/rsync/src/rsync-3.4.4.tar.gz
