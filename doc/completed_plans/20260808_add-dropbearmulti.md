@@ -218,3 +218,51 @@ repository contracts.
 - Source authentication, component licenses, linked-input provenance, catalog,
   checksums, and trust records are complete for all ready architectures, with
   no unrelated infrastructure or assurance change.
+
+## Execution Notes
+
+Completed on 2026-08-08 by implementation commit
+`549b36c4f0fa485466e5fdcb7d02fe1a99a424d7`.
+
+Implemented Dropbear 2026.94 as one independently rebuildable `dropbearmulti`
+artifact for each ready architecture. Every recipe consumes its architecture's
+committed immutable builder, verifies the tracked release archive and detached
+RSA/SHA-512 signature against the exact
+`F7347EF2EE2E07A267628CA944931494F29C6773` fingerprint, builds only the four
+planned roles, reconciles the final link map with reviewed source/license
+evidence, and validates a temporary candidate before artifact installation.
+
+All four target smoke tests passed under the supported native or Buildx/QEMU
+execution path. They verify the exact role and algorithm surface, generate
+Ed25519 host and client keys, round-trip the client key through OpenSSH format,
+and run a bounded public-key-authenticated loopback SSH command with the same
+candidate serving both ends. Password authentication is disabled for that
+test, and no `scp` or external SFTP role is present.
+
+Committed artifact results:
+
+- `aarch64`: 528,096 bytes,
+  `cb9d9b3e8ab9f7c144843125ea1b669b5e9337ed63efbd1949c04c4d6e54aebf`
+- `armv7`: 362,844 bytes,
+  `c754656d9d75d985f558f361014aefed6710bc4e6a6e151e117c2f3dee164828`
+- `x86`: 608,680 bytes,
+  `cd88adb4c9f6fcbae4070edd199ef140e390fe6afe9f92a0920ddd259ad07730`
+- `x86_64`: 561,048 bytes,
+  `ec67a38033ce3de5507a45de7378b2c94c5c18580cd11496095ebd1977d5dc26`
+
+Each artifact passed the exact machine, class, endianness, ABI, static-PIE,
+stripping, no-interpreter, no-`DT_NEEDED`, and no-text-relocation checks.
+ARMv7 additionally passed EABI5 hard-float validation, and x86 was compiled and
+validated against the required i686/SSE2 baseline. Candidate and installed
+hashes matched for every architecture.
+
+Validation also passed for all host/guest script syntax, all four tracked
+source checksums and signatures, `python3 scripts/recipes.py validate` (60
+enabled recipes), `sha256sum -c artifacts/SHA256SUMS`, `./build.sh list`,
+`git diff --check`, and `./validate.sh` (60 enabled recipes and 25 repository
+tests).
+
+There were no material plan deviations. Trailing whitespace was normalized in
+the separately extracted license-text copies to satisfy repository diff
+hygiene; the signed tracked source archives remain byte-exact. No unresolved
+blocker or deliberately excluded follow-up remains within this plan's scope.
