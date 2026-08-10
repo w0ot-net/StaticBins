@@ -83,6 +83,8 @@ unrelated architectures.
 
 The published builder remains a builder-only foundation during this rollout.
 Present the architecture as ready for utility users only after it has an
-enabled recipe and committed artifact for every tool already distributed on
-the repository's ready architectures. This permits builder-first onboarding
-without silently advertising partial utility coverage.
+enabled recipe and committed artifact for every baseline tool already
+distributed on the repository's ready architectures. Explicitly documented
+architecture-limited utilities do not block that baseline readiness and do not
+imply availability outside their cataloged pairs. This permits builder-first
+onboarding without silently advertising partial baseline coverage.

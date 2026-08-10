@@ -31,11 +31,14 @@ architecture and recipe owners, as documented in
 
 Builder support and public utility readiness are separate states. A cataloged,
 published builder may exist alone while an architecture is being onboarded;
-until every currently distributed tool has an enabled recipe and committed
+until every baseline distributed tool has an enabled recipe and committed
 artifact for it, that architecture is a builder-only foundation rather than a
-ready download target. Conversely, adopting a new distributed tool requires
-coverage across every ready architecture. This rollout state is a documentation
-contract, not another catalog field or a generic dispatcher inference.
+ready download target. Conversely, adopting a new distributed tool normally
+requires coverage across every ready architecture. An explicitly approved
+architecture-limited utility may cover fewer pairs when every omission and its
+compatibility or scope reason is documented by the recipe. This rollout state
+is a documentation contract, not another catalog field or a generic dispatcher
+inference; the enabled catalog is always the exact availability authority.
 
 ## Dispatch and validation
 

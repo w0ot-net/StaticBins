@@ -1,0 +1,2 @@
+# packer_path	package	version	Alpine_declared_license	license_file	Alpine_APKBUILD
+/usr/bin/upx	upx	5.2.0-r0	GPL-2.0-or-later	UPX-LICENSE.txt	https://gitlab.alpinelinux.org/alpine/aports/-/blob/899cb6e3b2603542ce1f88f036c7179ccf753a8c/community/upx/APKBUILD

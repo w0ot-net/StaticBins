@@ -1,0 +1,7 @@
+# bpftrace source acceptance and provenance metadata.
+SOURCE_VERSION=0.26.1
+SOURCE_ARCHIVE=bpftrace-0.26.1.tar.gz
+SOURCE_SHA256=555368f32f94bfcb74b119a3d9c67b68200be6375b8f452f794a2d3f6ebbcd16
+SOURCE_UPSTREAM_URL=https://github.com/bpftrace/bpftrace/archive/refs/tags/v0.26.1.tar.gz
+SOURCE_LICENSE=Apache-2.0
+SOURCE_AUTHENTICATION=checksum-only

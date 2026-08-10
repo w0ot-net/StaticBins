@@ -97,7 +97,8 @@ docker run --rm \
 
         for command_name in \
             autoreconf automake bison cc c++ cmake file flex libtoolize make \
-            libressl ninja pkg-config python3 readelf rpcgen sha256sum strip tar xz; do
+            libressl ninja patch pkg-config python3 readelf rpcgen sha256sum \
+            strip tar upx xz; do
             if ! command -v "${command_name}" >/dev/null 2>&1; then
                 echo "error: candidate builder is missing ${command_name}" >&2
                 validation_errors=$((validation_errors + 1))
@@ -107,12 +108,20 @@ docker run --rm \
         libgcc_archive=$(cc -print-file-name=libgcc.a)
         for archive_path in \
             /usr/lib/libc.a \
+            /usr/lib/libbcc.a \
+            /usr/lib/libbcc_bpf.a \
+            /usr/lib/libbcc-loader-static.a \
+            /usr/lib/libbpf.a \
+            /usr/lib/libbz2.a \
             /usr/lib/libcrypto.a \
             /usr/lib/libelf.a \
             /usr/lib/libexpat.a \
             /usr/lib/libssl.a \
             /usr/lib/libtirpc.a \
             /usr/lib/libtirpc-nokrb.a \
+            /usr/lib/libxml2.a \
+            /usr/lib/llvm20/lib/libLLVMCore.a \
+            /usr/lib/llvm20/lib/libclangAST.a \
             "${libgcc_archive}"; do
             if [ ! -f "${archive_path}" ]; then
                 echo "error: candidate builder is missing ${archive_path}" >&2

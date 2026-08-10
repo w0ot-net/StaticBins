@@ -36,9 +36,12 @@ Repository contract:
   activating recipes for it.
 - A published builder may exist as an onboarding foundation before recipes,
   but present an architecture as ready for utility users only when every
-  currently distributed tool has an enabled recipe and artifact for it. Adopt
+  baseline distributed tool has an enabled recipe and artifact for it. Adopt
   a new distributed tool for every ready architecture as one coordinated
-  rollout; keep incomplete coverage out of the public artifact set.
+  rollout by default. An explicitly approved architecture-limited utility may
+  be published only when its recipe documentation names the included and
+  omitted ready architectures and gives the compatibility or scope reason;
+  the catalog remains the exact availability authority.
 - Keep `artifacts/SHA256SUMS` complete and exact for every distributed file,
   excluding the manifest itself, and require its paths to equal the catalog's
   conventional recipe outputs. In `TRUST.md`, derive artifact source

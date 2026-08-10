@@ -1,0 +1,71 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 9ba10b59..ae6d66e2 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -9 +9 @@ project(bpftrace)
+-set(bpftrace_VERSION_PATCH 0)
++set(bpftrace_VERSION_PATCH 1)
+@@ -139,0 +140,9 @@ if(${LIBBFD_FOUND} AND ${LIBOPCODES_FOUND})
++
++# Alpine's llvm20-static package exposes only libzstd.a, while its exported
++# LLVMSupport target retains the shared-target name.  Provide that target name
++# without weakening the static link.
++if(STATIC_LINKING AND LIBZSTD_LIBRARIES AND NOT TARGET zstd::libzstd_shared)
++  add_library(zstd::libzstd_shared STATIC IMPORTED)
++  set_target_properties(zstd::libzstd_shared PROPERTIES
++    IMPORTED_LOCATION "${LIBZSTD_LIBRARIES}")
++endif()
+diff --git a/src/CMakeLists.txt b/src/CMakeLists.txt
+index 32bbcf32..ba8df94e 100644
+--- a/src/CMakeLists.txt
++++ b/src/CMakeLists.txt
+@@ -45,0 +46,7 @@ add_library(runtime STATIC
++# Alpine's static BCC archive was built with debuginfod enabled.  This release
++# profile deliberately omits remote debug-file downloads and supplies the
++# three BCC-referenced client entry points locally.
++if(STATIC_LINKING)
++  target_sources(runtime PRIVATE debuginfod_stubs.cpp)
++endif()
++
+@@ -97,0 +105,2 @@ target_link_options(bpftrace BEFORE PRIVATE
++  $<$<BOOL:${STATIC_LINKING}>:-static>
++  $<$<BOOL:${STATIC_LINKING}>:-no-pie>
+@@ -99,0 +109 @@ target_link_options(bpftrace BEFORE PRIVATE
++  $<$<BOOL:${STATIC_LINKING}>:-Wl,--gc-sections>
+@@ -205,8 +214,8 @@ if (STATIC_LINKING)
+     target_link_libraries(runtime "-Wl,-Bdynamic" "-ldl" "-lm" "-lz")
+   else()
+-    target_link_libraries(libbpftrace "-Wl,-Bdynamic" "-lrt" "-lpthread" "-ldl" "-lm")
++    target_link_libraries(libbpftrace "-Wl,-Bstatic" "-lrt" "-lpthread" "-ldl" "-lm")
+     target_link_libraries(libbpftrace "-Wl,-Bstatic" "-lz")
+-    target_link_libraries(runtime "-Wl,-Bdynamic" "-lrt" "-lpthread" "-ldl" "-lm")
++    target_link_libraries(runtime "-Wl,-Bstatic" "-lrt" "-lpthread" "-ldl" "-lm")
+     target_link_libraries(runtime "-Wl,-Bstatic" "-lz")
+   endif()
+ endif()
+diff --git a/src/debuginfod_stubs.cpp b/src/debuginfod_stubs.cpp
+new file mode 100644
+index 00000000..aa6df153
+--- /dev/null
++++ b/src/debuginfod_stubs.cpp
+@@ -0,0 +1,20 @@
++#include <cerrno>
++
++#include <elfutils/debuginfod.h>
++
++extern "C" debuginfod_client *debuginfod_begin()
++{
++  return nullptr;
++}
++
++extern "C" int debuginfod_find_debuginfo(debuginfod_client *,
++                                            const unsigned char *,
++                                            int,
++                                            char **)
++{
++  return -ENOSYS;
++}
++
++extern "C" void debuginfod_end(debuginfod_client *)
++{
++}

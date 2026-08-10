@@ -101,8 +101,9 @@ docker run --rm \
         done < /tmp/packages.lock
 
         for command_name in \
-            autoreconf automake bison cc c++ file flex libressl libtoolize make \
-            makeinfo pkg-config readelf rpcgen sha256sum strip tar wget xz; do
+            autoreconf automake bison cc c++ cmake file flex libressl libtoolize \
+            make makeinfo ninja patch pkg-config readelf rpcgen sha256sum strip \
+            tar upx wget xz; do
             if ! command -v "${command_name}" >/dev/null 2>&1; then
                 echo "error: candidate builder is missing ${command_name}" >&2
                 validation_errors=$((validation_errors + 1))
@@ -112,6 +113,11 @@ docker run --rm \
         libgcc_archive=$(cc -print-file-name=libgcc.a)
         for archive_path in \
             /usr/lib/libc.a \
+            /usr/lib/libbcc.a \
+            /usr/lib/libbcc_bpf.a \
+            /usr/lib/libbcc-loader-static.a \
+            /usr/lib/libbpf.a \
+            /usr/lib/libbz2.a \
             /usr/lib/libcrypto.a \
             /usr/lib/libelf.a \
             /usr/lib/libexpat.a \
@@ -121,9 +127,12 @@ docker run --rm \
             /usr/lib/libssl.a \
             /usr/lib/libtirpc.a \
             /usr/lib/libtirpc-nokrb.a \
+            /usr/lib/libxml2.a \
             /usr/lib/liblzma.a \
             /usr/lib/libz.a \
             /usr/lib/libzstd.a \
+            /usr/lib/llvm20/lib/libLLVMCore.a \
+            /usr/lib/llvm20/lib/libclangAST.a \
             "${libgcc_archive}"; do
             if [ ! -f "${archive_path}" ]; then
                 echo "error: candidate builder is missing ${archive_path}" >&2
@@ -158,13 +167,21 @@ docker run --rm \
         }
 
         validate_archive_metadata /usr/lib/libelf.a elfutils-dev "GPL-3.0-or-later AND ( GPL-2.0-or-later OR LGPL-3.0-or-later )"
+        validate_archive_metadata /usr/lib/libbcc.a bcc-static Apache-2.0
+        validate_archive_metadata /usr/lib/libbcc_bpf.a bcc-static Apache-2.0
+        validate_archive_metadata /usr/lib/libbcc-loader-static.a bcc-static Apache-2.0
+        validate_archive_metadata /usr/lib/libbpf.a libbpf-dev "LGPL-2.1-only OR BSD-2-Clause"
+        validate_archive_metadata /usr/lib/libbz2.a bzip2-static bzip2-1.0.6
         validate_archive_metadata /usr/lib/libexpat.a expat-static MIT
         validate_archive_metadata /usr/lib/libgmp.a gmp-static "LGPL-3.0-or-later OR GPL-2.0-or-later"
         validate_archive_metadata /usr/lib/libmpfr.a mpfr-dev LGPL-3.0-or-later
         validate_archive_metadata /usr/lib/libncursesw.a ncurses-static X11
+        validate_archive_metadata /usr/lib/libxml2.a libxml2-static MIT
         validate_archive_metadata /usr/lib/liblzma.a xz-static "GPL-2.0-or-later AND 0BSD AND Public-Domain AND LGPL-2.1-or-later"
         validate_archive_metadata /usr/lib/libz.a zlib-static Zlib
         validate_archive_metadata /usr/lib/libzstd.a zstd-static "BSD-3-Clause OR GPL-2.0-or-later"
+        validate_archive_metadata /usr/lib/llvm20/lib/libLLVMCore.a llvm20-static Apache-2.0
+        validate_archive_metadata /usr/lib/llvm20/lib/libclangAST.a clang20-static "Apache-2.0 WITH LLVM-exception"
 
         if [ "${validation_errors}" -ne 0 ]; then
             exit 1

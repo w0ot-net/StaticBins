@@ -1,0 +1,2 @@
+# header_path	package	version	Alpine_declared_license	license_file	Alpine_APKBUILD
+/usr/include/cereal/access.hpp	cereal	1.3.2-r6	BSD-3-Clause	cereal-LICENSE.txt	https://gitlab.alpinelinux.org/alpine/aports/-/blob/899cb6e3b2603542ce1f88f036c7179ccf753a8c/community/cereal/APKBUILD

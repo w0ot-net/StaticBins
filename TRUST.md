@@ -22,6 +22,8 @@ keyserver, or network lookup.
 
 | Source | Authentication | Full signer fingerprint | Official evidence |
 | --- | --- | --- | --- |
+| [bpftrace 0.26.1 (AArch64)](recipes/bpftrace/aarch64/source.lock) | Checksum only | Not adopted | [official release](https://github.com/bpftrace/bpftrace/releases/tag/v0.26.1) |
+| [bpftrace 0.26.1 (x86-64)](recipes/bpftrace/x86_64/source.lock) | Checksum only | Not adopted | [official release](https://github.com/bpftrace/bpftrace/releases/tag/v0.26.1) |
 | [BusyBox 1.38.0 (AArch64)](recipes/busybox/aarch64/source.lock) | Checksum only | Not available | [official download](https://busybox.net/downloads/) |
 | [BusyBox 1.38.0 (ARMv7)](recipes/busybox/armv7/source.lock) | Checksum only | Not available | [official download](https://busybox.net/downloads/) |
 | [BusyBox 1.38.0 (x86)](recipes/busybox/x86/source.lock) | Checksum only | Not available | [official download](https://busybox.net/downloads/) |
@@ -106,6 +108,11 @@ signature, these recipes have not adopted a signer key backed by authenticated
 official full-fingerprint evidence. They therefore select `checksum-only`
 explicitly and do not attempt PGP verification or fall back after a failed
 signature check.
+
+bpftrace's GitHub tag snapshot has no detached release signature adopted by
+these recipes. Both architecture records therefore select `checksum-only` and
+verify the exact committed source archive without claiming signer-authenticated
+origin.
 
 SQLite publishes an official SHA3-256 for the accepted amalgamation archive
 but no detached release signature. The recipes record that upstream digest,

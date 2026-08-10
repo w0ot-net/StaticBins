@@ -5,11 +5,14 @@ in `recipes/catalog.tsv`. Tool-specific source, configuration, build, license,
 and smoke-test logic stays inside the recipe; the root dispatcher and local
 repository validation remain generic.
 
-A newly distributed utility must have a complete recipe and artifact for every
-ready architecture. If that rollout is still incomplete, keep all of its pairs
-out of the enabled catalog and public artifact set until the remaining
-architecture owners are ready; do not redefine ready architectures as partial
-coverage.
+A newly distributed utility should have a complete recipe and artifact for
+every ready architecture. If that rollout is still incomplete, keep all of its
+pairs out of the enabled catalog and public artifact set until the remaining
+architecture owners are ready. An explicitly approved architecture-limited
+utility is the narrow exception: document every omitted ready architecture and
+its compatibility or scope reason in each recipe README, and rely on the
+catalog as the exact availability authority. Such an exception does not
+redefine an architecture's baseline readiness.
 
 This procedure implements the repository's stable
 [repository model](architecture/repository/REPOSITORY_MODEL.md),
