@@ -20,9 +20,8 @@ patch version, adapts LLVM's static zstd target, enforces the final static link,
 and supplies BCC's optional debuginfod entry points without adding its network
 dependency stack.
 
-This approved architecture-limited rollout includes AArch64 and x86-64 only.
-Alpine excludes its bpftrace package on x86, and this rollout does not adopt
-the additional ARMv7 LLVM/Clang builder footprint and emulated build cost.
+This approved architecture-limited rollout includes AArch64, ARMv7, and x86-64
+only. Alpine excludes its bpftrace package on x86.
 
 The result is a stripped, fully static classic `ET_EXEC` executable with BCC,
 libbpf, Clang 20, and LLVM 20 linked in. It uses the system libbpf, omits the

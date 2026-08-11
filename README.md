@@ -72,7 +72,7 @@ directly to its committed executable; `-` means that pair is not distributed.
 
 | Binary | AArch64 | ARMv7 | x86 | x86-64 |
 | --- | --- | --- | --- | --- |
-| [bpftrace](recipes/bpftrace/) | [binary](artifacts/aarch64/bpftrace) | - | - | [binary](artifacts/x86_64/bpftrace) |
+| [bpftrace](recipes/bpftrace/) | [binary](artifacts/aarch64/bpftrace) | [binary](artifacts/armv7/bpftrace) | - | [binary](artifacts/x86_64/bpftrace) |
 | [busybox](recipes/busybox/) | [binary](artifacts/aarch64/busybox) | [binary](artifacts/armv7/busybox) | [binary](artifacts/x86/busybox) | [binary](artifacts/x86_64/busybox) |
 | [curl](recipes/curl/) | [binary](artifacts/aarch64/curl) | [binary](artifacts/armv7/curl) | [binary](artifacts/x86/curl) | [binary](artifacts/x86_64/curl) |
 | [dropbearmulti](recipes/dropbearmulti/) | [binary](artifacts/aarch64/dropbearmulti) | [binary](artifacts/armv7/dropbearmulti) | [binary](artifacts/x86/dropbearmulti) | [binary](artifacts/x86_64/dropbearmulti) |

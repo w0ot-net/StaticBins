@@ -23,6 +23,7 @@ keyserver, or network lookup.
 | Source | Authentication | Full signer fingerprint | Official evidence |
 | --- | --- | --- | --- |
 | [bpftrace 0.26.1 (AArch64)](recipes/bpftrace/aarch64/source.lock) | Checksum only | Not adopted | [official release](https://github.com/bpftrace/bpftrace/releases/tag/v0.26.1) |
+| [bpftrace 0.26.1 (ARMv7)](recipes/bpftrace/armv7/source.lock) | Checksum only | Not adopted | [official release](https://github.com/bpftrace/bpftrace/releases/tag/v0.26.1) |
 | [bpftrace 0.26.1 (x86-64)](recipes/bpftrace/x86_64/source.lock) | Checksum only | Not adopted | [official release](https://github.com/bpftrace/bpftrace/releases/tag/v0.26.1) |
 | [BusyBox 1.38.0 (AArch64)](recipes/busybox/aarch64/source.lock) | Checksum only | Not available | [official download](https://busybox.net/downloads/) |
 | [BusyBox 1.38.0 (ARMv7)](recipes/busybox/armv7/source.lock) | Checksum only | Not available | [official download](https://busybox.net/downloads/) |

@@ -21,22 +21,21 @@ paths and catalog rows use `x86_64`.
 | Internal identifier | Current immutable tag | Current recipe consumers |
 | --- | --- | --- |
 | `aarch64` | `aarch64-alpine-3.24.1-r4` | Baseline utility set plus bpftrace |
-| `armv7` | `armv7-alpine-3.24.1-r3` | Baseline utility set |
+| `armv7` | `armv7-alpine-3.24.1-r4` | Baseline utility set plus bpftrace |
 | `x86` | `x86-alpine-3.24.1-r2` | Baseline utility set |
 | `x86_64` | `x64-alpine-3.24.1-r5` | Baseline utility set plus bpftrace |
 
-The AArch64 r4 and x86-64 r5 environments add the bpftrace static dependency
-set: BCC 0.36.1, LLVM and Clang 20.1.8, libbpf, cereal, bzip2, libxml2, CMake,
-Ninja, and UPX. Their candidate validation requires the exact packages and the
-static archives used by the final link. UPX is a deliberate release tool for
-the otherwise hosting-limit-sized bpftrace executable; recipes still validate
-the unpacked link before packing and the packed executable afterward.
+The AArch64 r4, ARMv7 r4, and x86-64 r5 environments add the bpftrace static
+dependency set: BCC 0.36.1, LLVM and Clang 20.1.8, libbpf, cereal, bzip2,
+libxml2, CMake, Ninja, and UPX. Their candidate validation requires the exact
+packages and the static archives used by the final link. UPX is a deliberate
+release tool for the otherwise hosting-limit-sized bpftrace executable;
+recipes still validate the unpacked link before packing and the packed
+executable afterward.
 
-bpftrace is an approved architecture-limited utility for AArch64 and x86-64.
-Alpine excludes its bpftrace package on x86, while the requested rollout did
-not adopt the additional ARMv7 LLVM/Clang builder footprint and emulated build
-cost. The enabled recipe catalog, rather than baseline readiness, expresses
-that exact availability.
+bpftrace is an approved architecture-limited utility for AArch64, ARMv7, and
+x86-64. Alpine excludes its bpftrace package on x86. The enabled recipe
+catalog, rather than baseline readiness, expresses that exact availability.
 
 The x86-64 environment retains the established GDB 17.2 static dependency set:
 Expat, GMP, MPFR, ncurses, xz, zlib, and zstd. Its candidate validation links

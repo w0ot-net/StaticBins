@@ -102,9 +102,9 @@ docker run --rm \
         done < /tmp/packages.lock
 
         for command_name in \
-            autoconf automake autoreconf bison cc c++ file flex \
-            libressl-openssl libtoolize make makeinfo perl pkg-config \
-            readelf readlink rpcgen sha256sum strip tar xz; do
+            autoconf automake autoreconf bison cc c++ cmake file flex \
+            libressl-openssl libtoolize make makeinfo ninja patch perl \
+            pkg-config readelf readlink rpcgen sha256sum strip tar upx xz; do
             if ! command -v "${command_name}" >/dev/null 2>&1; then
                 echo "error: candidate builder is missing ${command_name}" >&2
                 validation_errors=$((validation_errors + 1))
@@ -142,6 +142,11 @@ docker run --rm \
             /usr/lib/libutil.a; do
             validate_archive_owner "${archive_path}" musl-dev 1.2.6-r2
         done
+        validate_archive_owner /usr/lib/libbcc.a bcc-static 0.36.1-r1
+        validate_archive_owner /usr/lib/libbcc_bpf.a bcc-static 0.36.1-r1
+        validate_archive_owner /usr/lib/libbcc-loader-static.a bcc-static 0.36.1-r1
+        validate_archive_owner /usr/lib/libbpf.a libbpf-dev 1.7.0-r1
+        validate_archive_owner /usr/lib/libbz2.a bzip2-static 1.0.8-r6
         validate_archive_owner /usr/lib/libcrypto.a libressl-static 4.3.1-r0
         validate_archive_owner /usr/lib/libelf.a elfutils-dev 0.195-r0
         validate_archive_owner /usr/lib/libexpat.a expat-static 2.8.2-r0
@@ -152,8 +157,11 @@ docker run --rm \
         validate_archive_owner /usr/lib/libssl.a libressl-static 4.3.1-r0
         validate_archive_owner /usr/lib/libtirpc.a libtirpc-static 1.3.5-r1
         validate_archive_owner /usr/lib/libtirpc-nokrb.a libtirpc-static 1.3.5-r1
+        validate_archive_owner /usr/lib/libxml2.a libxml2-static 2.13.9-r2
         validate_archive_owner /usr/lib/libz.a zlib-static 1.3.2-r0
         validate_archive_owner /usr/lib/libzstd.a zstd-static 1.5.7-r2
+        validate_archive_owner /usr/lib/llvm20/lib/libLLVMCore.a llvm20-static 20.1.8-r1
+        validate_archive_owner /usr/lib/llvm20/lib/libclangAST.a clang20-static 20.1.8-r3
         validate_archive_owner "${libgcc_archive}" libgcc-static 15.2.0-r5
         validate_archive_owner "${libgcc_eh_archive}" gcc 15.2.0-r5
         validate_archive_owner "${libstdcxx_archive}" libstdc++-dev 15.2.0-r5
